@@ -1,0 +1,3 @@
+// Chart dependencies for customer analysis
+// This file is only for dependency tracking, not for import
+// Install: npm install recharts

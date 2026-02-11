@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 70" width="300" height="70" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <style>
+      .logo-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 700; fill: #0066cc; }
+      .logo-sub { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 600; fill: #00aa99; letter-spacing: 1.5px; }
+    </style>
+    <linearGradient id="shield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0066cc" />
+      <stop offset="100%" stop-color="#0050aa" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Shield Icon Group -->
+  <g transform="translate(8, 8)">
+    <!-- Shield shape -->
+    <path d="M 20 4 L 35 0 L 50 4 L 50 24 Q 35 42 35 52 Q 35 42 20 24 Z" fill="url(#shield)" stroke="none"/>
+    <!-- Inner circle -->
+    <circle cx="35" cy="28" r="14" fill="#003d80"/>
+    <!-- Checkmark -->
+    <g stroke="#00ff00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 30 30 L 33 33 L 41 25"/>
+    </g>
+  </g>
+  
+  <!-- Logo Text -->
+  <text x="64" y="28" class="logo-text">Opscale</text>
+  <text x="64" y="48" class="logo-sub">AUDIT IQ</text>
+</svg>

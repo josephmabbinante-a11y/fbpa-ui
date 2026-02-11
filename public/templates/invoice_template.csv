@@ -1,0 +1,4 @@
+invoiceNumber,carrier,carrierSCAC,amount,totalCharges,fuelSurcharge,accessorialCharges,pickupDate,deliveryDate,shipmentID,origin,destination,status,auditStatus,paymentStatus,reasonCode,description,notes
+INV-0001,FedEx,FDXE,1240.55,1240.55,120.50,45.20,2026-02-01,2026-02-03,SHIP-001,New York NY,Los Angeles CA,Completed,Audited,Paid,RATE_OK,Ground shipment to LA,Standard fedex ground
+INV-0002,UPS,UPSN,980.12,980.12,95.20,32.15,2026-02-02,2026-02-04,SHIP-002,Chicago IL,Denver CO,Completed,Audited,Paid,RATE_OK,Next day air shipment,UPS overnight delivery
+INV-0003,XPO,XPOL,2145.88,2145.88,180.40,125.60,2026-02-03,2026-02-07,SHIP-003,Atlanta GA,Seattle WA,Pending,Exception,Pending,RATE_MISMATCH,LTL freight shipment,Over 1000 lbs charge discrepancy
