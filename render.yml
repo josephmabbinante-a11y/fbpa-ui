@@ -1,3 +1,8 @@
+# ⚠️ SECURITY WARNING:
+# The MongoDB credentials that were previously in this file have been exposed publicly.
+# These credentials MUST be rotated immediately in MongoDB Atlas.
+# DO NOT commit credentials to this file - use Render's environment variable dashboard instead.
+
 services:
   - type: web
     name: fbpa-backend
@@ -6,8 +11,12 @@ services:
     buildCommand: npm install
     envVars:
       - key: MONGODB_URI
-        value: mongodb+srv://josephmabbinante_db_user:r5xSqmKB4QU8QkVl@cluster0.fvycshx.mongodb.net/fbpa-db?retryWrites=true&w=majority
+        sync: false  # Set this in Render dashboard - DO NOT hardcode credentials
       - key: JWT_SECRET
-        value: your_secret_key_change_in_production
+        sync: false  # Set this in Render dashboard - use a strong random secret
       - key: NODE_ENV
         value: production
+      - key: CORS_ORIGIN
+        sync: false  # Set this in Render dashboard to your frontend URL (e.g., https://your-app.onrender.com)
+      - key: SERVE_STATIC
+        value: "true"

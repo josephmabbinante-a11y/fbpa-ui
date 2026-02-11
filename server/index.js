@@ -1,3 +1,11 @@
+// ⚠️ SECURITY NOTICE:
+// Database credentials that were previously hardcoded in this repository have been publicly exposed.
+// If you are setting up this application:
+// 1. DO NOT use the old MongoDB credentials from git history
+// 2. Create NEW database credentials in MongoDB Atlas
+// 3. Set MONGODB_URI and JWT_SECRET as environment variables
+// 4. See DEPLOYMENT.md for complete security guidelines
+
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
