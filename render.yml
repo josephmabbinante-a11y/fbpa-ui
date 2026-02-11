@@ -1,13 +1,36 @@
 services:
+  # Backend API Service
   - type: web
     name: fbpa-backend
-    environment: node
-    startCommand: node server/index.js
+    env: node
+    region: oregon
+    plan: free
     buildCommand: npm install
+    startCommand: node server/index.js
     envVars:
       - key: MONGODB_URI
-        value: mongodb+srv://josephmabbinante_db_user:r5xSqmKB4QU8QkVl@cluster0.fvycshx.mongodb.net/fbpa-db?retryWrites=true&w=majority
+        sync: false  # Set in dashboard
       - key: JWT_SECRET
-        value: your_secret_key_change_in_production
+        sync: false  # Set in dashboard
       - key: NODE_ENV
         value: production
+      - key: CORS_ORIGIN
+        sync: false  # Set in dashboard
+      - key: SERVE_STATIC
+        value: "false"  # Backend doesn't serve static in this setup
+
+  # Frontend Static Site
+  - type: web
+    name: fbpa-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+    envVars:
+      - key: VITE_API_URL
+        sync: false  # Set to backend URL in dashboard
