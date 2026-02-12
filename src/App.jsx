@@ -1,6 +1,14 @@
 import CarrierScorecard from "./pages/CarrierScorecard";
 import RateLogicTool from "./pages/RateLogicTool";
 import FleetDashboard from "./pages/FleetDashboard";
+import LoadBoard from "./pages/LoadBoard";
+import Shipments from "./pages/Shipments";
+import AR from "./pages/AR";
+import AP from "./pages/AP";
+import Aging from "./pages/Aging";
+import LaneIntelligence from "./pages/LaneIntelligence";
+import Carriers from "./pages/Carriers";
+import Account from "./pages/Account";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DemoProvider } from "./demo/DemoContext";
@@ -55,20 +63,39 @@ function AppRoutes() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/load-board" element={<LoadBoard />} />
+          <Route path="/shipments" element={<Shipments />} />
+          <Route path="/fleet" element={<FleetDashboard />} />
+          <Route path="/fleet-dashboard" element={<FleetDashboard />} />
+          
+          {/* Operations */}
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          <Route path="/uploads" element={<Uploads />} />
           <Route path="/exceptions" element={<Exceptions />} />
           <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
+          
+          {/* Finance */}
+          <Route path="/finance/ar" element={<AR />} />
+          <Route path="/finance/ap" element={<AP />} />
+          <Route path="/finance/aging" element={<Aging />} />
+          
+          {/* Analytics */}
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:reportId" element={<ReportDetail />} />
-          <Route path="/carriers" element={<CarriersPerformance />} />
-          <Route path="/carriers/:carrier" element={<CarrierScorecard />} />
-          <Route path="/uploads" element={<Uploads />} />
+          <Route path="/carrier-performance" element={<CarriersPerformance />} />
+          <Route path="/carrier-performance/:carrier" element={<CarrierScorecard />} />
+          <Route path="/lane-intelligence" element={<LaneIntelligence />} />
+          
+          {/* CRM */}
           <Route path="/customers" element={<Customers />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/carriers" element={<Carriers />} />
+          
+          {/* Tools & Account */}
           <Route path="/rate-logic" element={<RateLogicTool />} />
-          <Route path="/fleet-dashboard" element={<FleetDashboard />} />
+          <Route path="/account" element={<Account />} />
           <Route path="/profile" element={<MyAuditIQProfile />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
         </Routes>
       </Layout>

@@ -1,3 +1,46 @@
+export async function forgotPassword(email) {
+  try {
+    const res = await fetch(apiUrl('/auth/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) throw new Error(`Forgot password failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('forgotPassword error:', err);
+    return { error: err.message };
+  }
+}
+
+export async function resetPassword(token, password) {
+  try {
+    const res = await fetch(apiUrl('/auth/reset-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, password }),
+    });
+    if (!res.ok) throw new Error(`Reset password failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('resetPassword error:', err);
+    return { error: err.message };
+  }
+}
+export async function signup(payload) {
+  try {
+    const res = await fetch(apiUrl('/auth/signup'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Signup failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('signup error:', err);
+    return { error: err.message };
+  }
+}
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '';
 
@@ -57,12 +100,53 @@ async function safeFetch(path, options) {
 // Mock data imports (only loaded if needed)
 let mockInvoices, mockExceptions, mockDashboard, mockReports;
 
-export async function getInvoices() {
+export async function getInvoices(type) {
   if (isMockMode()) {
     if (!mockInvoices) mockInvoices = (await import('../mock/invoices')).default;
     return mockInvoices;
   }
-  return safeFetch('/api/invoices');
+  const query = type ? `?type=${encodeURIComponent(type)}` : '';
+  return safeFetch(`/api/invoices${query}`);
+}
+
+export async function getCustomers() {
+  if (isMockMode()) {
+    return [];
+  }
+  return safeFetch('/api/customers');
+}
+
+export async function getCustomerDetail(id) {
+  if (!id) return { error: 'Customer id is required' };
+  return safeFetch(`/api/customers/${encodeURIComponent(id)}`);
+}
+
+export async function getCustomerAging(id) {
+  if (!id) return { error: 'Customer id is required' };
+  return safeFetch(`/api/customers/${encodeURIComponent(id)}/aging`);
+}
+
+export async function getCarriers() {
+  if (isMockMode()) {
+    return [];
+  }
+  return safeFetch('/api/carriers');
+}
+
+export async function createInvoice(payload) {
+  try {
+    const token = getAccessToken();
+    const res = await fetch(apiUrl('/api/invoices'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Create invoice failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('createInvoice error:', err);
+    return { error: err.message };
+  }
 }
 
 

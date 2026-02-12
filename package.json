@@ -4,11 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "start": "node server/index.js",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "test:backend-flow": "node scripts/backend-flow-test.js"
+  },
+    "engines": {
+      "node": ">=18"
   },
   "dependencies": {
     "cors": "^2.8.5",

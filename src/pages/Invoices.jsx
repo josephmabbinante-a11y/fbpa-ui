@@ -67,7 +67,7 @@ export default function Invoices() {
   const filtered = data.filter(
     (inv) =>
       inv.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.carrier.toLowerCase().includes(searchTerm.toLowerCase())
+      (inv.carrier || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const selectedInvoice = useMemo(
@@ -280,7 +280,7 @@ export default function Invoices() {
                     })}
                   </td>
                   <td style={tdStyle}>{invoice.status}</td>
-                  <td style={tdStyle}>{invoice.exceptions}</td>
+                  <td style={tdStyle}>{invoice.exceptions ?? 0}</td>
                   <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
                     {new Date(invoice.uploadDate).toLocaleDateString()}
                   </td>

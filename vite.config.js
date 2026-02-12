@@ -10,6 +10,11 @@ export default defineConfig({
         target: process.env.VITE_API_URL || 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
+      },
+      '/auth': {
+        target: process.env.VITE_API_URL || 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }

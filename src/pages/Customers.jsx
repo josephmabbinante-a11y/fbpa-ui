@@ -1,7 +1,7 @@
 // src/pages/Customers.jsx
 import { useEffect, useState } from 'react';
 import ContactCustomerModal from '../components/ContactCustomerModal';
-import { sendCustomerMessage } from '../api/client';
+import { getCustomerAging, getCustomerDetail, getCustomers, sendCustomerMessage } from '../api/client';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { Link } from 'react-router-dom';
@@ -14,23 +14,20 @@ export default function Customers() {
   const [detail, setDetail] = useState(null);
   const [aging, setAging] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', contact: '', email: '', phone: '', address: '' });
-  const [formError, setFormError] = useState('');
-  const [csvStatus, setCsvStatus] = useState('');
 
   useEffect(() => {
-    fetch('/api/customers')
-      .then((r) => r.json())
-      .then(setCustomers);
+    getCustomers().then((data) => {
+      if (Array.isArray(data)) setCustomers(data);
+      else setCustomers([]);
+    });
   }, []);
 
   useEffect(() => {
     if (!selected) return setDetail(null);
     setLoading(true);
     Promise.all([
-      fetch(`/api/customers/${selected}`).then((r) => r.json()),
-      fetch(`/api/customers/${selected}/aging`).then((r) => r.json()),
+      getCustomerDetail(selected),
+      getCustomerAging(selected),
     ]).then(([d, a]) => {
       setDetail(d);
       setAging(a);
@@ -51,38 +48,9 @@ export default function Customers() {
       <div style={{ display: 'flex', gap: 32 }}>
         <div style={{ minWidth: 260 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Customer List</h2>
-          <button
-            id="create-customer-btn"
-            style={{ marginBottom: 12, padding: '8px 12px', background: t.accent, color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, cursor: 'pointer', width: '100%' }}
-            onClick={() => { setShowModal(true); setForm({ name: '', contact: '', email: '', phone: '', address: '' }); setFormError(''); }}
-          >
-            + Create Customer
-          </button>
-          <form
-            id="csv-upload-form"
-            style={{ marginBottom: 16 }}
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setCsvStatus('');
-              const file = e.target.elements.csvfile.files[0];
-              if (!file) return setCsvStatus('Please select a CSV file.');
-              const formData = new FormData();
-              formData.append('file', file);
-              setCsvStatus('Uploading...');
-              const res = await fetch('/api/customers/upload-csv', { method: 'POST', body: formData });
-              if (res.ok) {
-                setCsvStatus('Upload successful!');
-                fetch('/api/customers').then(r => r.json()).then(setCustomers);
-              } else {
-                setCsvStatus('Upload failed.');
-              }
-              e.target.reset();
-            }}
-          >
-            <input type="file" name="csvfile" accept=".csv" style={{ marginBottom: 4 }} />
-            <button type="submit" style={{ marginLeft: 8, padding: '4px 10px', borderRadius: 4, border: 'none', background: t.surface, color: t.text, fontWeight: 500, cursor: 'pointer' }}>Upload CSV</button>
-            {csvStatus && <div style={{ fontSize: 12, color: csvStatus.includes('success') ? t.positive : t.error }}>{csvStatus}</div>}
-          </form>
+          <div style={{ fontSize: 12, color: t.textSecondary, marginBottom: 16 }}>
+            Customers are created automatically from AR invoices. Use this view to manage profiles and analytics.
+          </div>
           <ul id="customer-list" style={{ listStyle: 'none', padding: 0 }}>
             {customers.map((c) => (
               <li key={c.id}>
@@ -106,41 +74,6 @@ export default function Customers() {
             ))}
           </ul>
         </div>
-              {/* Modal for creating customer */}
-              {showModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.3)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ background: t.surface, color: t.text, padding: 32, borderRadius: 8, minWidth: 320, boxShadow: '0 2px 16px rgba(0,0,0,0.15)' }}>
-                    <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Create Customer</h2>
-                    <form onSubmit={async (e) => {
-                      e.preventDefault();
-                      setFormError('');
-                      if (!form.name) return setFormError('Name is required');
-                      const res = await fetch('/api/customers', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(form),
-                      });
-                      if (res.ok) {
-                        setShowModal(false);
-                        fetch('/api/customers').then(r => r.json()).then(setCustomers);
-                      } else {
-                        setFormError('Failed to create customer');
-                      }
-                    }} style={{ display: 'grid', gap: 12 }}>
-                      <input autoFocus placeholder="Name*" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} style={{ padding: 8, borderRadius: 4, border: `1px solid ${t.border}` }} />
-                      <input placeholder="Contact" value={form.contact} onChange={e => setForm(f => ({ ...f, contact: e.target.value }))} style={{ padding: 8, borderRadius: 4, border: `1px solid ${t.border}` }} />
-                      <input placeholder="Email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={{ padding: 8, borderRadius: 4, border: `1px solid ${t.border}` }} />
-                      <input placeholder="Phone" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} style={{ padding: 8, borderRadius: 4, border: `1px solid ${t.border}` }} />
-                      <input placeholder="Address" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} style={{ padding: 8, borderRadius: 4, border: `1px solid ${t.border}` }} />
-                      {formError && <div style={{ color: t.error, fontSize: 13 }}>{formError}</div>}
-                      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                        <button type="submit" style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 4, padding: '8px 16px', fontWeight: 600, cursor: 'pointer' }}>Create</button>
-                        <button type="button" style={{ background: t.bgAlt, color: t.text, border: `1px solid ${t.border}`, borderRadius: 4, padding: '8px 16px', fontWeight: 500, cursor: 'pointer' }} onClick={() => setShowModal(false)}>Cancel</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )}
         <div style={{ flex: 1 }} id="customer-analysis">
           {!selected && <div style={{ color: t.textSecondary }}>Select a customer to view details.</div>}
           {loading && <div>Loading...</div>}
@@ -172,6 +105,24 @@ export default function Customers() {
                 >
                   Contact Customer
                 </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, margin: '16px 0 24px' }}>
+                <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 12 }}>
+                  <div style={{ fontSize: 12, color: t.textSecondary }}>Total Revenue</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: t.positive }}>
+                    ${Number(detail.totalRevenue || 0).toLocaleString()}
+                  </div>
+                </div>
+                <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 12 }}>
+                  <div style={{ fontSize: 12, color: t.textSecondary }}>Open AR</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: t.warning }}>
+                    ${Number(detail.openAR || 0).toLocaleString()}
+                  </div>
+                </div>
+                <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 12 }}>
+                  <div style={{ fontSize: 12, color: t.textSecondary }}>Invoice Count</div>
+                  <div style={{ fontSize: 18, fontWeight: 700 }}>{Number(detail.invoiceCount || 0)}</div>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 32, marginBottom: 24 }}>
                 <div style={{ flex: 1 }}>
