@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
@@ -7,7 +7,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
  * Replaces the Top Carriers table with visual representation
  * Clickable for navigation
  */
-export default function SavingsByCarrierChart({ data, onClick }) {
+const SavingsByCarrierChart = memo(({ data, onClick }) => {
   const { theme } = useTheme();
   const t = themes[theme];
   const [isHovered, setIsHovered] = useState(false);
@@ -120,4 +120,6 @@ export default function SavingsByCarrierChart({ data, onClick }) {
       </div>
     </div>
   );
-}
+});
+
+export default SavingsByCarrierChart;

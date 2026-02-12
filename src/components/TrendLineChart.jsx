@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   LineChart,
   Line,
@@ -8,7 +9,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-export default function TrendLineChart({ data, dataKey, title, color = '#8884d8', yAxisLabel = 'Value' }) {
+const TrendLineChart = memo(({ data, dataKey, title, color = '#8884d8', yAxisLabel = 'Value' }) => {
   if (!data || data.length === 0) return null;
 
   return (
@@ -56,4 +57,6 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
       </div>
     </div>
   );
-}
+});
+
+export default TrendLineChart;

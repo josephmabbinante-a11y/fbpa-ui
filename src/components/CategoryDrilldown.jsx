@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, memo } from 'react';
 import {
   BarChart,
   Bar,
@@ -20,7 +20,7 @@ const formatCurrency = (value) =>
 
 const formatPercent = (value) => `${value.toFixed(1)}%`;
 
-export default function CategoryDrilldown({ data }) {
+const CategoryDrilldown = memo(({ data }) => {
   const { theme } = useTheme();
   const t = themes[theme];
   const [activeCategory, setActiveCategory] = useState(data && data.length ? data[0].category : '');
@@ -202,4 +202,6 @@ export default function CategoryDrilldown({ data }) {
       </div>
     </div>
   );
-}
+});
+
+export default CategoryDrilldown;

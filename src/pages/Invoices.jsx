@@ -5,14 +5,21 @@ import mockInvoices from "../mock/invoices";
 import mockInvoiceImages from "../mock/invoiceImages";
 import { useTheme, themes } from "../contexts/ThemeContext";
 import CollapsibleSection from "../components/CollapsibleSection";
+import { useApi } from '../hooks/useApi';
 
 export default function Invoices() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
-  const [data, setData] = useState(mockInvoices);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // Wrap API call to handle both array and object responses
+  const fetchInvoices = async () => {
+    const res = await getInvoices();
+    // Handle both direct array and { invoices: [...] } structure
+    return res && res.invoices ? res.invoices : res;
+  };
+  
+  const { data, loading, error, setData } = useApi(fetchInvoices, mockInvoices);
   const [searchTerm, setSearchTerm] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -21,27 +28,6 @@ export default function Invoices() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
   const [imageHistory, setImageHistory] = useState(mockInvoiceImages);
   const [verificationResult, setVerificationResult] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    getInvoices()
-      .then((res) => {
-        if (!mounted) return;
-        if (res && !res.error && res.invoices) {
-          setData(res.invoices);
-        } else {
-          setData(mockInvoices);
-          if (res && res.error) setError(res.error);
-        }
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setData(mockInvoices);
-        setError(err.message || String(err));
-      })
-      .finally(() => mounted && setLoading(false));
-    return () => (mounted = false);
-  }, []);
 
   useEffect(() => {
     if (!imageFile) {

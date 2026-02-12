@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api/client';
 import mockReports from '../mock/reports';
@@ -7,27 +7,13 @@ import TrendLineChart from '../components/TrendLineChart';
 import CollapsibleSection from '../components/CollapsibleSection';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
+import { useApi } from '../hooks/useApi';
 
 export default function Reports() {
   const { theme } = useTheme();
   const t = themes[theme];
   const navigate = useNavigate();
-  const [data, setData] = useState(mockReports);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let mounted = true;
-    getReports()
-      .then((res) => {
-        if (!mounted) return;
-        if (res && !res.error && res.monthlySummary) setData(res);
-        else setError(res && res.error ? res.error : null);
-      })
-      .catch((err) => mounted && setError(err.message || String(err)))
-      .finally(() => mounted && setLoading(false));
-    return () => (mounted = false);
-  }, []);
+  const { data, loading, error } = useApi(getReports, mockReports);
 
   const containerStyle = {
     padding: '24px 32px',

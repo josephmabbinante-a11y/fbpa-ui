@@ -6,6 +6,7 @@ import { getExceptions } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import CollapsibleSection from '../components/CollapsibleSection';
 import { Link } from 'react-router-dom';
+import { useApi } from '../hooks/useApi';
 
 const CATEGORIES = ['Rate Discrepancy', 'Missing Docs', 'Duplicate', 'Other'];
 const ACTIONS = ['Review', 'Approve', 'Reject', 'Escalate'];
@@ -15,11 +16,17 @@ export default function Exceptions() {
 	const t = themes[theme];
 	const [query, setQuery] = useState('');
 	const [statusFilter, setStatusFilter] = useState('All');
-	const [data, setData] = useState(mockExceptions);
+	
+	// Wrap API call to handle both array and object responses
+	const fetchExceptions = async () => {
+		const res = await getExceptions();
+		// Handle both direct array and { exceptions: [...] } structure
+		return res && res.exceptions ? res.exceptions : res;
+	};
+	
+	const { data, loading, error, setData } = useApi(fetchExceptions, mockExceptions);
 	const [categories, setCategories] = useState({}); // { [exceptionId]: category }
 	const [actions, setActions] = useState({}); // { [exceptionId]: action }
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(null);
 
 	// Modal state
 	const [modalOpen, setModalOpen] = useState(false);
@@ -34,27 +41,6 @@ export default function Exceptions() {
 	const handleSendMessage = async ({ message, customer, invoice, exception }) => {
 		return await sendCustomerMessage({ message, customer, invoice, exception });
 	};
-
-	useEffect(() => {
-		let mounted = true;
-		getExceptions()
-			.then((res) => {
-				if (!mounted) return;
-				if (res && !res.error && Array.isArray(res.exceptions)) {
-					setData(res.exceptions);
-				} else {
-					setData(mockExceptions);
-					if (res && res.error) setError(res.error);
-				}
-			})
-			.catch((err) => {
-				if (!mounted) return;
-				setData(mockExceptions);
-				setError(err.message || String(err));
-			})
-			.finally(() => mounted && setLoading(false));
-		return () => (mounted = false);
-	}, []);
 
 	const statuses = useMemo(() => {
 		const set = new Set(data.map((e) => e.status));

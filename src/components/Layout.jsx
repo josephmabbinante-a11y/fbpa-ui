@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
 function Layout({ children }) {
@@ -6,45 +6,40 @@ function Layout({ children }) {
   const t = themes[theme];
   const [sidebarWidth, setSidebarWidth] = useState(240);
 
-  // Monitor sidebar collapse state
+  const checkSidebarWidth = useCallback(() => {
+    const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
+    setSidebarWidth(collapsed ? 64 : 240);
+  }, []);
+
   useEffect(() => {
-    const checkSidebarWidth = () => {
-      const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-      setSidebarWidth(collapsed ? 64 : 240);
-    };
-
     checkSidebarWidth();
-
-    // Listen for storage changes (in case sidebar is toggled in another tab)
     window.addEventListener('storage', checkSidebarWidth);
-    
-    // Check periodically (fallback for same-tab changes)
     const interval = setInterval(checkSidebarWidth, 100);
 
     return () => {
       window.removeEventListener('storage', checkSidebarWidth);
       clearInterval(interval);
     };
-  }, []);
+  }, [checkSidebarWidth]);
+
+  const containerStyle = useMemo(() => ({
+    display: 'flex',
+    minHeight: '100vh',
+    backgroundColor: t.bg,
+    color: t.text,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+  }), [t.bg, t.text]);
+
+  const mainStyle = useMemo(() => ({
+    flex: 1,
+    marginLeft: sidebarWidth,
+    transition: 'margin-left 0.3s ease',
+    backgroundColor: t.bg,
+  }), [sidebarWidth, t.bg]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        minHeight: '100vh',
-        backgroundColor: t.bg,
-        color: t.text,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-      }}
-    >
-      <main
-        style={{
-          flex: 1,
-          marginLeft: sidebarWidth,
-          transition: 'margin-left 0.3s ease',
-          backgroundColor: t.bg,
-        }}
-      >
+    <div style={containerStyle}>
+      <main style={mainStyle}>
         {children}
       </main>
     </div>

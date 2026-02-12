@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
@@ -7,7 +7,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
  * Uses a donut chart for compact visualization
  * Clickable to navigate to Exceptions page
  */
-export default function ExceptionBreakdownChart({ data, onClick }) {
+const ExceptionBreakdownChart = memo(({ data, onClick }) => {
   const { theme } = useTheme();
   const t = themes[theme];
   const [isHovered, setIsHovered] = useState(false);
@@ -112,4 +112,6 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
       </div>
     </div>
   );
-}
+});
+
+export default ExceptionBreakdownChart;

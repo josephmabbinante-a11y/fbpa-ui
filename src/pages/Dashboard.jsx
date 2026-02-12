@@ -1,4 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getDashboard } from '../api/client';
+import dashboardEnhanced from '../mock/dashboardEnhanced';
+import { useTheme, themes } from '../contexts/ThemeContext';
+import KPIWithTrend from '../components/KPIWithTrend';
+import CollapsibleSection from '../components/CollapsibleSection';
+import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+import { useApi } from '../hooks/useApi';
+
 const defaultDashboardPrefs = {
   showTotalInvoices: true,
   showExceptions: true,
@@ -15,22 +25,12 @@ const DASH_VARIANTS = [
   { key: 'broker', label: 'Broker', description: 'Brokerage and margin analytics.' },
 ];
 const DASH_VARIANT_KEY = 'dashboardVariant';
-import { useNavigate } from 'react-router-dom';
-import { getDashboard } from '../api/client';
-import dashboardEnhanced from '../mock/dashboardEnhanced';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import KPIWithTrend from '../components/KPIWithTrend';
-import CollapsibleSection from '../components/CollapsibleSection';
-import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
-import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
-  const [data, setData] = useState(dashboardEnhanced);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data, loading, error } = useApi(getDashboard, dashboardEnhanced);
   const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
   const [variant, setVariant] = useState(() => {
     try {
@@ -51,19 +51,6 @@ export default function Dashboard() {
     setVariant(e.target.value);
     try { localStorage.setItem(DASH_VARIANT_KEY, e.target.value); } catch {}
   }
-
-  useEffect(() => {
-    let mounted = true;
-    getDashboard()
-      .then((res) => {
-        if (!mounted) return;
-        if (res && !res.error && res.summary) setData(res);
-        else setError(res && res.error ? res.error : null);
-      })
-      .catch((err) => mounted && setError(err.message || String(err)))
-      .finally(() => mounted && setLoading(false));
-    return () => (mounted = false);
-  }, []);
 
   const containerStyle = {
     padding: '24px 32px',
