@@ -45,6 +45,7 @@ export function useApi(apiCall, fallbackData = null, deps = []) {
     return () => {
       mounted = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
   return { data, loading, error, setData };
