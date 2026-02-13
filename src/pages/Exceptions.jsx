@@ -78,9 +78,9 @@ export default function Exceptions() {
 		padding: '24px 32px',
 		backgroundColor: t.bg,
 		color: t.text,
-	if (loading) return <div>Loading exceptions...</div>;
-	if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
-	if (!data.length) return <div>No exceptions found.</div>;
+	if (loading) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].info}`, borderRadius: 4, fontSize: '13px', color: themes[theme].info, margin: 32 }}>Loading exceptions...</div>;
+	if (error) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].error}`, borderRadius: 4, fontSize: '13px', color: themes[theme].error, margin: 32 }}>Error loading exceptions: {error}</div>;
+	if (!data.length) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].warning}`, borderRadius: 4, fontSize: '13px', color: themes[theme].warning, margin: 32 }}>No exceptions found.</div>;
 	return (
 		<div style={containerStyle}>
 			<div style={headerStyle}>

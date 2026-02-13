@@ -43,9 +43,9 @@ export default function Reports() {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-  if (loading) return <div>Loading reports...</div>;
-  if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
-  if (!data) return <div>No report data available.</div>;
+  if (loading) return <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.info}`, borderRadius: 4, fontSize: '13px', color: t.info, margin: 32 }}>Loading reports...</div>;
+  if (error) return <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.error}`, borderRadius: 4, fontSize: '13px', color: t.error, margin: 32 }}>Error loading reports: {error}</div>;
+  if (!data) return <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, margin: 32 }}>No report data available.</div>;
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>

@@ -138,13 +138,22 @@ export default function Dashboard() {
         {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
       </div>
 
-      {error && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-          Backend error, using mock data: {error}
+      {loading && (
+        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.info}`, borderRadius: 4, fontSize: '13px', color: t.info, marginBottom: 24 }}>
+          Loading dashboard data...
         </div>
       )}
-
-      {data && (
+      {error && !loading && (
+        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.error}`, borderRadius: 4, fontSize: '13px', color: t.error, marginBottom: 24 }}>
+          Error loading dashboard: {error}
+        </div>
+      )}
+      {!loading && !error && !data && (
+        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
+          No dashboard data available.
+        </div>
+      )}
+      {data && !loading && !error && (
         <>
           {/* KPIs with Trends */}
           <div style={kpiGridStyle}>
