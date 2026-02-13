@@ -14,8 +14,10 @@ export default function LoginForm() {
     setIsLoading(true)
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL
-      const res = await fetch(`${apiUrl}/api/v1/auth/login`, {
+      const apiUrl = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL
+        ? import.meta.env.VITE_API_URL
+        : process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${apiUrl}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
