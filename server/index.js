@@ -154,6 +154,7 @@ const seededUsers = [
 app.post('/auth/signup', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
   try {
     const normalizedEmail = String(email).trim().toLowerCase();
@@ -176,6 +177,7 @@ app.post('/auth/signup', async (req, res) => {
 
 app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
   const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
   const normalizedEmail = String(email || '').trim().toLowerCase();
 
@@ -216,30 +218,37 @@ app.post('/auth/login', async (req, res) => {
 app.post('/auth/forgot-password', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
+  try {
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-  const normalizedEmail = String(email).trim().toLowerCase();
-  const user = await User.findOne({ email: normalizedEmail });
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  const token = crypto.randomBytes(24).toString('hex');
-  resetTokens[token] = { email: normalizedEmail, expires: Date.now() + 3600 * 1000 };
-  return res.json({ ok: true, token });
+    const token = crypto.randomBytes(24).toString('hex');
+    resetTokens[token] = { email: normalizedEmail, expires: Date.now() + 3600 * 1000 };
+    return res.json({ ok: true, token });
+  } catch (err) {
+    return res.status(500).json({ error: 'Forgot password failed', details: err.message });
+  }
 });
 
 app.post('/auth/reset-password', async (req, res) => {
   const { token, password } = req.body || {};
   if (!token || !password) return res.status(400).json({ error: 'Token and password required' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  try {
+    const entry = resetTokens[token];
+    if (!entry || entry.expires < Date.now()) return res.status(400).json({ error: 'Invalid or expired token' });
 
-  const entry = resetTokens[token];
-  if (!entry || entry.expires < Date.now()) return res.status(400).json({ error: 'Invalid or expired token' });
+    const user = await User.findOne({ email: entry.email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-  const user = await User.findOne({ email: entry.email });
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
-  user.password = hashPassword(password);
-  await user.save();
-  delete resetTokens[token];
-  return res.json({ ok: true });
+    user.password = hashPassword(password);
+    await user.save();
+    delete resetTokens[token];
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Reset password failed', details: err.message });
+  }
 });
 
 if (process.env.SERVE_STATIC === 'true') {

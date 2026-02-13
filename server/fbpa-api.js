@@ -13,7 +13,24 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const MONGODB_URI = process.env.MONGODB_URI || '';
+
+function buildMongoUri() {
+  const explicitUri = (process.env.MONGODB_URI || '').trim();
+  if (explicitUri) return explicitUri;
+
+  const user = process.env.MONGODB_USER;
+  const password = process.env.MONGODB_PASSWORD;
+  const host = process.env.MONGODB_HOST;
+  const db = process.env.MONGODB_DB || 'fbpa-db';
+
+  if (!user || !password || !host) return '';
+
+  const encodedUser = encodeURIComponent(String(user));
+  const encodedPassword = encodeURIComponent(String(password));
+  return `mongodb+srv://${encodedUser}:${encodedPassword}@${host}/${db}?retryWrites=true&w=majority`;
+}
+
+const MONGODB_URI = buildMongoUri();
 
 if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI)
