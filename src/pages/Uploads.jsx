@@ -10,6 +10,7 @@ export default function Uploads() {
   const t = themes[theme];
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState(uploadHistory);
 
@@ -48,34 +49,36 @@ export default function Uploads() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setUploadResult(null);
     if (!file) return setStatus('Choose a file first');
     setLoading(true);
-
-    let invoiceCount = 1;
+    setStatus(null);
+    let res;
     try {
-      if (file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv' || (file.type && file.type.startsWith('text/'))) {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
-        invoiceCount = Math.max(1, lines.length - (lines.length > 1 ? 1 : 0));
-      }
+      res = await uploadInvoiceFile(file);
     } catch (err) {
-      invoiceCount = 1;
+      setStatus('Upload failed: ' + (err.message || 'unknown error'));
+      setLoading(false);
+      return;
     }
-
-    const payload = { fileName: file.name, invoiceCount };
-    const res = await uploadInvoiceFile(payload);
     setLoading(false);
-
-    if (res && !res.error) {
+    if (res && !res.error && res.success) {
       setStatus('Upload successful');
-      const entry = res.id
-        ? { id: res.id, fileName: res.fileName || file.name, uploadDate: res.uploadDate || new Date().toISOString(), invoiceCount: res.invoiceCount || invoiceCount, successCount: res.successCount || invoiceCount, errorCount: res.errorCount || 0, status: res.status || 'Processed' }
-        : { id: Date.now(), fileName: file.name, uploadDate: new Date().toISOString(), invoiceCount, successCount: invoiceCount, errorCount: 0, status: 'Processed' };
+      setUploadResult(res);
+      const entry = {
+        id: Date.now(),
+        fileName: res.fileName || file.name,
+        uploadDate: res.uploadedAt || new Date().toISOString(),
+        invoiceCount: res.invoiceCount || 0,
+        successCount: res.successCount || 0,
+        errorCount: res.errorCount || 0,
+        status: 'Processed',
+      };
       setHistory((h) => [entry, ...h]);
     } else {
       setStatus(`Upload failed: ${res && res.error ? res.error : 'unknown'}`);
+      setUploadResult(res && res.errors ? res : null);
     }
-
     setFile(null);
   };
 
@@ -224,6 +227,28 @@ export default function Uploads() {
               }}
             >
               {status}
+            </div>
+          )}
+          {uploadResult && (
+            <div style={{ marginTop: 8, fontSize: 13 }}>
+              <div><b>Invoices Parsed:</b> {uploadResult.successCount} / {uploadResult.invoiceCount}</div>
+              {uploadResult.errorCount > 0 && (
+                <div style={{ color: t.error }}>
+                  <b>Errors:</b> {uploadResult.errorCount}
+                  <ul style={{ margin: '4px 0 0 16px', fontSize: 12 }}>
+                    {uploadResult.errors.slice(0, 5).map((err, idx) => (
+                      <li key={idx}>Line {err.line}: {err.value}</li>
+                    ))}
+                    {uploadResult.errorCount > 5 && <li>...and {uploadResult.errorCount - 5} more</li>}
+                  </ul>
+                </div>
+              )}
+              {uploadResult.invoices && uploadResult.invoices.length > 0 && (
+                <div style={{ marginTop: 6 }}>
+                  <b>Preview:</b>
+                  <pre style={{ background: t.bgAlt, padding: 8, borderRadius: 4, fontSize: 12, maxHeight: 120, overflow: 'auto' }}>{JSON.stringify(uploadResult.invoices, null, 2)}</pre>
+                </div>
+              )}
             </div>
           )}
         </div>
