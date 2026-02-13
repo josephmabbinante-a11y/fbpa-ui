@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage } from "../api/client";
-import mockInvoices from "../mock/invoices";
-import mockInvoiceImages from "../mock/invoiceImages";
+// import mockInvoices from "../mock/invoices"; // Retained for demo mode only
+// import mockInvoiceImages from "../mock/invoiceImages"; // Retained for demo mode only
 import { useTheme, themes } from "../contexts/ThemeContext";
 import CollapsibleSection from "../components/CollapsibleSection";
 
@@ -10,7 +10,7 @@ export default function Invoices() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
-  const [data, setData] = useState(mockInvoices);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,14 +29,10 @@ export default function Invoices() {
         if (!mounted) return;
         if (res && !res.error && res.invoices) {
           setData(res.invoices);
-        } else {
-          setData(mockInvoices);
-          if (res && res.error) setError(res.error);
-        }
+        } else if (res && res.error) setError(res.error);
       })
       .catch((err) => {
         if (!mounted) return;
-        setData(mockInvoices);
         setError(err.message || String(err));
       })
       .finally(() => mounted && setLoading(false));
@@ -59,7 +55,7 @@ export default function Invoices() {
       if (res && !res.error && res.images) {
         setImageHistory(res.images);
       } else {
-        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
+        // setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId)); // Demo mode: Uncomment to use mock data
       }
     });
   }, [selectedInvoiceId]);
@@ -171,9 +167,13 @@ export default function Invoices() {
     if (!imageFile || !selectedInvoiceId) {
       setImageStatus('Select an invoice and image first');
       return;
-    }
-    setImageLoading(true);
-    setImageStatus(null);
+        if (loading) return <div>Loading invoices...</div>;
+        if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
+        if (!data.length) return <div>No invoices found.</div>;
+        return (
+          <div style={{ ...containerStyle, minHeight: '100vh' }}>
+            {/* ...existing code... */}
+          </div>
     setVerificationResult(null);
     const res = await uploadInvoiceImage({ file: imageFile, invoiceId: selectedInvoiceId });
     setImageLoading(false);

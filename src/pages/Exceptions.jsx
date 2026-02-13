@@ -15,7 +15,8 @@ export default function Exceptions() {
 	const t = themes[theme];
 	const [query, setQuery] = useState('');
 	const [statusFilter, setStatusFilter] = useState('All');
-	const [data, setData] = useState(mockExceptions);
+	// import mockExceptions from '../mock/exceptions'; // Retained for demo mode only
+	const [data, setData] = useState([]);
 	const [categories, setCategories] = useState({}); // { [exceptionId]: category }
 	const [actions, setActions] = useState({}); // { [exceptionId]: action }
 	const [loading, setLoading] = useState(true);
@@ -35,26 +36,24 @@ export default function Exceptions() {
 		return await sendCustomerMessage({ message, customer, invoice, exception });
 	};
 
-	useEffect(() => {
-		let mounted = true;
-		getExceptions()
-			.then((res) => {
-				if (!mounted) return;
-				if (res && !res.error && Array.isArray(res.exceptions)) {
-					setData(res.exceptions);
-				} else {
-					setData(mockExceptions);
-					if (res && res.error) setError(res.error);
-				}
-			})
-			.catch((err) => {
-				if (!mounted) return;
-				setData(mockExceptions);
-				setError(err.message || String(err));
-			})
-			.finally(() => mounted && setLoading(false));
-		return () => (mounted = false);
-	}, []);
+		useEffect(() => {
+			let mounted = true;
+			getExceptions()
+				.then((res) => {
+					if (!mounted) return;
+					if (res && !res.error && Array.isArray(res.exceptions)) {
+						setData(res.exceptions);
+					} else {
+						if (res && res.error) setError(res.error);
+					}
+				})
+				.catch((err) => {
+					if (!mounted) return;
+					setError(err.message || String(err));
+				})
+				.finally(() => mounted && setLoading(false));
+			return () => (mounted = false);
+		}, []);
 
 	const statuses = useMemo(() => {
 		const set = new Set(data.map((e) => e.status));
@@ -79,93 +78,14 @@ export default function Exceptions() {
 		padding: '24px 32px',
 		backgroundColor: t.bg,
 		color: t.text,
-		minHeight: '100vh',
-	};
-
-	const headerStyle = {
-		marginBottom: 24,
-		display: 'flex',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-	};
-
-	const titleStyle = {
-		fontSize: '24px',
-		fontWeight: '700',
-		letterSpacing: '-0.5px',
-	};
-
-	const filterBarStyle = {
-		display: 'flex',
-		gap: 12,
-		marginBottom: 24,
-		alignItems: 'center',
-	};
-
-	const inputStyle = {
-		flex: 1,
-		padding: '8px 12px',
-		backgroundColor: t.surface,
-		border: `1px solid ${t.border}`,
-		borderRadius: 4,
-		color: t.text,
-		fontSize: '13px',
-		minWidth: 200,
-	};
-
-	const selectStyle = {
-		padding: '8px 12px',
-		backgroundColor: t.surface,
-		border: `1px solid ${t.border}`,
-		borderRadius: 4,
-		color: t.text,
-		fontSize: '13px',
-		minWidth: 140,
-	};
-
-	const tableStyle = {
-		width: '100%',
-		borderCollapse: 'collapse',
-		fontSize: '13px',
-	};
-
-	const thStyle = {
-		padding: '8px 12px',
-		textAlign: 'left',
-		fontWeight: '600',
-		backgroundColor: t.surface,
-		borderBottom: `1px solid ${t.border}`,
-		color: t.textSecondary,
-		fontSize: '11px',
-		textTransform: 'uppercase',
-		letterSpacing: '0.3px',
-	};
-
-	const tdStyle = {
-		padding: '8px 12px',
-		borderBottom: `1px solid ${t.borderLight}`,
-		color: t.text,
-	};
-
-	const currencyStyle = {
-		...tdStyle,
-		color: t.positive,
-		fontWeight: '500',
-	};
-
+	if (loading) return <div>Loading exceptions...</div>;
+	if (error) return <div style={{ color: 'red' }}>Error: {error}</div>;
+	if (!data.length) return <div>No exceptions found.</div>;
 	return (
 		<div style={containerStyle}>
 			<div style={headerStyle}>
 				<h1 style={titleStyle}>Exceptions</h1>
-				{loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
 			</div>
-
-			{error && (
-				<div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-					Backend error, using mock data: {error}
-				</div>
-			)}
-
 			<div style={filterBarStyle}>
 				<input
 					type="text"
@@ -182,7 +102,6 @@ export default function Exceptions() {
 					))}
 				</select>
 			</div>
-
 			{filtered.length === 0 ? (
 				<div style={{ padding: '32px', textAlign: 'center', color: t.textSecondary }}>
 					No exceptions found.
@@ -210,6 +129,86 @@ export default function Exceptions() {
 								<td style={tdStyle}>{ex.carrier}</td>
 								<td style={currencyStyle}>
 									${ex.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+								</td>
+								<td style={currencyStyle}>
+									{ex.savings ? `$${ex.savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+								</td>
+								<td style={tdStyle}>{ex.status}</td>
+								<td style={{ ...tdStyle, fontSize: '12px' }}>{ex.reason}</td>
+								<td style={tdStyle}>
+									<select
+										value={categories[ex.id] || ''}
+										onChange={e => setCategories(c => ({ ...c, [ex.id]: e.target.value }))}
+										style={{ ...selectStyle, minWidth: 120 }}
+									>
+										<option value="">Uncategorized</option>
+										{CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+									</select>
+								</td>
+								<td style={tdStyle}>
+									<select
+										value={actions[ex.id] || ''}
+										onChange={e => setActions(a => ({ ...a, [ex.id]: e.target.value }))}
+										style={{ ...selectStyle, minWidth: 100 }}
+									>
+										<option value="">No Action</option>
+										{ACTIONS.map(act => <option key={act} value={act}>{act}</option>)}
+									</select>
+								</td>
+								<td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
+									{new Date(ex.createdAt).toLocaleDateString()}
+								</td>
+								<td style={tdStyle}>
+									<Link
+										to={`/exceptions/${ex.id}`}
+										style={{
+											background: '#fff',
+											color: '#1976d2',
+											border: '1px solid #1976d2',
+											borderRadius: 4,
+											padding: '6px 14px',
+											fontWeight: 600,
+											fontSize: 13,
+											cursor: 'pointer',
+											textDecoration: 'none',
+									}}
+									>
+										Drilldown
+									</Link>
+									<button
+										style={{
+											background: '#1976d2',
+											color: '#fff',
+											border: 'none',
+											borderRadius: 4,
+											padding: '6px 14px',
+											fontWeight: 600,
+											fontSize: 13,
+											cursor: 'pointer',
+									}}
+									onClick={() => handleContactClick(ex)}
+									>
+									Contact
+									</button>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+			<ContactCustomerModal
+				open={modalOpen}
+				onClose={() => setModalOpen(false)}
+				onSend={handleSendMessage}
+				exception={modalException}
+				customer={null}
+				invoice={null}
+			/>
+		</div>
+	);
+}
+// Demo mode: Uncomment to use mock data
+// useEffect(() => { setData(mockExceptions); setLoading(false); }, []);
 								</td>
 								<td style={currencyStyle}>
 									{ex.savings ? `$${ex.savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}

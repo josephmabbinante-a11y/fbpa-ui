@@ -17,7 +17,7 @@ const DASH_VARIANTS = [
 const DASH_VARIANT_KEY = 'dashboardVariant';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/client';
-import dashboardEnhanced from '../mock/dashboardEnhanced';
+// import dashboardEnhanced from '../mock/dashboardEnhanced'; // Retained for demo mode only
 import { useTheme, themes } from '../contexts/ThemeContext';
 import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
@@ -28,7 +28,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
-  const [data, setData] = useState(dashboardEnhanced);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
@@ -273,3 +273,5 @@ export default function Dashboard() {
     </div>
   );
 }
+  // Demo mode: Uncomment to use mock data
+  // useEffect(() => { setData(dashboardEnhanced); setLoading(false); }, []);
