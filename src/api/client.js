@@ -54,39 +54,35 @@ async function safeFetch(path, options) {
 }
 
 
-// Mock data imports (only loaded if needed)
-let mockInvoices, mockExceptions, mockDashboard, mockReports;
+// Mock data imports
+import mockInvoices from '../mock/invoices';
+import mockExceptions from '../mock/exceptions';
+import mockDashboard from '../mock/dashboard';
+import mockReports from '../mock/reports';
 
 export async function getInvoices() {
   if (isMockMode()) {
-    if (!mockInvoices) mockInvoices = (await import('../mock/invoices')).default;
     return mockInvoices;
   }
   return safeFetch('/api/invoices');
 }
 
-
 export async function getExceptions() {
   if (isMockMode()) {
-    if (!mockExceptions) mockExceptions = (await import('../mock/exceptions')).default;
     return mockExceptions;
   }
   return safeFetch('/api/exceptions');
 }
 
-
 export async function getDashboard() {
   if (isMockMode()) {
-    if (!mockDashboard) mockDashboard = (await import('../mock/dashboard')).default;
     return mockDashboard;
   }
   return safeFetch('/api/dashboard');
 }
 
-
 export async function getReports() {
   if (isMockMode()) {
-    if (!mockReports) mockReports = (await import('../mock/reports')).default;
     return mockReports;
   }
   return safeFetch('/api/reports');
