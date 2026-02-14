@@ -1,3 +1,4 @@
+/* global process */
 import crypto from 'crypto';
 import express from 'express';
 import cors from 'cors';

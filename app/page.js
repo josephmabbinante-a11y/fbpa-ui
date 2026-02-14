@@ -14,11 +14,11 @@ export default function Home() {
     setError('');
 
     try {
-      const appId = process.env.NEXT_PUBLIC_MONGODB_APP_ID;
-      const apiKey = process.env.NEXT_PUBLIC_MONGODB_DATA_API_KEY;
-      const dataSource = process.env.NEXT_PUBLIC_MONGODB_DATA_SOURCE;
-      const database = process.env.NEXT_PUBLIC_MONGODB_DATABASE;
-      const collection = process.env.NEXT_PUBLIC_MONGODB_COLLECTION;
+      const appId = import.meta.env.VITE_MONGODB_APP_ID;
+      const apiKey = import.meta.env.VITE_MONGODB_DATA_API_KEY;
+      const dataSource = import.meta.env.VITE_MONGODB_DATA_SOURCE;
+      const database = import.meta.env.VITE_MONGODB_DATABASE;
+      const collection = import.meta.env.VITE_MONGODB_COLLECTION;
 
       if (!appId || !apiKey || !dataSource || !database || !collection) {
         throw new Error('Missing Mongo Data API environment variables');

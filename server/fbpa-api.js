@@ -1,3 +1,4 @@
+/* global process */
 // FBPA API repository starter file for Render deployment
 import express from 'express';
 import cors from 'cors';
