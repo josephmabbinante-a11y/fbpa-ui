@@ -78,11 +78,13 @@ export default function Exceptions() {
 		padding: '24px 32px',
 		backgroundColor: t.bg,
 		color: t.text,
-	if (loading) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].info}`, borderRadius: 4, fontSize: '13px', color: themes[theme].info, margin: 32 }}>Loading exceptions...</div>;
-	if (error) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].error}`, borderRadius: 4, fontSize: '13px', color: themes[theme].error, margin: 32 }}>Error loading exceptions: {error}</div>;
-	if (!data.length) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].warning}`, borderRadius: 4, fontSize: '13px', color: themes[theme].warning, margin: 32 }}>No exceptions found.</div>;
-	return (
-		<div style={containerStyle}>
+	};
+
+		if (loading) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].info}`, borderRadius: 4, fontSize: '13px', color: themes[theme].info, margin: 32 }}>Loading exceptions...</div>;
+		if (error) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].error}`, borderRadius: 4, fontSize: '13px', color: themes[theme].error, margin: 32 }}>Error loading exceptions: {error}</div>;
+		if (!data.length) return <div style={{ padding: '8px 12px', backgroundColor: themes[theme].bgAlt, border: `1px solid ${themes[theme].warning}`, borderRadius: 4, fontSize: '13px', color: themes[theme].warning, margin: 32 }}>No exceptions found.</div>;
+		return (
+			<div style={containerStyle}>
 			<div style={headerStyle}>
 				<h1 style={titleStyle}>Exceptions</h1>
 			</div>
@@ -209,13 +211,6 @@ export default function Exceptions() {
 }
 // Demo mode: Uncomment to use mock data
 // useEffect(() => { setData(mockExceptions); setLoading(false); }, []);
-								</td>
-								<td style={currencyStyle}>
-									{ex.savings ? `$${ex.savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-								</td>
-								<td style={tdStyle}>{ex.status}</td>
-								<td style={{ ...tdStyle, fontSize: '12px' }}>{ex.reason}</td>
-								<td style={tdStyle}>
 									<select
 										value={categories[ex.id] || ''}
 										onChange={e => setCategories(c => ({ ...c, [ex.id]: e.target.value }))}

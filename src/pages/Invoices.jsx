@@ -167,14 +167,9 @@ export default function Invoices() {
     if (!imageFile || !selectedInvoiceId) {
       setImageStatus('Select an invoice and image first');
       return;
-        if (loading) return <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.info}`, borderRadius: 4, fontSize: '13px', color: t.info, margin: 32 }}>Loading invoices...</div>;
-        if (error) return <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.error}`, borderRadius: 4, fontSize: '13px', color: t.error, margin: 32 }}>Error loading invoices: {error}</div>;
-        if (!data.length) return <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, margin: 32 }}>No invoices found.</div>;
-        return (
-          <div style={{ ...containerStyle, minHeight: '100vh' }}>
-            {/* ...existing code... */}
-          </div>
+    }
     setVerificationResult(null);
+    setImageLoading(true);
     const res = await uploadInvoiceImage({ file: imageFile, invoiceId: selectedInvoiceId });
     setImageLoading(false);
 
