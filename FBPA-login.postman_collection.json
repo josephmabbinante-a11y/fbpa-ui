@@ -1,0 +1,153 @@
+{
+  "info": {
+    "_postman_id": "b1e1e1e1-1234-5678-9abc-def012345678",
+    "name": "FBPA Login API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Set default login credentials if not provided",
+              "if (!pm.variables.get('login_email')) pm.variables.set('login_email', 'test@example.com');",
+              "if (!pm.variables.get('login_password')) pm.variables.set('login_password', 'test123');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Parse and check JSON response",
+              "let jsonData;",
+              "try {",
+              "  jsonData = pm.response.json();",
+              "  pm.test('Response is JSON', function () {",
+              "    pm.expect(jsonData).to.be.an('object');",
+              "  });",
+              "  if (jsonData.accessToken) {",
+              "    pm.test('Access token present', function () {",
+              "      pm.expect(jsonData.accessToken).to.be.a('string');",
+              "    });",
+              "  } else {",
+              "    pm.test('Access token missing', function () {",
+              "      pm.expect.fail('No accessToken in response');",
+              "    });",
+              "  }",
+              "} catch (e) {",
+              "  pm.test('Response is valid JSON', function () {",
+              "    pm.expect.fail('Response is not valid JSON');",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "x-api-key",
+            "value": "{{API_KEY}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{login_email}}\",\n  \"password\": \"{{login_password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{API_URL}}/api/v1/auth/login",
+          "host": [
+            "{{API_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Login with email and password. Uses variables for easy testing."
+      },
+      "response": []
+    },
+    {
+      "name": "Register",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Set default registration values if not provided",
+              "if (!pm.variables.get('register_email')) pm.variables.set('register_email', 'newuser@example.com');",
+              "if (!pm.variables.get('register_password')) pm.variables.set('register_password', 'newpass123');",
+              "if (!pm.variables.get('register_name')) pm.variables.set('register_name', 'New User');",
+              "if (!pm.variables.get('register_organization')) pm.variables.set('register_organization', 'TestOrg');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{register_email}}\",\n  \"password\": \"{{register_password}}\",\n  \"name\": \"{{register_name}}\",\n  \"organization\": \"{{register_organization}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{API_URL}}/api/v1/auth/register",
+          "host": [
+            "{{API_URL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "register"
+          ]
+        },
+        "description": "Register a new user. Uses variables for easy testing."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    { "key": "API_URL", "value": "http://localhost:4000" },
+    { "key": "API_KEY", "value": "your-api-key-here" },
+    { "key": "login_email", "value": "test@example.com" },
+    { "key": "login_password", "value": "test123" },
+    { "key": "register_email", "value": "newuser@example.com" },
+    { "key": "register_password", "value": "newpass123" },
+    { "key": "register_name", "value": "New User" },
+    { "key": "register_organization", "value": "TestOrg" }
+  ]
+}

@@ -1,3 +1,16 @@
+// JWT authentication middleware
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+  }
+  const token = authHeader.split(' ')[1];
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(401).json({ error: 'Invalid or expired token' });
+    req.user = user;
+    next();
+  });
+}
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -56,9 +69,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use('/api/customers', customersRouter);
+app.use('/api/customers', authenticateJWT, customersRouter);
 app.use('/api/messages', messagesRouter);
-app.use('/api/rate-logic', rateLogicRouter);
+app.use('/api/rate-logic', authenticateJWT, rateLogicRouter);
 
 const users = [
   { id: 'u-1', email: 'admin@opscale.ai', role: 'admin', password: 'password123' },
