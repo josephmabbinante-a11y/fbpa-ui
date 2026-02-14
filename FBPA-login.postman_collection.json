@@ -13,9 +13,9 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "// Set default login credentials if not provided",
-              "if (!pm.variables.get('login_email')) pm.variables.set('login_email', 'test@example.com');",
-              "if (!pm.variables.get('login_password')) pm.variables.set('login_password', 'test123');"
+              "// Ensure login variables are set",
+              "pm.variables.set('login_email', pm.variables.get('login_email') || 'test@example.com');",
+              "pm.variables.set('login_password', pm.variables.get('login_password') || 'test123');"
             ]
           }
         },
@@ -24,27 +24,15 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "// Parse and check JSON response",
-              "let jsonData;",
-              "try {",
-              "  jsonData = pm.response.json();",
-              "  pm.test('Response is JSON', function () {",
-              "    pm.expect(jsonData).to.be.an('object');",
-              "  });",
-              "  if (jsonData.accessToken) {",
-              "    pm.test('Access token present', function () {",
-              "      pm.expect(jsonData.accessToken).to.be.a('string');",
-              "    });",
-              "  } else {",
-              "    pm.test('Access token missing', function () {",
-              "      pm.expect.fail('No accessToken in response');",
-              "    });",
-              "  }",
-              "} catch (e) {",
-              "  pm.test('Response is valid JSON', function () {",
-              "    pm.expect.fail('Response is not valid JSON');",
-              "  });",
-              "}"
+              "// Validate JSON response and accessToken",
+              "pm.test('Response is JSON', function () {",
+              "  pm.response.to.have.jsonBody();",
+              "});",
+              "const jsonData = pm.response.json();",
+              "pm.test('accessToken present', function () {",
+              "  pm.expect(jsonData).to.have.property('accessToken');",
+              "  pm.expect(jsonData.accessToken).to.be.a('string');",
+              "});"
             ]
           }
         }
