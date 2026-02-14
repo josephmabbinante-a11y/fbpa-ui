@@ -10,8 +10,3 @@ export default function LoginPage() {
       alignItems: 'center',
       minHeight: '100vh',
       background: '#18191A'
-    }}>
-      <LoginForm />
-    </div>
-  )
-}
