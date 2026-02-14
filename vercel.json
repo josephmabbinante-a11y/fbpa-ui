@@ -2,3 +2,5 @@
   "buildCommand": "next build",
   "outputDirectory": ".next"
 }
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
