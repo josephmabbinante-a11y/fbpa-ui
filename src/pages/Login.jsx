@@ -120,6 +120,9 @@ export default function Login() {
         <div style={{ marginTop: 16, fontSize: 12, color: t.textSecondary }}>
           By signing in you agree to the Opscale terms and privacy policy.
         </div>
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <a href="/register" style={{ color: t.accent, textDecoration: 'underline', fontWeight: 600 }}>Don't have an account? Register</a>
+        </div>
       </div>
     </div>
   );
