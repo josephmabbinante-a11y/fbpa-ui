@@ -1,26 +1,5 @@
-// Add /api/v1/auth/login for frontend compatibility
-app.post('/api/v1/auth/login', (req, res) => {
-  const { email, password } = req.body || {};
-  const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
-  const user = users.find((u) => u.email === email && u.password === password);
-  const authedUser =
-    user ||
-    (allowAny && email && password
-      ? { id: `u-${Date.now()}`, email, role: 'admin' }
-      : null);
-  if (!authedUser) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const accessToken = jwt.sign(
-    { sub: authedUser.id, email: authedUser.email, role: authedUser.role },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-
-  return res.json({
-    accessToken,
-    user: { id: authedUser.id, email: authedUser.email, role: authedUser.role },
-  });
-});
+// ...existing code...
+// ...existing code...
 // JWT authentication middleware
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers['authorization'];
