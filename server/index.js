@@ -1,3 +1,4 @@
+import { User } from './models.js';
 
 
 
@@ -136,31 +137,27 @@ app.use('/api/customers', authenticateJWT, customersRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/rate-logic', authenticateJWT, rateLogicRouter);
 
-const users = [
-  { id: 'u-1', email: 'admin@opscale.ai', role: 'admin', password: 'password123' },
-];
-
-app.post('/auth/login', (req, res) => {
+// Real user authentication using MongoDB
+app.post('/auth/login', async (req, res) => {
   const { email, password } = req.body || {};
-  const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
-  const user = users.find((u) => u.email === email && u.password === password);
-  const authedUser =
-    user ||
-    (allowAny && email && password
-      ? { id: `u-${Date.now()}`, email, role: 'admin' }
-      : null);
-  if (!authedUser) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const accessToken = jwt.sign(
-    { sub: authedUser.id, email: authedUser.email, role: authedUser.role },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-
-  return res.json({
-    accessToken,
-    user: { id: authedUser.id, email: authedUser.email, role: authedUser.role },
-  });
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const user = await User.findOne({ email });
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const accessToken = jwt.sign(
+      { sub: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    return res.json({
+      accessToken,
+      user: { id: user._id, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error' });
+  }
 });
 
 if (process.env.SERVE_STATIC === 'true') {
