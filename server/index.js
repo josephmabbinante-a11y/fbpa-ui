@@ -1,4 +1,6 @@
-// Registration endpoint for creating users
+
+import { User } from './models.js';
+// Registration endpoint for creating users (must be after app is defined)
 app.post('/auth/register', async (req, res) => {
   const { email, password, role } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
@@ -11,7 +13,6 @@ app.post('/auth/register', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
-import { User } from './models.js';
 
 
 
