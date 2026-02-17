@@ -1,17 +1,3 @@
-import { User } from './models.js';
-// Registration endpoint for creating users (must be after app is defined)
-app.post('/auth/register', async (req, res) => {
-  const { email, password, role } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-  try {
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ error: 'User already exists' });
-    const user = await User.create({ email, password, role: role || 'user' });
-    res.json({ success: true, user: { id: user._id, email: user.email, role: user.role } });
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
 
 import express from 'express';
