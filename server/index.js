@@ -46,20 +46,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
   const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
   try {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@audit-iq.com',
-      to: email,
-      subject: 'Password Reset',
-      text: `Reset your password: ${resetUrl}`,
-    });
-    console.log('Forgot password email sent to:', email);
-    res.json({ success: true });
-  } catch (e) {
-    console.error('Forgot password email error:', e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
 const defaultAllowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -111,21 +97,15 @@ if (MONGODB_URI) {
   mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ Connected to MongoDB'))
     .catch((err) => console.error('❌ MongoDB connection error:', err.message));
-} else {
-  console.warn('⚠️ MONGODB_URI not set, running without database');
-}
-
-// Serve frontend and API from same domain
-app.use(express.static(distPath));
-// API routes (already defined below)
-// Fallback to index.html for SPA
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
-    next();
-    return;
-  }
-  res.sendFile(path.join(distPath, 'index.html'));
-});
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@audit-iq.com',
+      to: email,
+      subject: 'Password Reset',
+      text: `Reset your password: ${resetUrl}`,
+    });
+    console.log('Forgot password email sent to:', email);
+    res.json({ success: true });
 
 app.use(cors({
   origin(origin, callback) {
@@ -198,6 +178,7 @@ app.post('/api/auth/register', async (req, res) => {
 
 if (process.env.SERVE_STATIC === 'true') {
   app.use(express.static(distPath));
+
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/auth')) {
       next();
@@ -206,6 +187,7 @@ if (process.env.SERVE_STATIC === 'true') {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
+
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
