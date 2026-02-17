@@ -89,6 +89,7 @@ export async function getReports() {
 }
 
 export async function login(payload) {
+  console.log('Frontend login payload:', payload);
   try {
     const res = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
@@ -210,6 +211,7 @@ export async function calculateRateLogic(payload) {
 }
 
 export async function register(payload) {
+  console.log('Frontend register payload:', payload);
   try {
     const res = await fetch(apiUrl('/api/auth/register'), {
       method: 'POST',

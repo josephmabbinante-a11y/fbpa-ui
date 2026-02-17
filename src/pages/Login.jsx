@@ -88,7 +88,7 @@ export default function Login() {
       }
       navigate('/dashboard');
     } else {
-      setStatus('Invalid email or password');
+      setStatus(res && res.error ? res.error : 'Invalid email or password');
     }
   };
 

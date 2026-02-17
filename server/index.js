@@ -143,11 +143,16 @@ app.use('/api/rate-logic', authenticateJWT, rateLogicRouter);
 
 // Real user authentication using MongoDB
 app.post('/auth/login', async (req, res) => {
+  console.log('Login request body:', req.body);
   const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (!email || !password) {
+    console.log('Login error: Email and password required');
+    return res.status(400).json({ error: 'Email and password required' });
+  }
   try {
     const user = await User.findOne({ email });
     if (!user || user.password !== password) {
+      console.log('Login error: Invalid credentials for', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const accessToken = jwt.sign(
@@ -155,25 +160,36 @@ app.post('/auth/login', async (req, res) => {
       JWT_SECRET,
       { expiresIn: '1h' }
     );
+    console.log('Login success for', email);
     return res.json({
       accessToken,
       user: { id: user._id, email: user.email, role: user.role },
     });
   } catch (err) {
+    console.error('Login server error:', err);
     return res.status(500).json({ error: 'Server error' });
   }
 });
 
 // Registration endpoint for creating users (must be after app is defined)
 app.post('/auth/register', async (req, res) => {
+  console.log('Register request body:', req.body);
   const { email, password, role } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  if (!email || !password) {
+    console.log('Register error: Email and password required');
+    return res.status(400).json({ error: 'Email and password required' });
+  }
   try {
     const existing = await User.findOne({ email });
-    if (existing) return res.status(409).json({ error: 'User already exists' });
+    if (existing) {
+      console.log('Register error: User already exists for', email);
+      return res.status(409).json({ error: 'User already exists' });
+    }
     const user = await User.create({ email, password, role: role || 'user' });
+    console.log('Register success for', email);
     res.json({ success: true, user: { id: user._id, email: user.email, role: user.role } });
   } catch (err) {
+    console.error('Register server error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
