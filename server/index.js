@@ -1,7 +1,7 @@
+// ...existing code...
+// Forgot password logic (must be after app is defined)
 import nodemailer from 'nodemailer';
-// Demo: In-memory reset tokens (replace with DB in production)
 const resetTokens = {};
-// Configure nodemailer (demo: ethereal or SMTP)
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
   port: 587,
@@ -9,6 +9,25 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
   },
+});
+app.post('/auth/forgot-password', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  // Demo: Accept any email, generate a token
+  const token = Math.random().toString(36).slice(2) + Date.now();
+  resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
+  const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@audit-iq.com',
+      to: email,
+      subject: 'Password Reset',
+      text: `Reset your password: ${resetUrl}`,
+    });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 // Forgot password endpoint (must be after app is defined)
 app.post('/auth/forgot-password', async (req, res) => {
