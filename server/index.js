@@ -33,8 +33,13 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post('/auth/forgot-password', async (req, res) => {
+  // Log the incoming request body for debugging
+  console.log('Forgot password request body:', req.body);
   const { email } = req.body || {};
-  if (!email) return res.status(400).json({ error: 'Email required' });
+  if (!email) {
+    console.log('Forgot password error: Email required');
+    return res.status(400).json({ error: 'Email required' });
+  }
   // Demo: Accept any email, generate a token
   const token = Math.random().toString(36).slice(2) + Date.now();
   resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
@@ -46,8 +51,10 @@ app.post('/auth/forgot-password', async (req, res) => {
       subject: 'Password Reset',
       text: `Reset your password: ${resetUrl}`,
     });
+    console.log('Forgot password email sent to:', email);
     res.json({ success: true });
   } catch (e) {
+    console.error('Forgot password email error:', e);
     res.status(500).json({ error: e.message });
   }
 });
