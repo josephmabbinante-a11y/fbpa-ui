@@ -6,13 +6,15 @@ import logo from '../assets/opscale-logo.svg';
 import RegisterForm from '../components/Register';
 
 function ForgotPasswordModal({ onClose }) {
+  const { theme } = useTheme();
+  const t = themes[theme];
   const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
+    setStatus('');
     setLoading(true);
     try {
       const res = await fetch('/api/auth/forgot-password', {
@@ -22,12 +24,12 @@ function ForgotPasswordModal({ onClose }) {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage('Password reset email sent!');
+        setStatus('Password reset email sent!');
       } else {
-        setMessage(data.error || 'Failed to send reset email.');
+        setStatus(data.error || 'Failed to send reset email.');
       }
-    } catch (err) {
-      setMessage('Network error');
+    } catch {
+      setStatus('Network error');
     }
     setLoading(false);
   };
@@ -41,7 +43,7 @@ function ForgotPasswordModal({ onClose }) {
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: '100%', padding: '0.7em', marginTop: '0.2em', borderRadius: 8, border: '1px solid #444950', background: '#18191A', color: '#fff', fontSize: '1em', boxSizing: 'border-box' }} />
           </label>
           <button type="submit" style={{ width: '100%', marginTop: 16, padding: '0.9em', background: t.accent, color: '#fff', border: 'none', borderRadius: 8, fontSize: '1.1em', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s' }} disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Sending...' : 'Send Reset Email'}
           </button>
           {status && <div style={{ color: '#ff4d4f', marginTop: 8 }}>{status}</div>}
         </form>
