@@ -1,4 +1,6 @@
 
+
+
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -51,26 +53,6 @@ app.post('/auth/forgot-password', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-import express from 'express';
-import cors from 'cors';
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import customersRouter from './customers.js';
-import messagesRouter from './messages.js';
-import rateLogicRouter from './rateLogic.js';
-
-dotenv.config();
-
-const app = express();
-const PORT = process.env.PORT || 4000;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
-const MONGODB_URI = process.env.MONGODB_URI;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const distPath = path.resolve(__dirname, '../dist');
 
 const defaultAllowedOrigins = [
   'http://localhost:5173',
