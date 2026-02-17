@@ -161,6 +161,15 @@ export default function Login() {
               placeholder="••••••••"
               style={inputStyle}
             />
+            <div style={{ marginTop: 6, textAlign: 'right' }}>
+              <button
+                type="button"
+                style={{ background: 'none', border: 'none', color: t.accent, textDecoration: 'underline', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                onClick={() => alert('Forgot password functionality coming soon!')}
+              >
+                Forgot password?
+              </button>
+            </div>
           </div>
           <button type="submit" style={buttonStyle} disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
