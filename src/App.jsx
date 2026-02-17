@@ -23,6 +23,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const Login = lazy(() => import("./pages/Login"));
 const Customers = lazy(() => import("./pages/Customers"));
 const MyAuditIQProfile = lazy(() => import("./pages/MyAuditIQProfile"));
+// Register page is now merged into Login
 
 function AppRoutes() {
   const location = useLocation();
@@ -75,6 +76,7 @@ function AppRoutes() {
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/profile" element={<MyAuditIQProfile />} />
             <Route path="/login" element={<Login />} />
+            {/* Register route removed, handled in Login */}
           </Routes>
         </Suspense>
       </Layout>
