@@ -2,10 +2,6 @@ const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '';
 
 function apiUrl(path) {
-  // Ensure all auth endpoints are prefixed with /api
-  if (path.startsWith('/auth/')) {
-    return `${API_URL}/api${path}`;
-  }
   return `${API_URL}${path}`;
 }
 

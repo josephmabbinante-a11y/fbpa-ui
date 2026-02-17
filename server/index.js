@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import customersRouter from './customers.js';
 import messagesRouter from './messages.js';
 import rateLogicRouter from './rateLogic.js';
+import healthRoutes from './routes.js';
 import nodemailer from 'nodemailer';
 import { User } from './models.js';
 
@@ -140,6 +141,7 @@ app.use(express.json());
 app.use('/api/customers', authenticateJWT, customersRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/rate-logic', authenticateJWT, rateLogicRouter);
+app.use('/api', healthRoutes);
 
 // Real user authentication using MongoDB
 app.post('/api/auth/login', async (req, res) => {
