@@ -46,58 +46,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
   const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
   try {
-const defaultAllowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  'http://localhost:5176',
-  'http://localhost:5177',
-  'http://localhost:5178',
-  'http://localhost:5179',
-];
-
-// JWT authentication middleware
-function authenticateJWT(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
-  }
-  const token = authHeader.split(' ')[1];
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(401).json({ error: 'Invalid or expired token' });
-    req.user = user;
-    next();
-  });
-}
-
-// Test endpoint for MongoDB connection
-app.get('/api/mongo-status', async (req, res) => {
-  const state = mongoose.connection.readyState;
-  // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
-  let status;
-  switch (state) {
-    case 0: status = 'disconnected'; break;
-    case 1: status = 'connected'; break;
-    case 2: status = 'connecting'; break;
-    case 3: status = 'disconnecting'; break;
-    default: status = 'unknown';
-  }
-  res.json({ status });
-});
-
-const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
-
-const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
-
-// Connect to MongoDB
-if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch((err) => console.error('❌ MongoDB connection error:', err.message));
-  try {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || 'noreply@audit-iq.com',
       to: email,
@@ -106,6 +54,11 @@ if (MONGODB_URI) {
     });
     console.log('Forgot password email sent to:', email);
     res.json({ success: true });
+  } catch (e) {
+    console.error('Forgot password email error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.use(cors({
   origin(origin, callback) {
