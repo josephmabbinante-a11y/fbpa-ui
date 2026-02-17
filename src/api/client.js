@@ -90,7 +90,7 @@ export async function getReports() {
 
 export async function login(payload) {
   try {
-    const res = await fetch(apiUrl('/auth/login'), {
+    const res = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -207,5 +207,20 @@ export async function calculateRateLogic(payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+}
+
+export async function register(payload) {
+  try {
+    const res = await fetch(apiUrl('/api/auth/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Register failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('register error:', err);
+    return { error: err.message };
+  }
 }
 
