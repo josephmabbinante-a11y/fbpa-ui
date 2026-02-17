@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
+import RegisterForm from '../components/Register';
 
 function ForgotPasswordModal({ onClose }) {
   const [email, setEmail] = useState('');
