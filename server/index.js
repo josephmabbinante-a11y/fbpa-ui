@@ -1,4 +1,6 @@
+// ...existing code...
 import { User } from './models.js';
+
 // Registration endpoint for creating users (must be after app is defined)
 app.post('/auth/register', async (req, res) => {
   const { email, password, role } = req.body || {};
@@ -12,6 +14,7 @@ app.post('/auth/register', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+// ...existing code...
 
 
 import express from 'express';
