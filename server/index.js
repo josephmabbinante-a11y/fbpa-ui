@@ -32,7 +32,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.post('/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', async (req, res) => {
   // Log the incoming request body for debugging
   console.log('Forgot password request body:', req.body);
   const { email } = req.body || {};
@@ -142,7 +142,7 @@ app.use('/api/messages', messagesRouter);
 app.use('/api/rate-logic', authenticateJWT, rateLogicRouter);
 
 // Real user authentication using MongoDB
-app.post('/auth/login', async (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   console.log('Login request body:', req.body);
   const { email, password } = req.body || {};
   if (!email || !password) {
@@ -172,7 +172,7 @@ app.post('/auth/login', async (req, res) => {
 });
 
 // Registration endpoint for creating users (must be after app is defined)
-app.post('/auth/register', async (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   console.log('Register request body:', req.body);
   const { email, password, role } = req.body || {};
   if (!email || !password) {
