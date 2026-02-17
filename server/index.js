@@ -1,7 +1,6 @@
 import nodemailer from 'nodemailer';
 // Demo: In-memory reset tokens (replace with DB in production)
 const resetTokens = {};
-
 // Configure nodemailer (demo: ethereal or SMTP)
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
@@ -11,8 +10,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS || '',
   },
 });
-
-// Forgot password endpoint
+// Forgot password endpoint (must be after app is defined)
 app.post('/auth/forgot-password', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
