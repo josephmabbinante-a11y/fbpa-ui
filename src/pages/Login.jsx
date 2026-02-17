@@ -49,6 +49,18 @@ function ForgotPasswordModal({ onClose }) {
   );
 }
 
+function TestModal({ onClose }) {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ maxWidth: 300, width: '100%', background: '#23272F', borderRadius: 16, color: '#fff', padding: '2em', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 12, right: 12, background: 'none', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer' }}>&times;</button>
+        <h2>Test Modal</h2>
+        <p>This is a test modal. If you see this, modal logic works.</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Login() {
   const { theme } = useTheme();
   const t = themes[theme];
@@ -59,6 +71,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,8 +178,12 @@ export default function Login() {
         <button type="button" onClick={() => setShowRegister(true)} style={{ color: t.accent, background: 'none', border: 'none', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
           Need an account? Register
         </button>
+        <button type="button" onClick={() => setShowTestModal(true)} style={{ color: t.accent, background: 'none', border: 'none', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer', fontSize: 14, marginTop: 12 }}>
+          Open Test Modal
+        </button>
         {showRegister && <RegisterForm onClose={() => setShowRegister(false)} />}
         {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
+        {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
       </div>
     </div>
   );
