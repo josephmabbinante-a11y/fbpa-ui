@@ -1,5 +1,9 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
-  ]
+  ],
+  "env": {
+    "VITE_API_URL": "https://express-brlmsvbpd-josephmabbinante-a11ys-projects.vercel.app",
+    "JWT_SECRET": "dev_secret_change_me"
+  }
 }
