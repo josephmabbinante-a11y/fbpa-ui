@@ -60,6 +60,22 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   }
 });
 
+// Allowed origins for CORS
+const defaultAllowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+  'http://localhost:5177',
+  'http://localhost:5178',
+  'http://localhost:5179',
+];
+const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+
 // JWT authentication middleware
 function authenticateJWT(req, res, next) {
   const authHeader = req.headers['authorization'];
