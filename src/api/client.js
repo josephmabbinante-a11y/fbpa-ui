@@ -1,3 +1,19 @@
+// Admin login function
+export async function adminLogin(payload) {
+  console.log('Frontend admin login payload:', payload);
+  try {
+    const res = await fetch(apiUrl('/api/auth/admin-login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Admin login failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('adminLogin error:', err);
+    return { error: err.message };
+  }
+}
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '';
 
