@@ -1,118 +1,55 @@
 ﻿{
     "info":  {
-                 "_postman_id":  "fbpa-auth-collection-2026",
-                 "name":  "FBPA Auth API",
-                 "schema":  "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-             },
-    "item":  [
-                 {
-                     "name":  "Login",
-                     "event":  [
-                                   {
-                                       "listen":  "prerequest",
-                                       "script":  {
-                                                      "exec":  [
-                                                                   "// Set base_url if not already set",
-                                                                   "if (!pm.environment.get(\u0027base_url\u0027)) {",
-                                                                   "    pm.environment.set(\u0027base_url\u0027, \u0027http://localhost:4000/api\u0027);",
-                                                                   "}"
-                                                               ],
-                                                      "type":  "text/javascript"
-                                                  }
-                                   },
-                                   {
-                                       "listen":  "test",
-                                       "script":  {
-                                                      "exec":  [
-                                                                   "pm.test(\"Status code is 200 or 401\", function () {",
-                                                                   "    pm.expect(pm.response.code).to.be.oneOf([200, 401]);",
-                                                                   "});",
-                                                                   "if (pm.response.code === 200) {",
-                                                                   "    var json = pm.response.json();",
-                                                                   "    pm.environment.set(\u0027accessToken\u0027, json.accessToken);",
-                                                                   "    pm.environment.set(\u0027userId\u0027, json.user \u0026\u0026 json.user.id ? json.user.id : \u0027\u0027);",
-                                                                   "}"
-                                                               ],
-                                                      "type":  "text/javascript"
-                                                  }
-                                   }
-                               ],
-                     "request":  {
-                                     "method":  "POST",
-                                     "header":  [
-                                                    {
-                                                        "key":  "Content-Type",
-                                                        "value":  "application/json"
-                                                    }
-                                                ],
-                                     "body":  {
-                                                  "mode":  "raw",
-                                                  "raw":  "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
-                                              },
-                                     "url":  {
-                                                 "raw":  "{{base_url}}/auth/login",
-                                                 "host":  [
-                                                              "{{base_url}}"
-                                                          ],
-                                                 "path":  [
-                                                              "auth",
-                                                              "login"
-                                                          ]
-                                             }
-                                 }
-                 },
-                 {
-                     "name":  "Register",
-                     "event":  [
-                                   {
-                                       "listen":  "prerequest",
-                                       "script":  {
-                                                      "exec":  [
-                                                                   "// Set base_url if not already set",
-                                                                   "if (!pm.environment.get(\u0027base_url\u0027)) {",
-                                                                   "    pm.environment.set(\u0027base_url\u0027, \u0027http://localhost:4000/api\u0027);",
-                                                                   "}"
-                                                               ],
-                                                      "type":  "text/javascript"
-                                                  }
-                                   },
-                                   {
-                                       "listen":  "test",
-                                       "script":  {
-                                                      "exec":  [
-                                                                   "pm.test(\"Status code is 200, 201 or 409\", function () {",
-                                                                   "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 409]);",
-                                                                   "});",
-                                                                   "if (pm.response.code === 200 || pm.response.code === 201) {",
-                                                                   "    var json = pm.response.json();",
-                                                                   "    pm.environment.set(\u0027userId\u0027, json.user \u0026\u0026 json.user.id ? json.user.id : \u0027\u0027);",
-                                                                   "}"
-                                                               ],
-                                                      "type":  "text/javascript"
-                                                  }
-                                   }
-                               ],
-                     "request":  {
-                                     "method":  "POST",
-                                     "header":  [
-                                                    {
-                                                        "key":  "Content-Type",
-                                                        "value":  "application/json"
-                                                    }
-                                                ],
-                                     "body":  {
-                                                  "mode":  "raw",
-                                                  "raw":  "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"name\": \"Test User\",\n  \"organization\": \"Test Org\"\n}"
-                                              },
-                                     "url":  {
-                                                 "raw":  "{{base_url}}/auth/register",
-                                                 "host":  [
-                                                              "{{base_url}}"
-                                                          ],
-                                                 "path":  [
-                                                              "auth",
-                                                              "register"
-                                                          ]
+                "item":  [
+                    {
+                        "name": "Health Check",
+                        "request": {
+                            "method": "GET",
+                            "header": [],
+                            "url": {
+                                "raw": "{{base_url}}/api/health",
+                                "host": ["{{base_url}}"],
+                                "path": ["api", "health"]
+                            }
+                        }
+                    },
+                    {
+                        "name": "Register",
+                        "request": {
+                            "method": "POST",
+                            "header": [
+                                {"key": "Content-Type", "value": "application/json"}
+                            ],
+                            "body": {
+                                "mode": "raw",
+                                "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"name\": \"Test User\",\n  \"role\": \"user\"\n}"
+                            },
+                            "url": {
+                                "raw": "{{base_url}}/auth/signup",
+                                "host": ["{{base_url}}"],
+                                "path": ["auth", "signup"]
+                            }
+                        }
+                    },
+                    {
+                        "name": "Login",
+                        "request": {
+                            "method": "POST",
+                            "header": [
+                                {"key": "Content-Type", "value": "application/json"}
+                            ],
+                            "body": {
+                                "mode": "raw",
+                                "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+                            },
+                            "url": {
+                                "raw": "{{base_url}}/auth/login",
+                                "host": ["{{base_url}}"],
+                                "path": ["auth", "login"]
+                            }
+                        }
+                    }
+                ],
                                              }
                                  }
                  }
