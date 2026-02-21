@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useTheme, themes } from '../contexts/ThemeContext';
 
@@ -17,24 +16,26 @@ const Register = ({ onClose }) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
+
     try {
-      const res = await fetch("/api/auth/register", {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/auth/register`;
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/auth/register`;
       const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify(form),
       });
+
       const data = await res.json();
       if (res.ok) {
         setMessage("Registration successful! Check your email for your password.");
       } else {
         setMessage(data.error || "Registration failed.");
       }
-    } catch (err) {
+    } catch {
       setMessage("Network error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const cardStyle = {
