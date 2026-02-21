@@ -12,18 +12,20 @@ export default function RateConfirmationImageUpload({ invoiceId }) {
   const handleFileChange = (e) => {
     const f = e.target.files[0];
     setFile(f);
-    setPreviewUrl(f ? URL.createObjectURL(f) : null);
+    if (f) {
+      setPreviewUrl(URL.createObjectURL(f));
+    } else {
+      setPreviewUrl(null);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus(null);
-
     if (!file) {
       setStatus('Please select a file to upload.');
       return;
     }
-
     setLoading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -33,10 +35,12 @@ export default function RateConfirmationImageUpload({ invoiceId }) {
       const res = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
+        // Headers might be needed for auth, e.g.,
+        // headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ message: `Upload failed with status: ${res.status}` }));
+        const errorData = await res.json().catch(() => ({ message: 'Upload failed with status: ' + res.status }));
         throw new Error(errorData.message || 'Upload failed');
       }
 

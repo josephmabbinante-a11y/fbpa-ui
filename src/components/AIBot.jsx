@@ -7,19 +7,19 @@ export default function AIBot() {
   const [loading, setLoading] = useState(false);
 
   async function sendMessage() {
-    if (!input.trim() || loading) return;
-
+    if (!input.trim()) return;
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
     setInput('');
 
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/ai/chat`;
-      const res = await fetch(apiUrl, {
+      const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          // Auth headers would be needed here, e.g., from localStorage
+          // 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
@@ -31,16 +31,10 @@ export default function AIBot() {
       }
 
       const data = await res.json();
-      const assistantMessage = {
-        role: 'assistant',
-        content: data.content || 'No response received.',
-      };
+      const assistantMessage = { role: 'assistant', content: data.content };
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
-      const errorMessage = {
-        role: 'assistant',
-        content: 'Error: Unable to get response.',
-      };
+    } catch (err) {
+      const errorMessage = { role: 'assistant', content: 'Error: Unable to get response.' };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
@@ -61,8 +55,8 @@ export default function AIBot() {
       <div style={{ display: 'flex', borderTop: '1px solid #eee', padding: 8 }}>
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && sendMessage()}
           placeholder="Ask me to automate..."
           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }}
           disabled={loading}
