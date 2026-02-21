@@ -7,29 +7,21 @@ export default function AIBot() {
   const [loading, setLoading] = useState(false);
 
   async function sendMessage() {
-    if (!input.trim()) return;
-    setMessages([...messages, { role: 'user', content: input }]);
+    if (!input.trim() || loading) return;
+
     const userMessage = { role: 'user', content: input };
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
     setInput('');
 
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
       const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/ai/chat`;
       const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer YOUR_OPENAI_API_KEY', // Replace with your backend proxy for security
-          'Content-Type': 'application/json'
           'Content-Type': 'application/json',
-          // Auth headers would be needed here, e.g., from localStorage
-          // 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [...messages, { role: 'user', content: input }]
-        })
           messages: [...messages, userMessage],
         }),
       });
@@ -39,18 +31,20 @@ export default function AIBot() {
       }
 
       const data = await res.json();
-      setMessages([...messages, { role: 'user', content: input }, { role: 'assistant', content: data.choices[0].message.content }]);
-      const assistantMessage = { role: 'assistant', content: data.content };
+      const assistantMessage = {
+        role: 'assistant',
+        content: data.content || 'No response received.',
+      };
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
-      setMessages([...messages, { role: 'user', content: input }, { role: 'assistant', content: 'Error: Unable to get response.' }]);
-      const errorMessage = { role: 'assistant', content: 'Error: Unable to get response.' };
+    } catch {
+      const errorMessage = {
+        role: 'assistant',
+        content: 'Error: Unable to get response.',
+      };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
-    setInput('');
-    setLoading(false);
   }
 
   return (
@@ -67,8 +61,8 @@ export default function AIBot() {
       <div style={{ display: 'flex', borderTop: '1px solid #eee', padding: 8 }}>
         <input
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && sendMessage()}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Ask me to automate..."
           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15 }}
           disabled={loading}
