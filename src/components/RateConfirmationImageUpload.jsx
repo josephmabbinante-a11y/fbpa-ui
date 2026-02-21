@@ -31,8 +31,7 @@ export default function RateConfirmationImageUpload({ invoiceId }) {
     formData.append('file', file);
 
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/invoices/${invoiceId}/upload-rate-confirmation`;
-      const res = await fetch(apiUrl, {
+      const res = await fetch(`/api/invoices/${invoiceId}/upload-rate-confirmation`, {
         method: 'POST',
         body: formData,
         // Headers might be needed for auth, e.g.,
