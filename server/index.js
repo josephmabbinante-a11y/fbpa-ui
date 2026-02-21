@@ -75,6 +75,7 @@ const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .map((origin) => origin.trim())
   .filter(Boolean);
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+const allowVercelOrigins = process.env.ALLOW_VERCEL_ORIGINS === 'true';
 
 // JWT authentication middleware
 function authenticateJWT(req, res, next) {
@@ -95,6 +96,17 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
       return;
+    }
+    if (allowVercelOrigins) {
+      try {
+        const hostname = new URL(origin).hostname;
+        if (hostname.endsWith('.vercel.app')) {
+          callback(null, true);
+          return;
+        }
+      } catch {
+        // Ignore invalid origin format and fall through to denial.
+      }
     }
     callback(new Error(`CORS origin not allowed: ${origin}`));
   },
@@ -171,8 +183,19 @@ if (process.env.SERVE_STATIC === 'true') {
   });
 }
 
+async function startServer() {
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI is required');
+  }
+  await mongoose.connect(MONGODB_URI);
+  console.log('MongoDB connected');
+  app.listen(PORT, () => {
+    // eslint-disable-next-line no-console
+    console.log(`Auth server running on http://localhost:${PORT}`);
+  });
+}
 
-app.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Auth server running on http://localhost:${PORT}`);
+startServer().catch((err) => {
+  console.error('Startup error:', err);
+  process.exit(1);
 });

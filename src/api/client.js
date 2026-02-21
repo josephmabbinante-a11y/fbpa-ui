@@ -112,7 +112,10 @@ export async function login(payload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Login failed ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Login failed ${res.status}`);
+    }
     return await res.json();
   } catch (err) {
     console.error('login error:', err);
