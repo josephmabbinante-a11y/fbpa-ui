@@ -31,10 +31,32 @@ export default function InvoiceAndRateUpload({ invoiceImages = [], rateImage = n
     setInvoiceLoading(true);
     setTimeout(() => {
       setInvoiceLoading(false);
+    const formData = new FormData();
+    formData.append('file', invoiceFile);
+
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/invoices/upload-image`;
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+        // headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Upload failed' }));
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      await res.json();
       setInvoiceStatus('Invoice image uploaded!');
       setInvoiceFile(null);
       setInvoicePreview(null);
     }, 1200);
+    } catch (err) {
+      setInvoiceStatus(err.message || 'An error occurred during upload.');
+    } finally {
+      setInvoiceLoading(false);
+    }
   };
 
   // Handlers for rate confirmation image
@@ -53,10 +75,32 @@ export default function InvoiceAndRateUpload({ invoiceImages = [], rateImage = n
     setRateLoading(true);
     setTimeout(() => {
       setRateLoading(false);
+    const formData = new FormData();
+    formData.append('file', rateFile);
+
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/api/invoices/upload-rate-confirmation`;
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        body: formData,
+        // headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Upload failed' }));
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      await res.json();
       setRateStatus('Rate confirmation image uploaded!');
       setRateFile(null);
       setRatePreview(null);
     }, 1200);
+    } catch (err) {
+      setRateStatus(err.message || 'An error occurred during upload.');
+    } finally {
+      setRateLoading(false);
+    }
   };
 
   return (

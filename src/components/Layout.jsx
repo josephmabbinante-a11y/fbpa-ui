@@ -15,15 +15,16 @@ function Layout({ children }) {
 
     checkSidebarWidth();
 
-    // Listen for storage changes (in case sidebar is toggled in another tab)
+    // Listen for storage changes (for changes in other tabs)
     window.addEventListener('storage', checkSidebarWidth);
-    
-    // Check periodically (fallback for same-tab changes)
-    const interval = setInterval(checkSidebarWidth, 100);
+
+    // Listen for a custom event for same-tab changes to avoid polling.
+    // The component that toggles the sidebar should dispatch this event.
+    window.addEventListener('opscale-sidebar-toggle', checkSidebarWidth);
 
     return () => {
       window.removeEventListener('storage', checkSidebarWidth);
-      clearInterval(interval);
+      window.removeEventListener('opscale-sidebar-toggle', checkSidebarWidth);
     };
   }, []);
 
