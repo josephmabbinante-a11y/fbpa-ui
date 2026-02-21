@@ -120,7 +120,7 @@
     "variable":  [
                      {
                          "key":  "base_url",
-                         "value":  "http://localhost:4000/api"
+                         "value":  "https://mongodb-production-744f.up.railway.app/api"
                      },
                      {
                          "key":  "test_email",
