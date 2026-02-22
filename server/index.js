@@ -113,9 +113,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use('/api/customers', authenticateJWT, customersRouter);
+app.use('/api/customers', customersRouter);
 app.use('/api/messages', messagesRouter);
-app.use('/api/rate-logic', authenticateJWT, rateLogicRouter);
+app.use('/api/rate-logic', rateLogicRouter);
 app.use('/api', healthRoutes);
 
 // Real user authentication using MongoDB

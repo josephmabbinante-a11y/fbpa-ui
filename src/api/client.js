@@ -47,20 +47,12 @@ function isMockMode() {
   }
 }
 
-function getAccessToken() {
-  try {
-    return localStorage.getItem('accessToken');
-  } catch {
-    return null;
-  }
-}
+// Removed JWT token retrieval
 
 async function safeFetch(path, options) {
   try {
-    const token = getAccessToken();
     const headers = {
       ...(options && options.headers ? options.headers : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(apiUrl(path), { ...options, headers });
     if (!res.ok) throw new Error(`Request failed with ${res.status}`);
@@ -127,13 +119,11 @@ export async function login(payload) {
 
 export async function connectEdiIntegration(payload) {
   try {
-    const token = getAccessToken();
     const res = await fetch(apiUrl('/api/edi/connect'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-
     if (!res.ok) throw new Error(`Connect failed ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -154,13 +144,10 @@ export async function uploadInvoiceImage(payload) {
     fd.append('invoiceId', payload.invoiceId);
     if (payload.notes) fd.append('notes', payload.notes);
 
-    const token = getAccessToken();
     const res = await fetch(apiUrl('/api/invoice-images'), {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: fd,
     });
-
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -171,16 +158,14 @@ export async function uploadInvoiceImage(payload) {
 
 export async function verifyInvoiceImage(payload) {
   try {
-    const token = getAccessToken();
     const res = await fetch(apiUrl('/api/invoice-images/verify'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         imageId: payload.imageId,
         invoiceId: payload.invoiceId,
       }),
     });
-
     if (!res.ok) throw new Error(`Verify failed ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -194,7 +179,6 @@ export async function uploadInvoiceFile(payload) {
   try {
     let body;
     let headers = {};
-    const token = getAccessToken();
 
     if (payload instanceof File) {
       // legacy: send as FormData
@@ -211,8 +195,8 @@ export async function uploadInvoiceFile(payload) {
 
     const res = await fetch(apiUrl('/api/uploads'), {
       method: 'POST',
-      headers: { ...headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body,
+      headers: { ...headers },
+      body
     });
 
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
