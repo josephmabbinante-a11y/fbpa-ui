@@ -15,7 +15,9 @@ export async function adminLogin(payload) {
   }
 }
 const RAW_API_URL = import.meta.env.VITE_API_URL;
-const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '';
+const API_URL = import.meta.env.PROD
+  ? ''
+  : (RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '');
 
 function apiUrl(path) {
   return `${API_URL}${path}`;
