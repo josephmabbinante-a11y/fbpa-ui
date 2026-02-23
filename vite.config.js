@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: env.VITE_API_URL || 'https://distinguished-delight-production-dda2.up.railway.app',
+          target: env.VITE_API_URL || 'https://mongodb-production-744f.up.railway.app',
           changeOrigin: true,
           secure: false,
         }
