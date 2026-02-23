@@ -62,6 +62,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 // Allowed origins for CORS
 const defaultAllowedOrigins = [
+  // Local development
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
@@ -69,6 +70,8 @@ const defaultAllowedOrigins = [
   'http://localhost:5177',
   'http://localhost:5178',
   'http://localhost:5179',
+  // Production web environment (Vercel)
+  'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
 ];
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
