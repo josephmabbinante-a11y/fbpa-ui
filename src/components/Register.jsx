@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { register } from '../api/client';
 
 const Register = ({ onClose }) => {
   const { theme } = useTheme();
@@ -17,20 +18,14 @@ const Register = ({ onClose }) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMessage("Registration successful! Check your email for your password.");
-      } else {
-        setMessage(data.error || "Registration failed.");
-      }
-    } catch (err) {
-      setMessage("Network error");
+    const res = await register({
+      email: form.email,
+      password: form.password,
+    });
+    if (res && !res.error) {
+      setMessage("Registration successful.");
+    } else {
+      setMessage(res?.error || "Registration failed.");
     }
     setLoading(false);
   };
