@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext();
 
@@ -23,6 +23,25 @@ export const ThemeProvider = ({ children }) => {
     });
   };
 
+  useEffect(() => {
+    const active = themes[theme];
+    const root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+    root.style.setProperty('--bg', active.bg);
+    root.style.setProperty('--bg-alt', active.bgAlt);
+    root.style.setProperty('--text', active.text);
+    root.style.setProperty('--text-secondary', active.textSecondary);
+    root.style.setProperty('--border', active.border);
+    root.style.setProperty('--surface', active.surface);
+    root.style.setProperty('--surface-strong', active.surfaceStrong);
+    root.style.setProperty('--accent', active.accent);
+    root.style.setProperty('--accent-2', active.accent2);
+    root.style.setProperty('--success', active.success);
+    root.style.setProperty('--warning', active.warning);
+    root.style.setProperty('--error', active.error);
+    root.style.setProperty('--glow', active.glow);
+  }, [theme]);
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}
@@ -38,17 +57,20 @@ export const useTheme = () => {
 
 export const themes = {
   dark: {
-    bg: '#1a1a1a',
-    bgAlt: '#242424',
-    text: '#f0f0f0',
-    textSecondary: '#a8a8a8',
-    border: '#3a3a3a',
-    borderLight: '#2a2a2a',
-    surface: '#1f1f1f',
-    accent: '#0066cc',
+    bg: '#060a15',
+    bgAlt: '#0b1327',
+    text: '#e6efff',
+    textSecondary: '#9cb0d3',
+    border: '#1d2b4d',
+    borderLight: '#142240',
+    surface: '#0f1b36',
+    surfaceStrong: '#132347',
+    accent: '#18d2ff',
+    accent2: '#5f8cff',
     success: '#4ade80',
     warning: '#f59e0b',
     error: '#ef4444',
+    glow: '24, 210, 255',
     
     // Semantic
     positive: '#10b981', // savings
@@ -56,17 +78,20 @@ export const themes = {
     neutral: '#6b7280', // inactive
   },
   light: {
-    bg: '#ffffff',
-    bgAlt: '#f9fafb',
-    text: '#1f2937',
-    textSecondary: '#6b7280',
-    border: '#e5e7eb',
-    borderLight: '#f3f4f6',
-    surface: '#f3f4f6',
-    accent: '#0066cc',
+    bg: '#edf4ff',
+    bgAlt: '#e2ecff',
+    text: '#0f1f3d',
+    textSecondary: '#38507e',
+    border: '#bdd2ff',
+    borderLight: '#d8e5ff',
+    surface: '#f7faff',
+    surfaceStrong: '#ecf3ff',
+    accent: '#0a7cff',
+    accent2: '#2f49ff',
     success: '#059669',
     warning: '#d97706',
     error: '#dc2626',
+    glow: '10, 124, 255',
     
     // Semantic
     positive: '#10b981', // savings

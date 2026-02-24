@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { register } from '../api/client';
 
-const Register = ({ onClose }) => {
+const Register = ({ onClose, onRegistered }) => {
   const { theme } = useTheme();
   const t = themes[theme];
   const [form, setForm] = useState({ email: "", password: "", name: "", organization: "" });
@@ -24,6 +24,9 @@ const Register = ({ onClose }) => {
     });
     if (res && !res.error) {
       setMessage("Registration successful.");
+      if (onRegistered) {
+        onRegistered({ email: form.email, password: form.password });
+      }
     } else {
       setMessage(res?.error || "Registration failed.");
     }

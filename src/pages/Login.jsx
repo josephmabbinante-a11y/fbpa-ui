@@ -125,6 +125,13 @@ export default function Login() {
     fontSize: 13,
   };
 
+  const handleRegistered = ({ email: newEmail, password: newPassword }) => {
+    setEmail(newEmail);
+    setPassword(newPassword);
+    setShowRegister(false);
+    setStatus('Registration successful. Sign in now.');
+  };
+
   const buttonStyle = {
     width: '100%',
     padding: '10px 14px',
@@ -195,7 +202,7 @@ export default function Login() {
         <button type="button" onClick={() => setShowTestModal(true)} style={{ color: t.accent, background: 'none', border: 'none', textDecoration: 'underline', fontWeight: 600, cursor: 'pointer', fontSize: 14, marginTop: 12 }}>
           Open Test Modal
         </button>
-        {showRegister && <RegisterForm onClose={() => setShowRegister(false)} />}
+        {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
         {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
         {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
       </div>
