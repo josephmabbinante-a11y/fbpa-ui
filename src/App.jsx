@@ -26,6 +26,34 @@ const MyAuditIQProfile = lazy(() => import("./pages/MyAuditIQProfile"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
 // Register page is now merged into Login
 
+const appRouteDefs = [
+  { path: "/", element: <Dashboard /> },
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/invoices", element: <Invoices /> },
+  { path: "/invoices/:id", element: <InvoiceDetail /> },
+  { path: "/exceptions", element: <Exceptions /> },
+  { path: "/exceptions/:id", element: <ExceptionDrilldown /> },
+  { path: "/reports", element: <Reports /> },
+  { path: "/reports/:reportId", element: <ReportDetail /> },
+  { path: "/carriers", element: <CarriersPerformance /> },
+  { path: "/carriers/:carrier", element: <CarrierScorecard /> },
+  { path: "/uploads", element: <Uploads /> },
+  { path: "/customers", element: <Customers /> },
+  { path: "/settings", element: <Settings /> },
+  { path: "/rate-logic", element: <RateLogicTool /> },
+  { path: "/fleet-dashboard", element: <FleetDashboard /> },
+  { path: "/profile", element: <MyAuditIQProfile /> },
+  { path: "/system-status", element: <SystemStatus /> },
+];
+
+function LoadingFallback() {
+  return (
+    <div style={{ padding: 24, color: "var(--text-secondary)", fontFamily: "'Exo 2', sans-serif", letterSpacing: 1 }}>
+      Loading module...
+    </div>
+  );
+}
+
 function AppRoutes() {
   const location = useLocation();
   const isLogin = location.pathname === "/login";
@@ -38,7 +66,7 @@ function AppRoutes() {
 
   if (isLogin) {
     return (
-      <Suspense fallback={<div style={{ padding: 16 }}>Loading...</div>}>
+      <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
         </Routes>
@@ -58,27 +86,12 @@ function AppRoutes() {
     <>
       <Sidebar />
       <Layout>
-        <Suspense fallback={<div style={{ padding: 16 }}>Loading...</div>}>
+        <Suspense fallback={<LoadingFallback />}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/invoices/:id" element={<InvoiceDetail />} />
-            <Route path="/exceptions" element={<Exceptions />} />
-            <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/reports/:reportId" element={<ReportDetail />} />
-            <Route path="/carriers" element={<CarriersPerformance />} />
-            <Route path="/carriers/:carrier" element={<CarrierScorecard />} />
-            <Route path="/uploads" element={<Uploads />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/rate-logic" element={<RateLogicTool />} />
-            <Route path="/fleet-dashboard" element={<FleetDashboard />} />
-            <Route path="/profile" element={<MyAuditIQProfile />} />
             <Route path="/login" element={<Login />} />
-            {/* Register route removed, handled in Login */}
-            <Route path="/system-status" element={<SystemStatus />} />
+            {appRouteDefs.map((route) => (
+              <Route key={route.path} path={route.path} element={route.element} />
+            ))}
           </Routes>
         </Suspense>
       </Layout>

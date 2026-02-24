@@ -1,52 +1,59 @@
 import { useEffect, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
+function getSidebarWidth() {
+  if (window.innerWidth < 900) return 74;
+  const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
+  return collapsed ? 74 : 264;
+}
+
 function Layout({ children }) {
   const { theme } = useTheme();
   const t = themes[theme];
-  const [sidebarWidth, setSidebarWidth] = useState(240);
+  const [sidebarWidth, setSidebarWidth] = useState(() => getSidebarWidth());
 
-  // Monitor sidebar collapse state
   useEffect(() => {
-    const checkSidebarWidth = () => {
+    const syncWidth = () => {
+      if (window.innerWidth < 900) {
+        setSidebarWidth(74);
+        return;
+      }
       const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-      setSidebarWidth(collapsed ? 64 : 240);
+      setSidebarWidth(collapsed ? 74 : 264);
     };
 
-    checkSidebarWidth();
-
-    // Listen for storage changes (for changes in other tabs)
-    window.addEventListener('storage', checkSidebarWidth);
-
-    // Listen for a custom event for same-tab changes to avoid polling.
-    // The component that toggles the sidebar should dispatch this event.
-    window.addEventListener('opscale-sidebar-toggle', checkSidebarWidth);
+    syncWidth();
+    window.addEventListener('resize', syncWidth);
+    window.addEventListener('storage', syncWidth);
+    window.addEventListener('opscale-sidebar-toggle', syncWidth);
 
     return () => {
-      window.removeEventListener('storage', checkSidebarWidth);
-      window.removeEventListener('opscale-sidebar-toggle', checkSidebarWidth);
+      window.removeEventListener('resize', syncWidth);
+      window.removeEventListener('storage', syncWidth);
+      window.removeEventListener('opscale-sidebar-toggle', syncWidth);
     };
   }, []);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        minHeight: '100vh',
-        backgroundColor: t.bg,
-        color: t.text,
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-      }}
-    >
+    <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', color: t.text }}>
       <main
         style={{
           flex: 1,
           marginLeft: sidebarWidth,
-          transition: 'margin-left 0.3s ease',
-          backgroundColor: t.bg,
+          transition: 'margin-left 220ms ease',
+          padding: 20,
         }}
       >
-        {children}
+        <section
+          className="card-surface page-shell"
+          style={{
+            minHeight: 'calc(100vh - 40px)',
+            backgroundColor: 'rgba(8, 17, 35, 0.56)',
+            borderColor: t.border,
+          }}
+        >
+          {children}
+        </section>
       </main>
     </div>
   );

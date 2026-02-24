@@ -18,16 +18,14 @@ const DASH_VARIANT_KEY = 'dashboardVariant';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
-import { useTheme, themes } from '../contexts/ThemeContext';
 import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+import { InlineAlert, PageHeader } from '../components/ui/Primitives';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const t = themes[theme];
   const [data, setData] = useState(dashboardEnhanced);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -65,89 +63,29 @@ export default function Dashboard() {
     return () => (mounted = false);
   }, []);
 
-  const containerStyle = {
-    padding: '24px 32px',
-    backgroundColor: t.bg,
-    color: t.text,
-    minHeight: '100vh',
-  };
-
-  const headerStyle = {
-    marginBottom: 24,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
-  const titleStyle = {
-    fontSize: '24px',
-    fontWeight: '700',
-    letterSpacing: '-0.5px',
-  };
-
-  const kpiGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: 12,
-    marginBottom: 32,
-  };
-
-  const chartGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-    gap: 20,
-    marginBottom: 24,
-  };
-
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '13px',
-  };
-
-  const thStyle = {
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontWeight: '600',
-    backgroundColor: t.surface,
-    borderBottom: `1px solid ${t.border}`,
-    color: t.textSecondary,
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.3px',
-  };
-
-  const tdStyle = {
-    padding: '8px 12px',
-    borderBottom: `1px solid ${t.borderLight}`,
-    color: t.text,
-  };
-
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <h1 style={titleStyle}>Dashboard</h1>
-          <select value={variant} onChange={handleVariantChange} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}>
+    <div className="ui-page">
+      <PageHeader
+        title="Dashboard"
+        description={DASH_VARIANTS.find((v) => v.key === variant)?.description}
+        loading={loading}
+        right={(
+          <select value={variant} onChange={handleVariantChange} className="ui-select" style={{ width: 180 }}>
             {DASH_VARIANTS.map(v => <option key={v.key} value={v.key}>{v.label}</option>)}
           </select>
-        </div>
-        <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
-          {DASH_VARIANTS.find(v => v.key === variant)?.description}
-        </div>
-        {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
-      </div>
+        )}
+      />
 
       {error && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
+        <InlineAlert>
           Backend error, using mock data: {error}
-        </div>
+        </InlineAlert>
       )}
 
       {data && (
         <>
           {/* KPIs with Trends */}
-          <div style={kpiGridStyle}>
+          <div className="ui-grid-auto">
             {/* Shipper: All KPIs, Carrier: On-Time, Claims, Volume, Broker: Margin, Loads, Revenue */}
             {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
               <KPIWithTrend 
@@ -207,7 +145,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div style={chartGridStyle}>
+          <div className="ui-grid-wide">
             {/* Exception Distribution Chart (Shipper, Broker) or Claims (Carrier) */}
             {variant !== 'carrier' && dashboardPrefs.showExceptionDistribution && data.exceptionBreakdown && (
               <div style={{ minWidth: 0 }}>
@@ -236,36 +174,38 @@ export default function Dashboard() {
           </div>
 
           {/* Summary Tables */}
-          {dashboardPrefs.showRecentActivity && (
+          {dashboardPrefs.showRecentActivity && data.recentActivity && (
             <CollapsibleSection title={variant === 'broker' ? 'Recent Loads' : 'Recent Activity'} defaultOpen={true}>
-              <table style={tableStyle}>
+              <div className="ui-table-wrap">
+                <table className="ui-table">
                 <thead>
                   <tr>
-                    <th style={thStyle}>Type</th>
-                    <th style={thStyle}>{variant === 'broker' ? 'Load/File' : 'Invoice/File'}</th>
-                    <th style={thStyle}>{variant === 'broker' ? 'Margin' : 'Amount'}</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Timestamp</th>
+                    <th>Type</th>
+                    <th>{variant === 'broker' ? 'Load/File' : 'Invoice/File'}</th>
+                    <th>{variant === 'broker' ? 'Margin' : 'Amount'}</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.recentActivity?.slice(0, 5).map((activity) => (
                     <tr key={activity.id}>
-                      <td style={tdStyle}>{activity.type}</td>
-                      <td style={tdStyle}>{activity.invoiceNumber || activity.fileName}</td>
-                      <td style={tdStyle}>
+                      <td>{activity.type}</td>
+                      <td>{activity.invoiceNumber || activity.fileName}</td>
+                      <td>
                         {variant === 'broker'
                           ? (activity.margin ? `${activity.margin}%` : activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)
                           : (activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)}
                       </td>
-                      <td style={tdStyle}>{activity.status}</td>
-                      <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
+                      <td>{activity.status}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                         {new Date(activity.timestamp).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+                </table>
+              </div>
             </CollapsibleSection>
           )}
         </>
