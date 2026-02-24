@@ -123,19 +123,6 @@ export default function Login() {
     backgroundColor: t.bgAlt,
     color: t.text,
     fontSize: 13,
-        <div style={{ ...containerStyle, flexDirection: 'row', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 32 }}>
-            <svg width="96" height="96" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
-              <path d="M12 44 Q10 36 18 34 Q16 18 32 14 Q48 18 46 34 Q54 36 52 44 Q54 54 48 52 Q44 50 40 54 Q36 58 32 54 Q28 58 24 54 Q20 50 16 52 Q10 54 14 50 Q6 60 24 56 Q18 54 22 56 Q32 60 36 56 Q40 52 44 56 Q48 60 50 56 Q52 52 54 56 Q56 58 56 40 Q56 18 32 10 Q8 18 8 40 Q8 58 12 44 Z" fill="#fff" stroke="#222" strokeWidth="2"/>
-              <ellipse cx="25" cy="32" rx="2" ry="3" fill="#222"/>
-              <ellipse cx="39" cy="32" rx="2" ry="3" fill="#222"/>
-              <ellipse cx="25" cy="31" rx="0.7" ry="1.2" fill="#fff"/>
-              <ellipse cx="39" cy="31" rx="0.7" ry="1.2" fill="#fff"/>
-              <path d="M28 40 Q32 44 36 40" stroke="#222" strokeWidth="1.5" fill="none"/>
-              <path d="M18 38 Q14 34 20 32" stroke="#222" strokeWidth="2" fill="none"/>
-              <path d="M46 38 Q50 34 44 32" stroke="#222" strokeWidth="2" fill="none"/>
-            </svg>
-          </div>
   };
 
   const buttonStyle = {
