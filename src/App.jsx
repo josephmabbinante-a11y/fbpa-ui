@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import LoginTest from "./components/LoginTest";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DemoProvider } from "./demo/DemoContext";
@@ -44,6 +45,7 @@ const appRouteDefs = [
   { path: "/fleet-dashboard", element: <FleetDashboard /> },
   { path: "/profile", element: <MyAuditIQProfile /> },
   { path: "/system-status", element: <SystemStatus /> },
+  { path: "/smoke-test", element: <LoginTest /> },
 ];
 
 function LoadingFallback() {
