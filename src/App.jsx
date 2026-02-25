@@ -1,5 +1,4 @@
 import { Suspense, lazy } from "react";
-import { Analytics } from "@vercel/analytics/next";
 import LoginTest from "./components/LoginTest";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -110,7 +109,6 @@ function App() {
           <AppRoutes />
           <DemoGuide />
           <AIBot />
-          <Analytics />
         </BrowserRouter>
       </ThemeProvider>
     </DemoProvider>
