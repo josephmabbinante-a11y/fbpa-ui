@@ -156,8 +156,8 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   console.log('Register request body:', req.body);
   const { email, password, role } = req.body || {};
-  if (!email || !password) {
-    console.log('Register error: Email and password required');
+  if (!email || typeof password !== 'string' || password.trim() === '') {
+    console.log('Register error: Email and password required (non-empty)');
     return res.status(400).json({ error: 'Email and password required' });
   }
   try {
