@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const uri = "mongodb+srv://<db_username>:<db_password>@cluster0.fvycshx.mongodb.net/?appName=Cluster0";
+const uri = "mongodb+srv://FBPADB:FBPAAUDIT@cluster0.fvycshx.mongodb.net/fbpa-db?retryWrites=true&w=majority";
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
 
