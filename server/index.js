@@ -11,6 +11,7 @@ import rateLogicRouter from './rateLogic.js';
 import healthRoutes from './routes.js';
 import nodemailer from 'nodemailer';
 import { User } from './models.js';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -131,7 +132,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
   try {
     const user = await User.findOne({ email });
-    if (!user || user.password !== password) {
+    if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
       console.log('Login error: Invalid credentials for', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -165,7 +166,8 @@ app.post('/api/auth/register', async (req, res) => {
       console.log('Register error: User already exists for', email);
       return res.status(409).json({ error: 'User already exists' });
     }
-    const user = await User.create({ email, password, role: role || 'user' });
+    const passwordHash = bcrypt.hashSync(password, 10);
+    const user = await User.create({ email, passwordHash, role: role || 'user' });
     console.log('Register success for', email);
     res.json({ success: true, user: { id: user._id, email: user.email, role: user.role } });
   } catch (err) {
