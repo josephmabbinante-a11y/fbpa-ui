@@ -27,6 +27,8 @@ export const ThemeProvider = ({ children }) => {
     const active = themes[theme];
     const root = document.documentElement;
     root.setAttribute('data-theme', theme);
+    // Add smooth transition for theme changes
+    root.style.transition = 'background-color 0.4s, color 0.4s';
     root.style.setProperty('--bg', active.bg);
     root.style.setProperty('--bg-alt', active.bgAlt);
     root.style.setProperty('--text', active.text);
