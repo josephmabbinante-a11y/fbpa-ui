@@ -16,7 +16,7 @@
   --radius-lg: 18px;
   --shadow-float: 0 16px 38px rgba(0, 0, 0, 0.35);
   --sidebar-width: 264px;
-}
+/* removed stray closing brace */
 
 * {
   box-sizing: border-box;
