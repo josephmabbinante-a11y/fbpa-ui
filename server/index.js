@@ -15,6 +15,11 @@ import invoicesRouter from './invoices.js';
 import exceptionsRouter from './exceptions.js';
 import messagesRouter from './messages.js';
 import rateLogicRouter from './rateLogic.js';
+import dashboardRouter from './dashboard.js';
+import reportsRouter from './reports.js';
+import uploadsRouter from './uploads.js';
+import invoiceImagesRouter from './invoiceImages.js';
+import ediRouter from './edi.js';
 
 dotenv.config();
 
@@ -155,12 +160,21 @@ app.use('/api/invoices', invoicesRouter);
 app.use('/api/exceptions', exceptionsRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/rate-logic', rateLogicRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/reports', reportsRouter);
+app.use('/api/uploads', uploadsRouter);
+app.use('/api/invoice-images', invoiceImagesRouter);
+app.use('/api/edi', ediRouter);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
 const users = [
   { id: 'u-1', email: 'admin@opscale.ai', role: 'admin', password: 'password123' },
 ];
 
-app.post('/auth/login', (req, res) => {
+const handleLogin = (req, res) => {
   const { email, password } = req.body || {};
   const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
   const user = users.find((u) => u.email === email && u.password === password);
@@ -179,6 +193,34 @@ app.post('/auth/login', (req, res) => {
   return res.json({
     accessToken,
     user: { id: authedUser.id, email: authedUser.email, role: authedUser.role },
+  });
+};
+
+app.post('/auth/login', handleLogin);
+app.post('/api/auth/login', handleLogin);
+
+app.post('/api/auth/register', (req, res) => {
+  const { email, password, role } = req.body || {};
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const passwordText = String(password || '');
+
+  if (!normalizedEmail || !passwordText) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+  if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
+    return res.status(409).json({ error: 'User already exists' });
+  }
+
+  const user = {
+    id: `u-${Date.now()}`,
+    email: normalizedEmail,
+    role: role === 'admin' ? 'admin' : 'user',
+    password: passwordText,
+  };
+  users.push(user);
+
+  return res.status(201).json({
+    user: { id: user.id, email: user.email, role: user.role },
   });
 });
 
