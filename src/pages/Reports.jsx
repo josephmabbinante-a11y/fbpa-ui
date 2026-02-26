@@ -128,11 +128,23 @@ export default function Reports() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <TrendLineChart data={data?.savingsTrend || []} color="#10b981" label="Savings" />
-        <TrendLineChart data={data?.exceptionTrend || []} color="#ef4444" label="Exceptions" />
+        <TrendLineChart
+          data={data?.savingsTrend || []}
+          dataKey="savings"
+          title="Savings Trend"
+          color="#10b981"
+          yAxisLabel="Savings ($)"
+        />
+        <TrendLineChart
+          data={data?.exceptionTrend || []}
+          dataKey="exceptions"
+          title="Exception Trend"
+          color="#ef4444"
+          yAxisLabel="Count"
+        />
       </div>
 
-      {data?.auditMetrics ? <AuditDrillDown data={data.auditMetrics} /> : null}
+      {data?.auditMetrics ? <AuditDrillDown auditMetrics={data.auditMetrics} /> : null}
       {data?.categoryDrilldown ? <CategoryDrilldown data={data.categoryDrilldown} /> : null}
     </div>
   );
