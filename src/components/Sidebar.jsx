@@ -42,8 +42,6 @@ export default function Sidebar() {
     window.addEventListener('resize', updateViewport);
     return () => window.removeEventListener('resize', updateViewport);
   }, []);
-  }, []);
-
 
   useEffect(() => {
     window.dispatchEvent(new Event('opscale-sidebar-toggle'));
