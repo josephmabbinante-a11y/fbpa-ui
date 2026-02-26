@@ -20,7 +20,8 @@ export default function Dashboard() {
       const prefs = JSON.parse(localStorage.getItem(DASH_PREFS_KEY));
       if (prefs) setDashboardPrefs(prefs);
     } catch {}
-  }
+  }, []);
+
   // KPICompact component for KPI row
   function KPICompact({ title, value, change, accent }) {
     return (
@@ -42,42 +43,7 @@ export default function Dashboard() {
 
   // Tailwind Freight Intelligence Command Center Layout
   return (
-    <div></div>
-  );
-        </div>
-
-        {/* KPI ROW */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-          {/* Example KPI cards, replace with real data */}
-          <KPICompact title="Recovery Rate %" value={data.summary?.recoveryRate || 92.5} change={+2.1} accent="border-l-4 border-green-400" />
-          <KPICompact title="Total Recovered ($)" value={data.summary?.totalRecovered || 12450.75} change={+4.3} accent="border-l-4 border-blue-400" />
-          <KPICompact title="Exception Rate %" value={data.summary?.exceptionRate || 7.1} change={-0.8} accent="border-l-4 border-red-400" />
-          <KPICompact title="Cost per Shipment" value={data.summary?.costPerShipment || 32.8} change={+0.5} accent="border-l-4 border-yellow-400" />
-          <KPICompact title="Avg Resolution Time" value={data.summary?.avgResolutionTime || 2.4} change={-0.2} accent="border-l-4 border-purple-400" />
-        </div>
-
-        {/* PRIMARY ANALYTICS ROW */}
-        <div className="grid grid-cols-12 gap-6 mb-6">
-          <div className="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Savings & Recovery Trend</div>
-            {/* Savings Trend Chart placeholder */}
-            <SavingsByCarrierChart data={data.trends?.savingsTrend} />
-          </div>
-          <div className="col-span-12 lg:col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Exception Trend</div>
-            {/* Exception Trend Chart placeholder */}
-            <ExceptionBreakdownChart data={data.trends?.exceptionTrend} />
-          </div>
-        </div>
-
-        {/* SECONDARY ANALYTICS ROW */}
-        <div className="grid grid-cols-12 gap-6 mb-6">
-          <div className="col-span-12 lg:col-span-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Accessorial Breakdown</div>
-            {/* Accessorial Breakdown Chart placeholder */}
-            {/* Replace with actual horizontal bar chart */}
-            <div className="h-48 flex items-center justify-center text-gray-400">[Accessorial Chart]</div>
-          </div>
+    // ...existing code...
           <div className="col-span-12 lg:col-span-6 bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200">
             <div className="text-lg font-semibold text-gray-800 mb-4">Carrier Overcharge Leaderboard</div>
             {/* Carrier Leaderboard Table placeholder */}
@@ -172,26 +138,6 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
-
-// KPICompact component for KPI row
-function KPICompact({ title, value, change, accent }) {
-  return (
-    <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-5 ${accent} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col gap-2`}>
-      <div className="text-sm text-gray-500 font-medium">{title}</div>
-      <div className="text-3xl font-bold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</div>
-      <div className="flex items-center gap-2">
-        {change !== undefined && (
-          <span className={change > 0 ? 'text-green-600' : 'text-red-600'}>
-            {change > 0 ? '▲' : '▼'} {Math.abs(change)}%
-          </span>
-        )}
-        {/* Sparkline placeholder */}
-        <span className="ml-auto text-xs text-gray-400">[Sparkline]</span>
-      </div>
-    </div>
-  );
-}
               <div className="text-lg font-semibold text-gray-800">🕒 Recent Activity</div>
               <button className="bg-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm hover:bg-gray-300 transition-all duration-200">View All</button>
             </div>
