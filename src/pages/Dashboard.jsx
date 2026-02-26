@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react';
-// ...existing code...
-import { useEffect, useState } from 'react';
 // ...existing imports...
 
 export default function Dashboard() {
@@ -102,11 +100,7 @@ export default function Dashboard() {
                 <thead className="bg-gray-100 text-xs uppercase tracking-wide">
                   <tr>
                     <th className="px-3 py-2 text-left">Carrier</th>
-                    <th className="px-3 py-2 text-left">Disputes</th>
-                    <th className="px-3 py-2 text-left">Recovery $</th>
-                    <th className="px-3 py-2 text-left">Overcharge %</th>
-                  </tr>
-                </thead>
+// ...existing code...
                 <tbody>
                   {/* Replace with real leaderboard data */}
                   <tr className="even:bg-gray-50 hover:bg-gray-100">
