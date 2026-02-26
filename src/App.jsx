@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DemoProvider } from "./demo/DemoContext";
 import DemoGuide from "./demo/DemoGuide";
-import AIBot from "./components/AIBot";
 import Sidebar from "./components/Sidebar";
 import Layout from "./components/Layout";
 
@@ -108,7 +107,6 @@ function App() {
         <BrowserRouter>
           <AppRoutes />
           <DemoGuide />
-          <AIBot />
         </BrowserRouter>
       </ThemeProvider>
     </DemoProvider>

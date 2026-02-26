@@ -53,7 +53,7 @@ export default function FleetDashboard() {
   const { theme } = useTheme();
   const t = themes[theme];
   const [selectedDriver, setSelectedDriver] = useState(mockDrivers[0]);
-  const [menu, setMenu] = useState('profile');
+  // Remove menu state
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: t.bg, color: t.text }}>
@@ -61,27 +61,22 @@ export default function FleetDashboard() {
       <div style={{ width: 220, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ padding: '24px 0 0 0' }}>
           <div style={{ padding: '0 18px', marginBottom: 18 }}>
-            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 18 }}>Menu</div>
-            {['profile', 'compliance', 'telematics', 'eld', 'mobile'].map((item) => (
+            <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 18 }}>Drivers</div>
+            {mockDrivers.map((driver) => (
               <div
-                key={item}
-                onClick={() => setMenu(item)}
+                key={driver.id}
+                onClick={() => setSelectedDriver(driver)}
                 style={{
-                  marginBottom: 12,
-                  fontWeight: menu === item ? 700 : 500,
-                  color: menu === item ? t.accent : t.text,
+                  marginBottom: 8,
+                  color: selectedDriver.id === driver.id ? t.accent : t.textSecondary,
+                  fontWeight: selectedDriver.id === driver.id ? 700 : 500,
                   cursor: 'pointer',
-                  background: menu === item ? t.bgAlt : 'none',
-                  borderRadius: 6,
-                  padding: '8px 12px',
-                  transition: 'background 0.2s',
+                  padding: '4px 8px',
+                  borderRadius: 4,
+                  background: selectedDriver.id === driver.id ? t.bgAlt : 'none',
                 }}
               >
-                {item === 'profile' && 'Driver Profile'}
-                {item === 'compliance' && 'DQF Management'}
-                {item === 'telematics' && 'Telematics & Maps'}
-                {item === 'eld' && 'ELD & ETAs'}
-                {item === 'mobile' && 'Driver App'}
+                {driver.name}
               </div>
             ))}
           </div>
@@ -112,77 +107,59 @@ export default function FleetDashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content: Merge all fields into Driver Profile */}
       <div style={{ flex: 1, padding: 32 }}>
-        {menu === 'profile' && (
-          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 600 }}>
-            <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 8 }}>{selectedDriver.name}</div>
-            <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>{selectedDriver.company} · <span style={{ color: t.positive }}>{selectedDriver.status}</span></div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <button style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600 }}>VoIP Call</button>
-              <button style={{ background: t.warning, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600 }}>SMS</button>
-            </div>
-            <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Compliance: {selectedDriver.compliance}%</div>
-            <div style={{ fontWeight: 600, marginBottom: 6 }}>Documents</div>
-            <ul style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>
-              {selectedDriver.docs.map((doc, i) => (
-                <li key={i}>{doc.name} - <span style={{ color: doc.status === 'Complete' ? t.positive : t.warning }}>{doc.status}</span></li>
-              ))}
-            </ul>
+        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 900 }}>
+          <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 8 }}>{selectedDriver.name}</div>
+          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>{selectedDriver.company} · <span style={{ color: t.positive }}>{selectedDriver.status}</span></div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <button style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600 }}>VoIP Call</button>
+            <button style={{ background: t.warning, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600 }}>SMS</button>
           </div>
-        )}
-        {menu === 'compliance' && (
-          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 600 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>DQF Management</div>
-            <div style={{ fontSize: 14, color: t.textSecondary }}>Safety & Compliance checklist, document uploads, and blank forms.</div>
+          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Compliance: {selectedDriver.compliance}%</div>
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>Documents</div>
+          <ul style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>
+            {selectedDriver.docs.map((doc, i) => (
+              <li key={i}>{doc.name} - <span style={{ color: doc.status === 'Complete' ? t.positive : t.warning }}>{doc.status}</span></li>
+            ))}
+          </ul>
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>DQF Management</div>
+          <div style={{ fontSize: 14, color: t.textSecondary }}>Safety & Compliance checklist, document uploads, and blank forms.</div>
+          <div style={{ fontWeight: 600, marginBottom: 8, marginTop: 24 }}>Real-Time Telematics & Traffic</div>
+          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Location: {selectedDriver.telematics.location}</div>
+          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>ETA: {selectedDriver.telematics.eta}</div>
+          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Status: {selectedDriver.telematics.status}</div>
+          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Times: {selectedDriver.telematics.times.join(' · ')}</div>
+          <div style={{ height: 180, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
+            <span>Trimble Maps (placeholder)</span>
           </div>
-        )}
-        {menu === 'telematics' && (
-          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 600 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Real-Time Telematics & Traffic</div>
-            <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Location: {selectedDriver.telematics.location}</div>
-            <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>ETA: {selectedDriver.telematics.eta}</div>
-            <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Status: {selectedDriver.telematics.status}</div>
-            <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Times: {selectedDriver.telematics.times.join(' · ')}</div>
-            <div style={{ height: 180, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
-              <span>Trimble Maps (placeholder)</span>
-            </div>
-          </div>
-        )}
-        {menu === 'eld' && (
-          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 900 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Integrated ELD & ETAs</div>
-            <table style={{ width: '100%', fontSize: 14 }}>
-              <thead>
-                <tr style={{ color: t.textSecondary }}>
-                  <th>Driver</th>
-                  <th>Status</th>
-                  <th>ETA</th>
-                  <th>Times</th>
+          <div style={{ fontWeight: 600, marginBottom: 8, marginTop: 24 }}>Integrated ELD & ETAs</div>
+          <table style={{ width: '100%', fontSize: 14 }}>
+            <thead>
+              <tr style={{ color: t.textSecondary }}>
+                <th>Driver</th>
+                <th>Status</th>
+                <th>ETA</th>
+                <th>Times</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mockELD.map((row, i) => (
+                <tr key={i}>
+                  <td>{row.driver}</td>
+                  <td>{row.status}</td>
+                  <td>{row.eta}</td>
+                  <td>{row.times.join(' · ')}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {mockELD.map((row, i) => (
-                  <tr key={i}>
-                    <td>{row.driver}</td>
-                    <td>{row.status}</td>
-                    <td>{row.eta}</td>
-                    <td>{row.times.join(' · ')}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ fontWeight: 600, marginBottom: 8, marginTop: 24 }}>Driver Application</div>
+          <div style={{ fontSize: 14, color: t.textSecondary }}>Mobile app preview and driver features.</div>
+          <div style={{ height: 120, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
+            <span>Mobile App (placeholder)</span>
           </div>
-        )}
-        {menu === 'mobile' && (
-          <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 600 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Driver Application</div>
-            <div style={{ fontSize: 14, color: t.textSecondary }}>Mobile app preview and driver features.</div>
-            <div style={{ height: 120, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
-              <span>Mobile App (placeholder)</span>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
