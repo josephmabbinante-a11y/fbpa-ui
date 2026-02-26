@@ -11,6 +11,7 @@ const navItems = [
   { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic' },
   { id: 'reports', label: 'Reports', icon: 'RP', path: '/reports' },
   { id: 'carriers', label: 'Carrier Performance', icon: 'CP', path: '/carriers' },
+  { id: 'loads', label: 'Loads', icon: 'LD', path: '/loads' },
   { id: 'uploads', label: 'Uploads', icon: 'UP', path: '/uploads' },
   { id: 'customers', label: 'Customers', icon: 'CU', path: '/customers' },
   { id: 'profile', label: 'My Audit IQ Profile', icon: 'PR', path: '/profile' },

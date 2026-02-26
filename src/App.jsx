@@ -1,3 +1,4 @@
+const Loads = lazy(() => import("./pages/Loads"));
 import { Suspense, lazy } from "react";
 import LoginTest from "./components/LoginTest";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
@@ -37,6 +38,7 @@ const appRouteDefs = [
   { path: "/reports/:reportId", element: <ReportDetail /> },
   { path: "/carriers", element: <CarriersPerformance /> },
   { path: "/carriers/:carrier", element: <CarrierScorecard /> },
+  { path: "/loads", element: <Loads /> },
   { path: "/uploads", element: <Uploads /> },
   { path: "/customers", element: <Customers /> },
   { path: "/settings", element: <Settings /> },
