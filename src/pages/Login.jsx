@@ -98,15 +98,20 @@ export default function Login() {
     <div className="auth-shell">
       <div className="auth-wrap">
         <div className="auth-logo-panel">
-          <svg width="96" height="96" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 44 Q10 36 18 34 Q16 18 32 14 Q48 18 46 34 Q54 36 52 44 Q54 54 48 52 Q44 50 40 54 Q36 58 32 54 Q28 58 24 54 Q20 50 16 52 Q10 54 12 44 Z" fill="#fff" stroke="#222" strokeWidth="2"/>
-            <ellipse cx="25" cy="32" rx="2" ry="3" fill="#222"/>
-            <ellipse cx="39" cy="32" rx="2" ry="3" fill="#222"/>
-            <ellipse cx="25" cy="31" rx="0.7" ry="1.2" fill="#fff"/>
-            <ellipse cx="39" cy="31" rx="0.7" ry="1.2" fill="#fff"/>
-            <path d="M28 40 Q32 44 36 40" stroke="#222" strokeWidth="1.5" fill="none"/>
-            <path d="M18 38 Q14 34 20 32" stroke="#222" strokeWidth="2" fill="none"/>
-            <path d="M46 38 Q50 34 44 32" stroke="#222" strokeWidth="2" fill="none"/>
+          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Security badge">
+            <circle cx="60" cy="60" r="56" stroke="rgba(24, 210, 255, 0.45)" strokeWidth="2" />
+            <circle cx="60" cy="60" r="46" fill="rgba(15, 27, 54, 0.75)" />
+            <path d="M60 22L90 34V58C90 76 76 92 60 98C44 92 30 76 30 58V34L60 22Z" fill="url(#badgeFill)" stroke="#7dd9ff" strokeWidth="2" />
+            <rect x="46" y="62" width="8" height="14" rx="1.5" fill="#5f8cff" />
+            <rect x="58" y="54" width="8" height="22" rx="1.5" fill="#18d2ff" />
+            <rect x="70" y="46" width="8" height="30" rx="1.5" fill="#4ade80" />
+            <path d="M48 44L57 52L73 37" stroke="#9cff6d" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            <defs>
+              <linearGradient id="badgeFill" x1="60" y1="22" x2="60" y2="98" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#163265" />
+                <stop offset="1" stopColor="#0b1633" />
+              </linearGradient>
+            </defs>
           </svg>
         </div>
 
