@@ -39,7 +39,7 @@ const mockDrivers = [
       eta: '2 hours 10 mins',
       status: 'Sleeper',
       times: ['06:42', '01:29', '01:29', '29:30'],
-    );
+    },
   }
       {/* Sidebar: Driver List */}
       <div style={{ width: 220, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
