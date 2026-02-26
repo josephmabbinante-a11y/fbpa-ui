@@ -75,13 +75,15 @@ const defaultAllowedOrigins = [
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-e3wffttsx-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-ui-git-fbpa-josephmabbinante-a11ys-projects.vercel.app',
+  // Allow all Vercel preview/production URLs
+  /^https:\/\/.*\.vercel\.app$/,
 ];
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
-const allowVercelOrigins = process.env.ALLOW_VERCEL_ORIGINS === 'true';
+const allowVercelOrigins = true;
 
 // JWT authentication middleware
 function authenticateJWT(req, res, next) {
