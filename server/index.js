@@ -74,6 +74,7 @@ const defaultAllowedOrigins = [
   // Production web environment (Vercel)
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-e3wffttsx-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-ui-git-fbpa-josephmabbinante-a11ys-projects.vercel.app',
 ];
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
