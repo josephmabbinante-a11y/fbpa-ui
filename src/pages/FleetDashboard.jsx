@@ -41,43 +41,6 @@ const mockDrivers = [
       times: ['06:42', '01:29', '01:29', '29:30'],
     },
   },
-            <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>Drivers</div>
-            {mockDrivers.map((driver) => (
-              <div
-                key={driver.id}
-                onClick={() => setSelectedDriver(driver)}
-                style={{
-                  marginBottom: 8,
-                  color: selectedDriver.id === driver.id ? t.accent : t.textSecondary,
-                  fontWeight: selectedDriver.id === driver.id ? 700 : 500,
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: 4,
-                  background: selectedDriver.id === driver.id ? t.bgAlt : 'none',
-                }}
-              >
-                {driver.name}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div style={{ padding: 18 }}>
-          <button style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontWeight: 600, marginRight: 8 }}>VoIP Call</button>
-          <button style={{ background: t.warning, color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontWeight: 600 }}>SMS</button>
-        </div>
-      </div>
-
-      {/* Main Content: Merge all fields into Driver Profile */}
-      <div style={{ flex: 1, padding: 32 }}>
-        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 900 }}>
-          <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 8 }}>{selectedDriver.name}</div>
-          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>{selectedDriver.company} · <span style={{ color: t.positive }}>{selectedDriver.status}</span></div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button style={{ background: t.accent, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600 }}>VoIP Call</button>
-            <button style={{ background: t.warning, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 12px', fontWeight: 600 }}>SMS</button>
-          </div>
-          <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>Compliance: {selectedDriver.compliance}%</div>
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>Documents</div>
           <ul style={{ fontSize: 14, color: t.textSecondary, marginBottom: 8 }}>
             {selectedDriver.docs.map((doc, i) => (
               <li key={i}>{doc.name} - <span style={{ color: doc.status === 'Complete' ? t.positive : t.warning }}>{doc.status}</span></li>
