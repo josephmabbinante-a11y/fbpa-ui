@@ -27,19 +27,21 @@ const MyAuditIQProfile = lazy(() => import("./pages/MyAuditIQProfile"));
 const SystemStatus = lazy(() => import("./pages/SystemStatus"));
 // Register page is now merged into Login
 
+import ExceptionsUploads from "./pages/ExceptionsUploads";
+
 const appRouteDefs = [
   { path: "/", element: <Dashboard /> },
   { path: "/dashboard", element: <Dashboard /> },
   { path: "/invoices", element: <Invoices /> },
   { path: "/invoices/:id", element: <InvoiceDetail /> },
-  { path: "/exceptions", element: <Exceptions /> },
+  { path: "/exceptions", element: <ExceptionsUploads /> },
+  { path: "/uploads", element: <ExceptionsUploads /> },
   { path: "/exceptions/:id", element: <ExceptionDrilldown /> },
   { path: "/reports", element: <Reports /> },
   { path: "/reports/:reportId", element: <ReportDetail /> },
   { path: "/carriers", element: <CarriersPerformance /> },
   { path: "/carriers/:carrier", element: <CarrierScorecard /> },
   { path: "/loads", element: <Loads /> },
-  { path: "/uploads", element: <Uploads /> },
   { path: "/customers", element: <Customers /> },
   { path: "/settings", element: <Settings /> },
   { path: "/rate-logic", element: <RateLogicTool /> },
