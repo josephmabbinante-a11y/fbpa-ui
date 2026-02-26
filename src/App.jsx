@@ -6,6 +6,7 @@ import DemoGuide from './demo/DemoGuide';
 import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
 import LoginTest from './components/LoginTest';
+import { getAccessToken } from './utils/authToken';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CombinedPage = lazy(() => import('./pages/CombinedPage'));
@@ -50,14 +51,8 @@ function LoadingFallback() {
 
 function AppRoutes() {
   const location = useLocation();
-  const isLogin = location.pathname === '/login';
-  let isAuthed = false;
-
-  try {
-    isAuthed = Boolean(localStorage.getItem('accessToken'));
-  } catch {
-    isAuthed = false;
-  }
+  const isLogin = location.pathname === '/login' || location.pathname === '/login/';
+  const isAuthed = Boolean(getAccessToken());
 
   if (isLogin) {
     return (

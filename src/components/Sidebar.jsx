@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
+import { clearAccessToken } from '../utils/authToken';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
@@ -165,11 +166,7 @@ export default function Sidebar() {
           type="button"
           className="neon-outline"
           onClick={() => {
-            try {
-              localStorage.removeItem('accessToken');
-            } catch {
-              // Ignore localStorage issues in private mode.
-            }
+            clearAccessToken();
             navigate('/login');
           }}
           style={{

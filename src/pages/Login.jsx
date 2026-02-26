@@ -4,6 +4,7 @@ import { login } from "../api/client";
 import logo from "../assets/opscale-logo.svg";
 import RegisterForm from "../components/Register";
 import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
+import { setAccessToken } from "../utils/authToken";
 
 function ForgotPasswordModal({ onClose }) {
   const [email, setEmail] = useState("");
@@ -79,11 +80,7 @@ export default function Login() {
     const res = await login({ email, password });
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      try {
-        localStorage.setItem("accessToken", res.accessToken);
-      } catch {
-        // Ignore storage errors.
-      }
+      setAccessToken(res.accessToken);
       navigate("/dashboard");
     } else {
       setStatus(res && res.error ? res.error : "Invalid email or password");

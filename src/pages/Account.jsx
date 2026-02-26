@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
+import { clearAccessToken } from '../utils/authToken';
 
 export default function Account() {
   const { theme, setTheme } = useTheme();
@@ -374,11 +375,7 @@ export default function Account() {
                 style={{ ...buttonStyle, backgroundColor: '#ef4444' }}
                 onClick={() => {
                   if (window.confirm('Are you sure you want to log out?')) {
-                    try {
-                      localStorage.removeItem('accessToken');
-                    } catch {
-                      // ignore
-                    }
+                    clearAccessToken();
                     navigate('/login');
                   }
                 }}
