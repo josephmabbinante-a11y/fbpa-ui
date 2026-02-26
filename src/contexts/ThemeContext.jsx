@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 const ThemeContext = createContext();
 const THEME_STORAGE_KEY = 'opscale_theme';
@@ -6,6 +6,9 @@ const TRANSITION_CLASS = 'theme-transition';
 const TRANSITION_MS = 220;
 
 export const ThemeProvider = ({ children }) => {
+  const previousThemeRef = useRef(null);
+  const transitionTimerRef = useRef(null);
+
   const [theme, setTheme] = useState(() => {
     try {
       return localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
@@ -26,7 +29,7 @@ export const ThemeProvider = ({ children }) => {
     });
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const active = themes[theme] || themes.dark;
     const root = document.documentElement;
     const body = document.body;
@@ -46,17 +49,29 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--error', active.error);
     root.style.setProperty('--glow', active.glow);
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return undefined;
+    const shouldAnimate =
+      previousThemeRef.current !== null &&
+      previousThemeRef.current !== theme &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (shouldAnimate) {
+      body.classList.add(TRANSITION_CLASS);
+      if (transitionTimerRef.current) {
+        window.clearTimeout(transitionTimerRef.current);
+      }
+      transitionTimerRef.current = window.setTimeout(() => {
+        body.classList.remove(TRANSITION_CLASS);
+        transitionTimerRef.current = null;
+      }, TRANSITION_MS);
     }
 
-    body.classList.add(TRANSITION_CLASS);
-    const timeout = window.setTimeout(() => {
-      body.classList.remove(TRANSITION_CLASS);
-    }, TRANSITION_MS);
+    previousThemeRef.current = theme;
 
     return () => {
-      window.clearTimeout(timeout);
+      if (transitionTimerRef.current) {
+        window.clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = null;
+      }
       body.classList.remove(TRANSITION_CLASS);
     };
   }, [theme]);
