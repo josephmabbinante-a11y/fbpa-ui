@@ -41,11 +41,6 @@ export default function Dashboard() {
           </div>
         );
       }
-              </div>
-            </CollapsibleSection>
-          )}
-        </>
-      )}
     </div>
   );
 }

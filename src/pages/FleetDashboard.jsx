@@ -39,23 +39,8 @@ const mockDrivers = [
       eta: '2 hours 10 mins',
       status: 'Sleeper',
       times: ['06:42', '01:29', '01:29', '29:30'],
-    },
-  },
-];
-
-const mockELD = [
-  { driver: 'Mohamed Fernandez Yaser', status: 'Driving', eta: 'Deerfield Beach, FL in 6 hours 5 mins', times: ['04:09', '05:19', '07:17', '08:28'] },
-  { driver: 'Chandier Rivera Rodriguez', status: 'Driving', eta: 'Evansville, TN in 1 hour 59 mins', times: ['01:01', '04:01', '06:37', '62:44'] },
-  { driver: 'Gabor Ujhelyi', status: 'Sleeper', eta: 'Swedesboro, NJ in 7 hours 20 mins', times: ['06:42', '01:29', '01:29', '29:30'] },
-];
-
-export default function FleetDashboard() {
-  const { theme } = useTheme();
-  const t = themes[theme];
-  const [selectedDriver, setSelectedDriver] = useState(mockDrivers[0]);
-
-  return (
-    <div style={{ background: t.bgAlt, minHeight: '100vh', display: 'flex' }}>
+    );
+  }
       {/* Sidebar: Driver List */}
       <div style={{ width: 220, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ padding: '24px 0 0 0' }}>
