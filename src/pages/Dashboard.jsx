@@ -39,7 +39,7 @@ export default function Dashboard() {
         {/* Page Header */}
         <div className="mb-8">
           <PageHeader
-            title={<span className="text-2xl font-semibold text-gray-900">Freight Intelligence Command Center 📊</span>}
+            title={<span className="text-2xl font-semibold text-gray-900">📊 Freight Intelligence Command Center</span>}
             description={<span className="text-lg text-gray-800">Enterprise analytics for cost recovery, trends, and operational performance</span>}
             loading={loading}
           />
@@ -75,12 +75,12 @@ export default function Dashboard() {
         {/* Primary Analytics Row */}
         <div className="grid grid-cols-12 gap-6 mb-6">
           <div className="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Savings & Recovery Trend</div>
+            <div className="text-lg font-semibold text-gray-800 mb-4">💸 Savings & Recovery Trend</div>
             {/* Savings Trend Chart component here */}
             <SavingsByCarrierChart data={data.savingsByCarrier} />
           </div>
           <div className="col-span-12 lg:col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Exception Trend</div>
+            <div className="text-lg font-semibold text-gray-800 mb-4">🚨 Exception Trend</div>
             {/* Exception Trend Chart component here */}
             <ExceptionBreakdownChart data={data.exceptionBreakdown} />
           </div>
@@ -88,13 +88,13 @@ export default function Dashboard() {
         {/* Secondary Analytics Row */}
         <div className="grid grid-cols-12 gap-6 mb-6">
           <div className="col-span-12 lg:col-span-6 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Accessorial Breakdown</div>
+            <div className="text-lg font-semibold text-gray-800 mb-4">🧾 Accessorial Breakdown</div>
             {/* Accessorial Breakdown Chart component here */}
             {/* Replace with actual chart */}
             <div className="h-48 flex items-center justify-center text-gray-400">[Accessorial Chart Placeholder]</div>
           </div>
           <div className="col-span-12 lg:col-span-6 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
-            <div className="text-lg font-semibold text-gray-800 mb-4">Carrier Overcharge Leaderboard</div>
+            <div className="text-lg font-semibold text-gray-800 mb-4">🚚 Carrier Overcharge Leaderboard</div>
             {/* Carrier Leaderboard Table component here */}
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -135,7 +135,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-12 gap-6 mb-6">
           <div className="col-span-12 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-lg font-semibold text-gray-800">Recent Activity</div>
+              <div className="text-lg font-semibold text-gray-800">🕒 Recent Activity</div>
               <button className="bg-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm hover:bg-gray-300 transition-all duration-200">View All</button>
             </div>
             <div className="overflow-x-auto">
