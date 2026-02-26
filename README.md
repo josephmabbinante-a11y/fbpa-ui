@@ -14,3 +14,42 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+---
+
+## Debugging Authentication (Login/Register/Forgot Password)
+
+### Backend (Node/Express)
+- All authentication endpoints (`/auth/login`, `/auth/register`, `/auth/forgot-password`) now log incoming request bodies and errors to the server console.
+- If you get a 400 or 401 error, check the server logs for details (e.g., missing fields, invalid credentials).
+- If you get a 500 error, check for stack traces or error messages in the server logs.
+
+### Frontend (React)
+- The login and register forms now display backend error messages directly in the UI.
+- The frontend also logs all payloads and errors to the browser console for easier debugging.
+
+### Postman/Curl Testing
+- Use the provided `FBPA-auth-api.postman_collection.json` to test endpoints directly.
+- Always set `Content-Type: application/json` and provide the required fields in the request body.
+
+### Common Issues
+- **400 Bad Request:** Usually means a required field (like `email` or `password`) is missing or empty.
+- **401 Unauthorized:** Invalid credentials for login.
+- **409 Conflict:** User already exists (register endpoint).
+- **500 Server Error:** Check backend logs for details.
+
+### Example Curl for Login
+```sh
+curl -X POST http://localhost:4000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com","password":"yourpassword"}'
+```
+
+### Example Curl for Forgot Password
+```sh
+curl -X POST http://localhost:4000/auth/forgot-password \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com"}'
+```
+
+---

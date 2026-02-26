@@ -13,22 +13,59 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { DemoProvider } from "./demo/DemoContext";
 import DemoGuide from "./demo/DemoGuide";
-import AIBot from "./components/AIBot";
 import Sidebar from "./components/Sidebar";
 import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
-import Uploads from "./pages/Uploads";
-import Reports from "./pages/Reports";
-import ReportDetail from "./pages/ReportDetail";
-import CarriersPerformance from "./pages/CarriersPerformance";
-import Invoices from "./pages/Invoices";
-import InvoiceDetail from "./pages/InvoiceDetail";
-import Exceptions from "./pages/Exceptions";
-import ExceptionDrilldown from "./pages/ExceptionDrilldown";
-import Settings from "./pages/Settings";
-import Login from "./pages/Login";
-import Customers from "./pages/Customers";
-import MyAuditIQProfile from "./pages/MyAuditIQProfile";
+
+const CarrierScorecard = lazy(() => import("./pages/CarrierScorecard"));
+const RateLogicTool = lazy(() => import("./pages/RateLogicTool"));
+const FleetDashboard = lazy(() => import("./pages/FleetDashboard"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Uploads = lazy(() => import("./pages/Uploads"));
+const Reports = lazy(() => import("./pages/Reports"));
+const ReportDetail = lazy(() => import("./pages/ReportDetail"));
+const CarriersPerformance = lazy(() => import("./pages/CarriersPerformance"));
+const Invoices = lazy(() => import("./pages/Invoices"));
+const InvoiceDetail = lazy(() => import("./pages/InvoiceDetail"));
+const Exceptions = lazy(() => import("./pages/Exceptions"));
+const ExceptionDrilldown = lazy(() => import("./pages/ExceptionDrilldown"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Login = lazy(() => import("./pages/Login"));
+const Customers = lazy(() => import("./pages/Customers"));
+const MyAuditIQProfile = lazy(() => import("./pages/MyAuditIQProfile"));
+const SystemStatus = lazy(() => import("./pages/SystemStatus"));
+// Register page is now merged into Login
+
+import ExceptionsUploads from "./pages/ExceptionsUploads";
+
+const appRouteDefs = [
+  { path: "/", element: <Dashboard /> },
+  { path: "/dashboard", element: <Dashboard /> },
+  { path: "/invoices", element: <CombinedPage /> },
+  { path: "/invoices/:id", element: <InvoiceDetail /> },
+  { path: "/exceptions", element: <ExceptionsUploads /> },
+  { path: "/uploads", element: <ExceptionsUploads /> },
+  { path: "/exceptions/:id", element: <ExceptionDrilldown /> },
+  { path: "/reports", element: <Reports /> },
+  { path: "/reports/:reportId", element: <ReportDetail /> },
+  { path: "/carriers", element: <CarriersPerformance /> },
+  { path: "/carriers/:carrier", element: <CarrierScorecard /> },
+  { path: "/loads", element: <Loads /> },
+  { path: "/customers", element: <Customers /> },
+  { path: "/settings", element: <Settings /> },
+  { path: "/rate-logic", element: <RateLogicTool /> },
+  { path: "/fleet-dashboard", element: <FleetDashboard /> },
+  { path: "/profile", element: <MyAuditIQProfile /> },
+  { path: "/system-status", element: <SystemStatus /> },
+  { path: "/smoke-test", element: <LoginTest /> },
+];
+
+function LoadingFallback() {
+  return (
+    <div style={{ padding: 24, color: "var(--text-secondary)", fontFamily: "'Exo 2', sans-serif", letterSpacing: 1 }}>
+      Loading module...
+    </div>
+  );
+}
 
 function AppRoutes() {
   const location = useLocation();
@@ -42,9 +79,11 @@ function AppRoutes() {
 
   if (isLogin) {
     return (
-      <Routes>
-        <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
-      </Routes>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
+        </Routes>
+      </Suspense>
     );
   }
 
@@ -60,6 +99,7 @@ function AppRoutes() {
     <>
       <Sidebar />
       <Layout>
+<<<<<<< HEAD
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -80,41 +120,3 @@ function AppRoutes() {
           <Route path="/finance/ap" element={<AP />} />
           <Route path="/finance/aging" element={<Aging />} />
           
-          {/* Analytics */}
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/reports/:reportId" element={<ReportDetail />} />
-          <Route path="/carrier-performance" element={<CarriersPerformance />} />
-          <Route path="/carrier-performance/:carrier" element={<CarrierScorecard />} />
-          <Route path="/lane-intelligence" element={<LaneIntelligence />} />
-          
-          {/* CRM */}
-          <Route path="/customers" element={<Customers />} />
-          <Route path="/carriers" element={<Carriers />} />
-          
-          {/* Tools & Account */}
-          <Route path="/rate-logic" element={<RateLogicTool />} />
-          <Route path="/account" element={<Account />} />
-          <Route path="/profile" element={<MyAuditIQProfile />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </Layout>
-    </>
-  );
-}
-
-function App() {
-  return (
-    <DemoProvider>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AppRoutes />
-          <DemoGuide />
-          <AIBot />
-        </BrowserRouter>
-      </ThemeProvider>
-    </DemoProvider>
-  );
-}
-
-export default App;

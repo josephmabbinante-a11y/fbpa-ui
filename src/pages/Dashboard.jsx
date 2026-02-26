@@ -1,34 +1,28 @@
 import { useEffect, useState } from 'react';
-const defaultDashboardPrefs = {
-  showTotalInvoices: true,
-  showExceptions: true,
-  showTotalSavings: true,
-  showPending: true,
-  showExceptionDistribution: true,
-  showSavingsByCarrier: true,
-  showRecentActivity: true,
-};
-const DASH_PREFS_KEY = 'dashboardPrefs';
-const DASH_VARIANTS = [
-  { key: 'shipper', label: 'Shipper', description: 'Shipper-focused metrics and analytics.' },
-  { key: 'carrier', label: 'Carrier', description: 'Carrier performance and compliance.' },
-  { key: 'broker', label: 'Broker', description: 'Brokerage and margin analytics.' },
-];
-const DASH_VARIANT_KEY = 'dashboardVariant';
 import { useNavigate } from 'react-router-dom';
+<<<<<<< HEAD
 import { getDashboard } from '../api/client';
 // import dashboardEnhanced from '../mock/dashboardEnhanced'; // Retained for demo mode only
 import { useTheme, themes } from '../contexts/ThemeContext';
 import KPIWithTrend from '../components/KPIWithTrend';
+=======
+import { InlineAlert } from '../components/ui/Primitives';
+>>>>>>> origin/FBPA
 import CollapsibleSection from '../components/CollapsibleSection';
-import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+import dashboardEnhanced from '../mock/dashboardEnhanced';
+import defaultDashboardPrefs from '../mock/dashboard';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+<<<<<<< HEAD
   const { theme } = useTheme();
   const t = themes[theme];
   const [data, setData] = useState(null);
+=======
+  const [data, setData] = useState(dashboardEnhanced);
+>>>>>>> origin/FBPA
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
@@ -43,87 +37,16 @@ export default function Dashboard() {
   useEffect(() => {
     try {
       const prefs = JSON.parse(localStorage.getItem(DASH_PREFS_KEY));
-      if (prefs) setDashboardPrefs(prefs);
-    } catch {}
+      // ...existing code...
+    } catch (e) {
+      // handle error
+    }
+    setLoading(false);
   }, []);
 
-  function handleVariantChange(e) {
-    setVariant(e.target.value);
-    try { localStorage.setItem(DASH_VARIANT_KEY, e.target.value); } catch {}
-  }
-
-  useEffect(() => {
-    let mounted = true;
-    getDashboard()
-      .then((res) => {
-        if (!mounted) return;
-        if (res && !res.error && res.summary) setData(res);
-        else setError(res && res.error ? res.error : null);
-      })
-      .catch((err) => mounted && setError(err.message || String(err)))
-      .finally(() => mounted && setLoading(false));
-    return () => (mounted = false);
-  }, []);
-
-  const containerStyle = {
-    padding: '24px 32px',
-    backgroundColor: t.bg,
-    color: t.text,
-    minHeight: '100vh',
-  };
-
-  const headerStyle = {
-    marginBottom: 24,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
-  const titleStyle = {
-    fontSize: '24px',
-    fontWeight: '700',
-    letterSpacing: '-0.5px',
-  };
-
-  const kpiGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: 12,
-    marginBottom: 32,
-  };
-
-  const chartGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-    gap: 20,
-    marginBottom: 24,
-  };
-
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '13px',
-  };
-
-  const thStyle = {
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontWeight: '600',
-    backgroundColor: t.surface,
-    borderBottom: `1px solid ${t.border}`,
-    color: t.textSecondary,
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.3px',
-  };
-
-  const tdStyle = {
-    padding: '8px 12px',
-    borderBottom: `1px solid ${t.borderLight}`,
-    color: t.text,
-  };
-
+  // TODO: Implement Dashboard JSX here
   return (
+<<<<<<< HEAD
     <div style={containerStyle}>
       <div style={headerStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
@@ -230,57 +153,195 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Savings by Carrier Chart (Shipper, Broker) or Volume by Lane (Carrier) */}
-            {variant !== 'carrier' && dashboardPrefs.showSavingsByCarrier && data.savingsByCarrier && (
-              <div style={{ minWidth: 0 }}>
-                <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
-              </div>
-            )}
-            {variant === 'carrier' && (
-              <div style={{ minWidth: 0 }}>
-                {/* Could use a Volume by Lane chart for carriers */}
-                <SavingsByCarrierChart data={data.volumeByLane || data.savingsByCarrier} onClick={() => navigate('/reports')} />
-              </div>
-            )}
-          </div>
+            import { useEffect, useState } from 'react';
+            import { useNavigate } from 'react-router-dom';
+            import { getDashboard } from '../api/client';
+            import { useTheme, themes } from '../contexts/ThemeContext';
+            import KPIWithTrend from '../components/KPIWithTrend';
+            import CollapsibleSection from '../components/CollapsibleSection';
+            import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+            import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+            import dashboardEnhanced from '../mock/dashboardEnhanced';
+            import defaultDashboardPrefs from '../mock/dashboard';
 
-          {/* Summary Tables */}
-          {dashboardPrefs.showRecentActivity && (
-            <CollapsibleSection title={variant === 'broker' ? 'Recent Loads' : 'Recent Activity'} defaultOpen={true}>
-              <table style={tableStyle}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Type</th>
-                    <th style={thStyle}>{variant === 'broker' ? 'Load/File' : 'Invoice/File'}</th>
-                    <th style={thStyle}>{variant === 'broker' ? 'Margin' : 'Amount'}</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.recentActivity?.slice(0, 5).map((activity) => (
-                    <tr key={activity.id}>
-                      <td style={tdStyle}>{activity.type}</td>
-                      <td style={tdStyle}>{activity.invoiceNumber || activity.fileName}</td>
-                      <td style={tdStyle}>
-                        {variant === 'broker'
-                          ? (activity.margin ? `${activity.margin}%` : activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)
-                          : (activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)}
-                      </td>
-                      <td style={tdStyle}>{activity.status}</td>
-                      <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
-                        {new Date(activity.timestamp).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CollapsibleSection>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-  // Demo mode: Uncomment to use mock data
-  // useEffect(() => { setData(dashboardEnhanced); setLoading(false); }, []);
+            export default function Dashboard() {
+              const navigate = useNavigate();
+              const { theme } = useTheme();
+              const t = themes[theme];
+              const [data, setData] = useState(null);
+              const [loading, setLoading] = useState(true);
+              const [error, setError] = useState(null);
+              const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
+              const [variant, setVariant] = useState(() => {
+                try {
+                  return localStorage.getItem('DASH_VARIANT_KEY') || 'shipper';
+                } catch {
+                  return 'shipper';
+                }
+              });
+
+              useEffect(() => {
+                try {
+                  const prefs = JSON.parse(localStorage.getItem('DASH_PREFS_KEY'));
+                  if (prefs) setDashboardPrefs(prefs);
+                } catch (e) {
+                  // handle error
+                }
+                setLoading(false);
+              }, []);
+
+              // TODO: Implement Dashboard JSX here
+              return (
+                <div style={{ padding: 24 }}>
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                      <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Dashboard</h1>
+                      <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}>
+                        {['shipper', 'carrier', 'broker'].map(v => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
+                      {/* Add variant description here if needed */}
+                    </div>
+                    {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
+                  </div>
+
+                  {loading && (
+                    <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.info}`, borderRadius: 4, fontSize: '13px', color: t.info, marginBottom: 24 }}>
+                      Loading dashboard data...
+                    </div>
+                  )}
+                  {error && !loading && (
+                    <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.error}`, borderRadius: 4, fontSize: '13px', color: t.error, marginBottom: 24 }}>
+                      Error loading dashboard: {error}
+                    </div>
+                  )}
+                  {!loading && !error && !data && (
+                    <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
+                      No dashboard data available.
+                    </div>
+                  )}
+                  {data && !loading && !error && (
+                    <>
+                      {/* KPIs with Trends */}
+                      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+                        {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
+                          <KPIWithTrend 
+                            label="Total Invoices" 
+                            value={data.summary?.totalInvoices || 0} 
+                            delta={5}
+                            trendData={data.trends?.invoiceTrend}
+                            trendColor="#0066cc"
+                            onClick={() => navigate('/invoices')}
+                          />
+                        )}
+                        {variant === 'shipper' && dashboardPrefs.showExceptions && (
+                          <KPIWithTrend 
+                            label="Exceptions" 
+                            value={data.summary?.totalExceptions || 0} 
+                            delta={-2}
+                            trendData={data.trends?.exceptionTrend}
+                            trendColor="#ef4444"
+                            onClick={() => navigate('/exceptions')}
+                          />
+                        )}
+                        {variant === 'shipper' && dashboardPrefs.showTotalSavings && (
+                          <KPIWithTrend 
+                            label="Total Savings" 
+                            value={data.summary?.totalSavings || 0} 
+                            format="currency" 
+                            delta={12}
+                            trendData={data.trends?.savingsTrend}
+                            trendColor="#10b981"
+                            onClick={() => navigate('/reports')}
+                          />
+                        )}
+                        {variant === 'shipper' && dashboardPrefs.showPending && (
+                          <KPIWithTrend 
+                            label="Pending" 
+                            value={data.summary?.pendingReview || 0} 
+                            delta={0}
+                            trendData={data.trends?.pendingTrend}
+                            trendColor="#f59e0b"
+                          />
+                        )}
+
+                        {variant === 'carrier' && (
+                          <>
+                            <KPIWithTrend label="On-Time %" value={data.summary?.onTime || 0} delta={2} trendData={data.trends?.onTimeTrend} trendColor="#10b981" />
+                            <KPIWithTrend label="Claims %" value={data.summary?.claimsRate || 0} delta={-1} trendData={data.trends?.claimsTrend} trendColor="#ef4444" />
+                            <KPIWithTrend label="Volume" value={data.summary?.totalInvoices || 0} delta={3} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" />
+                          </>
+                        )}
+
+                        {variant === 'broker' && (
+                          <>
+                            <KPIWithTrend label="Margin %" value={data.summary?.margin || 0} delta={1} trendData={data.trends?.marginTrend} trendColor="#10b981" />
+                            <KPIWithTrend label="Loads" value={data.summary?.loads || 0} delta={4} trendData={data.trends?.loadsTrend} trendColor="#0066cc" />
+                            <KPIWithTrend label="Revenue" value={data.summary?.revenue || 0} format="currency" delta={7} trendData={data.trends?.revenueTrend} trendColor="#f59e0b" />
+                          </>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+                        {variant !== 'carrier' && dashboardPrefs.showExceptionDistribution && data.exceptionBreakdown && (
+                          <div style={{ minWidth: 0 }}>
+                            <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
+                          </div>
+                        )}
+                        {variant === 'carrier' && (
+                          <div style={{ minWidth: 0 }}>
+                            <ExceptionBreakdownChart data={data.claimsBreakdown || data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
+                          </div>
+                        )}
+                        {variant !== 'carrier' && dashboardPrefs.showSavingsByCarrier && data.savingsByCarrier && (
+                          <div style={{ minWidth: 0 }}>
+                            <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
+                          </div>
+                        )}
+                        {variant === 'carrier' && (
+                          <div style={{ minWidth: 0 }}>
+                            <SavingsByCarrierChart data={data.volumeByLane || data.savingsByCarrier} onClick={() => navigate('/reports')} />
+                          </div>
+                        )}
+                      </div>
+
+                      {dashboardPrefs.showRecentActivity && (
+                        <CollapsibleSection title={variant === 'broker' ? 'Recent Loads' : 'Recent Activity'} defaultOpen={true}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr>
+                                <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
+                                <th style={{ textAlign: 'left', padding: 8 }}>{variant === 'broker' ? 'Load/File' : 'Invoice/File'}</th>
+                                <th style={{ textAlign: 'left', padding: 8 }}>{variant === 'broker' ? 'Margin' : 'Amount'}</th>
+                                <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+                                <th style={{ textAlign: 'left', padding: 8 }}>Timestamp</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {data.recentActivity?.slice(0, 5).map((activity) => (
+                                <tr key={activity.id}>
+                                  <td style={{ padding: 8 }}>{activity.type}</td>
+                                  <td style={{ padding: 8 }}>{activity.invoiceNumber || activity.fileName}</td>
+                                  <td style={{ padding: 8 }}>
+                                    {variant === 'broker'
+                                      ? (activity.margin ? `${activity.margin}%` : activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)
+                                      : (activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)}
+                                  </td>
+                                  <td style={{ padding: 8 }}>{activity.status}</td>
+                                  <td style={{ padding: 8, fontSize: '12px', color: t.textSecondary }}>
+                                    {new Date(activity.timestamp).toLocaleDateString()}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </CollapsibleSection>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            }
+            // Demo mode: Uncomment to use mock data
+            // useEffect(() => { setData(dashboardEnhanced); setLoading(false); }, []);
