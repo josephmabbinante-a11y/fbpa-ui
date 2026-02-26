@@ -56,8 +56,83 @@ export default function FleetDashboard() {
   // Remove menu state
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: t.bg, color: t.text }}>
-      {/* Sidebar */}
+    <div className="bg-gray-50 min-h-screen px-8 py-8">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-12 gap-2">
+        {/* Top: Driver Overview Card */}
+        <div className="col-span-12 mb-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-8 transition-all duration-200 hover:shadow-md">
+            <div className="flex flex-col gap-2">
+              <div className="text-2xl font-bold text-gray-900">{selectedDriver.name}</div>
+              <div className="flex items-center gap-4">
+                <span className={`px-3 py-1 rounded-lg font-semibold ${selectedDriver.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{selectedDriver.status}</span>
+                <span className="text-sm text-gray-500">Compliance: <span className="font-bold text-blue-600">{selectedDriver.compliance}%</span></span>
+                <span className="text-sm text-gray-500">ETA: <span className="font-bold text-purple-600">{selectedDriver.telematics.eta}</span></span>
+              </div>
+              {/* Compact KPI Row */}
+              <div className="flex gap-4 mt-2">
+                <div className="bg-gray-50 rounded-lg px-4 py-2 text-sm font-semibold text-gray-700">Status: {selectedDriver.telematics.status}</div>
+                <div className="bg-gray-50 rounded-lg px-4 py-2 text-sm font-semibold text-gray-700">Location: {selectedDriver.telematics.location}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Middle: Map & Telemetry Panel */}
+        <div className="col-span-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-72 flex items-center justify-center transition-all duration-200 hover:shadow-md">
+            <span className="text-gray-400">[Map Placeholder]</span>
+          </div>
+        </div>
+        <div className="col-span-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 h-72 flex flex-col gap-4 transition-all duration-200 hover:shadow-md">
+            <div className="text-lg font-semibold text-gray-800 mb-2">Live Telemetry</div>
+            <div className="text-sm text-gray-500">Times: {selectedDriver.telematics.times.join(' · ')}</div>
+            <div className="text-sm text-gray-500">Status: {selectedDriver.telematics.status}</div>
+            <div className="text-sm text-gray-500">ETA: {selectedDriver.telematics.eta}</div>
+          </div>
+        </div>
+
+        {/* Below: Compliance Module */}
+        <div className="col-span-12 mt-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4 transition-all duration-200 hover:shadow-md">
+            <div className="text-lg font-semibold text-gray-800 mb-2">Compliance Progress</div>
+            <div className="flex gap-4">
+              {selectedDriver.docs.map((doc, i) => (
+                <div key={i} className={`px-4 py-2 rounded-lg font-semibold text-sm ${doc.status === 'Complete' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{doc.name}: {doc.status}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom: ELD Table */}
+        <div className="col-span-12 mt-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md">
+            <div className="text-lg font-semibold text-gray-800 mb-2">ELD Status</div>
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-3 py-2 text-left">Driver</th>
+                  <th className="px-3 py-2 text-left">Status</th>
+                  <th className="px-3 py-2 text-left">ETA</th>
+                  <th className="px-3 py-2 text-left">Times</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mockELD.map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 font-semibold text-gray-900">{row.driver}</td>
+                    <td className={`px-3 py-2 font-semibold ${row.status === 'Driving' ? 'bg-green-100 text-green-700 rounded' : 'bg-purple-100 text-purple-700 rounded'}`}>{row.status}</td>
+                    <td className="px-3 py-2">{row.eta}</td>
+                    <td className="px-3 py-2">{row.times.join(' · ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
       <div style={{ width: 220, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ padding: '24px 0 0 0' }}>
           <div style={{ padding: '0 18px', marginBottom: 18 }}>
