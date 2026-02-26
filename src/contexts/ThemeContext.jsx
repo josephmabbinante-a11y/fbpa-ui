@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext();
+const THEME_STORAGE_KEY = 'opscale_theme';
+const TRANSITION_CLASS = 'theme-transition';
+const TRANSITION_MS = 220;
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     try {
-      return localStorage.getItem('opscale_theme') || 'dark';
+      return localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
     } catch {
       return 'dark';
     }
@@ -13,22 +16,22 @@ export const ThemeProvider = ({ children }) => {
 
   const toggleTheme = () => {
     setTheme((prev) => {
-      const newTheme = prev === 'dark' ? 'light' : 'dark';
+      const next = prev === 'dark' ? 'light' : 'dark';
       try {
-        localStorage.setItem('opscale_theme', newTheme);
+        localStorage.setItem(THEME_STORAGE_KEY, next);
       } catch {
-        // localStorage might not be available
+        // localStorage might not be available.
       }
-      return newTheme;
+      return next;
     });
   };
 
   useEffect(() => {
-    const active = themes[theme];
+    const active = themes[theme] || themes.dark;
     const root = document.documentElement;
+    const body = document.body;
+
     root.setAttribute('data-theme', theme);
-    // Add smooth transition for theme changes
-    root.style.transition = 'background-color 0.4s, color 0.4s';
     root.style.setProperty('--bg', active.bg);
     root.style.setProperty('--bg-alt', active.bgAlt);
     root.style.setProperty('--text', active.text);
@@ -42,13 +45,35 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--warning', active.warning);
     root.style.setProperty('--error', active.error);
     root.style.setProperty('--glow', active.glow);
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined;
+    }
+
+    body.classList.add(TRANSITION_CLASS);
+    const timeout = window.setTimeout(() => {
+      body.classList.remove(TRANSITION_CLASS);
+    }, TRANSITION_MS);
+
+    return () => {
+      window.clearTimeout(timeout);
+      body.classList.remove(TRANSITION_CLASS);
+    };
   }, [theme]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  useEffect(() => {
+    const syncTheme = (event) => {
+      if (event.key !== THEME_STORAGE_KEY || !event.newValue) return;
+      if (event.newValue === 'dark' || event.newValue === 'light') {
+        setTheme(event.newValue);
+      }
+    };
+
+    window.addEventListener('storage', syncTheme);
+    return () => window.removeEventListener('storage', syncTheme);
+  }, []);
+
+  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
 };
 
 export const useTheme = () => {
@@ -73,11 +98,9 @@ export const themes = {
     warning: '#f59e0b',
     error: '#ef4444',
     glow: '24, 210, 255',
-    
-    // Semantic
-    positive: '#10b981', // savings
-    negative: '#ef5350', // losses
-    neutral: '#6b7280', // inactive
+    positive: '#10b981',
+    negative: '#ef5350',
+    neutral: '#6b7280',
   },
   light: {
     bg: '#edf4ff',
@@ -94,10 +117,8 @@ export const themes = {
     warning: '#d97706',
     error: '#dc2626',
     glow: '10, 124, 255',
-    
-    // Semantic
-    positive: '#10b981', // savings
-    negative: '#ef5350', // losses
-    neutral: '#9ca3af', // inactive
+    positive: '#10b981',
+    negative: '#ef5350',
+    neutral: '#9ca3af',
   },
 };
