@@ -31,16 +31,10 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  // ...existing code for Dashboard component...
-
-            {error && (
-              <InlineAlert>
-                Backend error, using mock data: {error}
-              </InlineAlert>
-            )}
-          </div>
-        );
-      }
+  // TODO: Implement Dashboard JSX here
+  return (
+    <div>
+      {/* Dashboard content goes here */}
     </div>
   );
 }
