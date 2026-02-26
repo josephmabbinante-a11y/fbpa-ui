@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-// ...existing imports...
+import { useNavigate } from 'react-router-dom';
+import { InlineAlert } from '../components/ui/Primitives';
+import CollapsibleSection from '../components/CollapsibleSection';
+import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+import dashboardEnhanced from '../mock/dashboardEnhanced';
+import defaultDashboardPrefs from '../mock/dashboard';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -25,39 +31,7 @@ export default function Dashboard() {
         );
       }
 
-      export default function Dashboard() {
-        const navigate = useNavigate();
-        const [data, setData] = useState(dashboardEnhanced);
-        const [loading, setLoading] = useState(true);
-        const [error, setError] = useState(null);
-        const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
-        const [variant, setVariant] = useState('shipper');
-
-        useEffect(() => {
-          try {
-            const prefs = JSON.parse(localStorage.getItem('DASH_PREFS_KEY'));
-            if (prefs) setDashboardPrefs(prefs);
-          } catch {}
-        }, []);
-
-        return (
-          <div className="dashboard-page">
-            {/* KPI ROW */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-              <KPICompact title="Recovery Rate %" value={data.summary?.recoveryRate || 92.5} change={+2.1} accent="border-l-4 border-green-400" />
-              <KPICompact title="Total Recovered ($)" value={data.summary?.totalRecovered || 12450.75} change={+4.3} accent="border-l-4 border-blue-400" />
-              <KPICompact title="Exception Rate %" value={data.summary?.exceptionRate || 7.1} change={-0.8} accent="border-l-4 border-red-400" />
-              <KPICompact title="Cost per Shipment" value={data.summary?.costPerShipment || 32.8} change={+0.5} accent="border-l-4 border-yellow-400" />
-              <KPICompact title="Avg Resolution Time" value={data.summary?.avgResolutionTime || 2.4} change={-0.2} accent="border-l-4 border-purple-400" />
-            </div>
-
-            {/* PRIMARY ANALYTICS ROW */}
-            <div className="grid grid-cols-12 gap-6 mb-6">
-              <div className="col-span-12 lg:col-span-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200">
-                <div className="text-lg font-semibold text-gray-800 mb-4">Savings & Recovery Trend</div>
-                <SavingsByCarrierChart data={data.trends?.savingsTrend} />
-              </div>
-              <div className="col-span-12 lg:col-span-4 bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200">
+      // ...existing code...
                 <div className="text-lg font-semibold text-gray-800 mb-4">Exception Trend</div>
                 <ExceptionBreakdownChart data={data.trends?.exceptionTrend} />
               </div>
