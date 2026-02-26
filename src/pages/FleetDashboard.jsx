@@ -138,6 +138,7 @@ export default function FleetDashboard() {
           <div style={{ height: 120, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
             <span>Mobile App (placeholder)</span>
           </div>
+
         </div>
       </div>
     </div>
