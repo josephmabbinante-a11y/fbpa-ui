@@ -233,11 +233,7 @@ function KPICompact({ title, value, change, accent }) {
     </div>
   );
 }
-            )}
-            {variant === 'carrier' && (
-              <div style={{ minWidth: 0 }}>
-                {/* Could use a Volume by Lane chart for carriers */}
-                <SavingsByCarrierChart data={data.volumeByLane || data.savingsByCarrier} onClick={() => navigate('/reports')} />
+// ...existing code...
               </div>
             )}
           </div>
