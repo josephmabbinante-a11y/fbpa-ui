@@ -81,8 +81,6 @@ textarea {
     padding: 8px;
   }
 }
-}
-
 .card-surface {
   background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)),
     linear-gradient(120deg, var(--surface) 60%, var(--surface-strong) 100%);
