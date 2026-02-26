@@ -133,6 +133,7 @@ export default function FleetDashboard() {
       </div>
     </div>
   );
+}
       <div style={{ width: 220, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ padding: '24px 0 0 0' }}>
           <div style={{ padding: '0 18px', marginBottom: 18 }}>
