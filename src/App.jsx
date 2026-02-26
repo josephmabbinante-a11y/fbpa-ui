@@ -32,7 +32,7 @@ import ExceptionsUploads from "./pages/ExceptionsUploads";
 const appRouteDefs = [
   { path: "/", element: <Dashboard /> },
   { path: "/dashboard", element: <Dashboard /> },
-  { path: "/invoices", element: <Invoices /> },
+  { path: "/invoices", element: <CombinedPage /> },
   { path: "/invoices/:id", element: <InvoiceDetail /> },
   { path: "/exceptions", element: <ExceptionsUploads /> },
   { path: "/uploads", element: <ExceptionsUploads /> },
