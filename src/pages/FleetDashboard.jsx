@@ -41,23 +41,6 @@ const mockDrivers = [
       times: ['06:42', '01:29', '01:29', '29:30'],
     },
   },
-                key={driver.id}
-                onClick={() => setSelectedDriver(driver)}
-                style={{
-                  marginBottom: 8,
-                  color: selectedDriver.id === driver.id ? t.accent : t.textSecondary,
-                  fontWeight: selectedDriver.id === driver.id ? 700 : 500,
-                  cursor: 'pointer',
-                  padding: '4px 8px',
-                  borderRadius: 4,
-                  background: selectedDriver.id === driver.id ? t.bgAlt : 'none',
-                }}
-              >
-                {driver.name}
-              </div>
-            ))}
-          </div>
-          <div style={{ padding: '0 18px', marginBottom: 18 }}>
             <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 8 }}>Drivers</div>
             {mockDrivers.map((driver) => (
               <div
