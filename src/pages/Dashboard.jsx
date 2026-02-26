@@ -18,26 +18,6 @@ export default function Dashboard() {
   useEffect(() => {
     try {
       const prefs = JSON.parse(localStorage.getItem(DASH_PREFS_KEY));
-
-      import { useEffect, useState } from 'react';
-      import { useNavigate } from 'react-router-dom';
-      import { InlineAlert } from '../components/ui/Primitives';
-      import CollapsibleSection from '../components/CollapsibleSection';
-      import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
-      import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
-      import dashboardEnhanced from '../mock/dashboardEnhanced';
-      import defaultDashboardPrefs from '../mock/dashboard';
-
-      function KPICompact({ title, value, change, accent }) {
-        return (
-          <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-5 ${accent} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col gap-2`}>
-            <div className="text-sm text-gray-500 font-medium">{title}</div>
-            <div className="text-3xl font-bold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</div>
-            <div className="flex items-center gap-2">
-              {change !== undefined && (
-                <span className={change > 0 ? 'text-green-600' : 'text-red-600'}>
-                  {change > 0 ? '▲' : '▼'} {Math.abs(change)}%
-                </span>
               )}
               <span className="ml-auto text-xs text-gray-400">[Sparkline]</span>
             </div>
