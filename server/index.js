@@ -73,6 +73,7 @@ const defaultAllowedOrigins = [
   'http://localhost:5179',
   // Production web environment (Vercel)
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-e3wffttsx-josephmabbinante-a11ys-projects.vercel.app',
 ];
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
