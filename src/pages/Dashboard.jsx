@@ -20,25 +20,25 @@ export default function Dashboard() {
       const prefs = JSON.parse(localStorage.getItem(DASH_PREFS_KEY));
       if (prefs) setDashboardPrefs(prefs);
     } catch {}
-  }, []);
-
-  function handleVariantChange(e) {
-    setVariant(e.target.value);
-    try { localStorage.setItem(DASH_VARIANT_KEY, e.target.value); } catch {}
   }
-
-  useEffect(() => {
-    let mounted = true;
-    getDashboard()
-      .then((res) => {
-        if (!mounted) return;
-        if (res && !res.error && res.summary) setData(res);
-        else setError(res && res.error ? res.error : null);
-      })
-      .catch((err) => mounted && setError(err.message || String(err)))
-      .finally(() => mounted && setLoading(false));
-    return () => (mounted = false);
-  }, []);
+  // KPICompact component for KPI row
+  function KPICompact({ title, value, change, accent }) {
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-100 p-5 ${accent} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 flex flex-col gap-2`}>
+        <div className="text-sm text-gray-500 font-medium">{title}</div>
+        <div className="text-3xl font-bold text-gray-900">{typeof value === 'number' ? value.toLocaleString() : value}</div>
+        <div className="flex items-center gap-2">
+          {change !== undefined && (
+            <span className={change > 0 ? 'text-green-600' : 'text-red-600'}>
+              {change > 0 ? '▲' : '▼'} {Math.abs(change)}%
+            </span>
+          )}
+          {/* Sparkline placeholder */}
+          <span className="ml-auto text-xs text-gray-400">[Sparkline]</span>
+        </div>
+      </div>
+    );
+  }
 
   // Tailwind Freight Intelligence Command Center Layout
   return (
@@ -187,10 +187,6 @@ function KPICompact({ title, value, change, accent }) {
     </div>
   );
 }
-// ...existing code...
-        <div className="grid grid-cols-12 gap-6 mb-6">
-          <div className="col-span-12 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
-            <div className="flex items-center justify-between mb-4">
               <div className="text-lg font-semibold text-gray-800">🕒 Recent Activity</div>
               <button className="bg-gray-200 text-gray-700 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm hover:bg-gray-300 transition-all duration-200">View All</button>
             </div>
