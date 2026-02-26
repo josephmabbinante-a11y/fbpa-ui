@@ -35,7 +35,14 @@ const Account = lazy(() => import('./pages/Account'));
 
 function LoadingFallback() {
   return (
-    <div style={{ padding: 24, color: "var(--text-secondary)", fontFamily: "'Exo 2', sans-serif", letterSpacing: 1 }}>
+    <div
+      style={{
+        padding: 24,
+        color: 'var(--text-secondary)',
+        fontFamily: "'Exo 2', sans-serif",
+        letterSpacing: 1,
+      }}
+    >
       Loading module...
     </div>
   );
@@ -43,8 +50,9 @@ function LoadingFallback() {
 
 function AppRoutes() {
   const location = useLocation();
-  const isLogin = location.pathname === "/login";
+  const isLogin = location.pathname === '/login';
   let isAuthed = false;
+
   try {
     isAuthed = Boolean(localStorage.getItem('accessToken'));
   } catch {
@@ -73,24 +81,55 @@ function AppRoutes() {
     <>
       <Sidebar />
       <Layout>
-<<<<<<< HEAD
+        <Suspense fallback={<LoadingFallback />}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/invoices" element={<CombinedPage />} />
+            <Route path="/invoices/:id" element={<InvoiceDetail />} />
+            <Route path="/exceptions" element={<ExceptionsUploads />} />
+            <Route path="/uploads" element={<ExceptionsUploads />} />
+            <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports/:reportId" element={<ReportDetail />} />
+            <Route path="/carriers" element={<CarriersPerformance />} />
+            <Route path="/carriers/:carrier" element={<CarrierScorecard />} />
+            <Route path="/loads" element={<Loads />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/rate-logic" element={<RateLogicTool />} />
+            <Route path="/fleet-dashboard" element={<FleetDashboard />} />
+            <Route path="/profile" element={<MyAuditIQProfile />} />
+            <Route path="/system-status" element={<SystemStatus />} />
+            <Route path="/smoke-test" element={<LoginTest />} />
+
             <Route path="/load-board" element={<LoadBoard />} />
             <Route path="/shipments" element={<Shipments />} />
             <Route path="/fleet" element={<FleetDashboard />} />
-          <Route path="/fleet-dashboard" element={<FleetDashboard />} />
-          
-          {/* Operations */}
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/invoices/:id" element={<InvoiceDetail />} />
-          <Route path="/uploads" element={<Uploads />} />
-          <Route path="/exceptions" element={<Exceptions />} />
-          <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
-          
-          {/* Finance */}
             <Route path="/finance/ar" element={<AR />} />
             <Route path="/finance/ap" element={<AP />} />
             <Route path="/finance/aging" element={<Aging />} />
-          
+            <Route path="/lane-intelligence" element={<LaneIntelligence />} />
+            <Route path="/carriers-list" element={<Carriers />} />
+            <Route path="/account" element={<Account />} />
+
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Suspense>
+      </Layout>
+      <DemoGuide />
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <DemoProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </DemoProvider>
+    </ThemeProvider>
+  );
+}

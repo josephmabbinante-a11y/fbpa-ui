@@ -1,26 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage } from "../api/client";
-<<<<<<< HEAD
-// import mockInvoices from "../mock/invoices"; // Retained for demo mode only
-// import mockInvoiceImages from "../mock/invoiceImages"; // Retained for demo mode only
-import { useTheme, themes } from "../contexts/ThemeContext";
-=======
 import mockInvoices from "../mock/invoices";
 import mockInvoiceImages from "../mock/invoiceImages";
->>>>>>> origin/FBPA
 import CollapsibleSection from "../components/CollapsibleSection";
 import { InlineAlert, PageHeader, PrimaryButton } from "../components/ui/Primitives";
 
 export default function Invoices() {
   const navigate = useNavigate();
-<<<<<<< HEAD
-  const { theme } = useTheme();
-  const t = themes[theme];
-  const [data, setData] = useState([]);
-=======
   const [data, setData] = useState(mockInvoices);
->>>>>>> origin/FBPA
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,10 +27,14 @@ export default function Invoices() {
         if (!mounted) return;
         if (res && !res.error && res.invoices) {
           setData(res.invoices);
-        } else if (res && res.error) setError(res.error);
+        } else {
+          setData(mockInvoices);
+          if (res && res.error) setError(res.error);
+        }
       })
       .catch((err) => {
         if (!mounted) return;
+        setData(mockInvoices);
         setError(err.message || String(err));
       })
       .finally(() => mounted && setLoading(false));
@@ -65,7 +57,7 @@ export default function Invoices() {
       if (res && !res.error && res.images) {
         setImageHistory(res.images);
       } else {
-        // setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId)); // Demo mode: Uncomment to use mock data
+        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
       }
     });
   }, [selectedInvoiceId]);
@@ -73,8 +65,8 @@ export default function Invoices() {
   const filtered = data.filter(
     (inv) =>
       inv.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (inv.carrier || '').toLowerCase().includes(searchTerm.toLowerCase())
-  [import { useEffect, useMemo, useState } from "react";
+      inv.carrier.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const selectedInvoice = useMemo(
     () => data.find((inv) => inv.id === selectedInvoiceId),
@@ -88,8 +80,9 @@ export default function Invoices() {
       setImageStatus("Select an invoice and image first");
       return;
     }
-    setVerificationResult(null);
     setImageLoading(true);
+    setImageStatus(null);
+    setVerificationResult(null);
     const res = await uploadInvoiceImage({ file: imageFile, invoiceId: selectedInvoiceId });
     setImageLoading(false);
 
@@ -240,19 +233,9 @@ export default function Invoices() {
                   <td style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate(`/invoices/${invoice.id}`)}>
                     {invoice.id}
                   </td>
-<<<<<<< HEAD
-                  <td style={tdStyle}>{invoice.status}</td>
-                  <td style={tdStyle}>{invoice.exceptions ?? 0}</td>
-                  <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
-                    {new Date(invoice.uploadDate).toLocaleDateString()}
-                  </td>
-                  <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
-                    {invoice.description || "-"}
-=======
                   <td>{invoice.carrier}</td>
                   <td style={{ color: "var(--success)", fontWeight: 600 }}>
                     ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
->>>>>>> origin/FBPA
                   </td>
                   <td>{invoice.status}</td>
                   <td>{invoice.exceptions}</td>
