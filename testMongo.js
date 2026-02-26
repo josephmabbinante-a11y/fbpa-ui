@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 const uri = "mongodb+srv://FBPADB:FBPAAUDIT@cluster0.fvycshx.mongodb.net/fbpa-db?retryWrites=true&w=majority";
 
 const clientOptions = { serverApi: { version: '1', strict: true, deprecationErrors: true } };
