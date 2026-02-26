@@ -7,7 +7,53 @@ import CollapsibleSection from '../components/CollapsibleSection';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
-import defaultDashboardPrefs from '../mock/dashboard';
+
+const DASH_PREFS_KEY = 'dashboardPrefs';
+const DASH_VARIANT_KEY = 'dashboardVariant';
+const DEFAULT_DASHBOARD_PREFS = {
+  showTotalInvoices: true,
+  showExceptions: true,
+  showTotalSavings: true,
+  showPending: true,
+  showExceptionDistribution: true,
+  showSavingsByCarrier: true,
+  showRecentActivity: true,
+};
+
+function readDashboardPrefs() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DASH_PREFS_KEY) || 'null');
+    if (!parsed || typeof parsed !== 'object') return DEFAULT_DASHBOARD_PREFS;
+    return { ...DEFAULT_DASHBOARD_PREFS, ...parsed };
+  } catch {
+    return DEFAULT_DASHBOARD_PREFS;
+  }
+}
+
+function readDashboardVariant() {
+  try {
+    const stored = localStorage.getItem(DASH_VARIANT_KEY);
+    if (stored === 'shipper' || stored === 'carrier' || stored === 'broker') {
+      return stored;
+    }
+    return 'shipper';
+  } catch {
+    return 'shipper';
+  }
+}
+
+function mergeDashboardData(incoming) {
+  if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
+  return {
+    ...dashboardEnhanced,
+    ...incoming,
+    summary: { ...dashboardEnhanced.summary, ...(incoming.summary || {}) },
+    trends: { ...dashboardEnhanced.trends, ...(incoming.trends || {}) },
+    exceptionBreakdown: incoming.exceptionBreakdown?.length ? incoming.exceptionBreakdown : dashboardEnhanced.exceptionBreakdown,
+    savingsByCarrier: incoming.savingsByCarrier?.length ? incoming.savingsByCarrier : dashboardEnhanced.savingsByCarrier,
+    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : dashboardEnhanced.recentActivity,
+  };
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -16,24 +62,50 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
-  const [variant, setVariant] = useState(() => {
-    try {
-      return localStorage.getItem('DASH_VARIANT_KEY') || 'shipper';
-    } catch {
-      return 'shipper';
-    }
-  });
+  const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
+  const [variant, setVariant] = useState(() => readDashboardVariant());
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
+      const res = await getDashboard();
+      if (!mounted) return;
+
+      if (res && !res.error) {
+        setData(mergeDashboardData(res));
+      } else {
+        setData(dashboardEnhanced);
+        if (res?.error) setError(res.error);
+      }
+      setLoading(false);
+    };
+
+    loadDashboard();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     try {
-      const prefs = JSON.parse(localStorage.getItem('DASH_PREFS_KEY'));
-      if (prefs) setDashboardPrefs(prefs);
-    } catch (e) {
-      // handle error
+      setDashboardPrefs(readDashboardPrefs());
+    } catch {
+      setDashboardPrefs(DEFAULT_DASHBOARD_PREFS);
     }
-    setLoading(false);
   }, []);
+
+  const handleVariantChange = (event) => {
+    const nextVariant = event.target.value;
+    setVariant(nextVariant);
+    try {
+      localStorage.setItem(DASH_VARIANT_KEY, nextVariant);
+    } catch {
+      // localStorage may be blocked.
+    }
+  };
 
   // TODO: Implement Dashboard JSX here
   return (
@@ -41,7 +113,11 @@ export default function Dashboard() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Dashboard</h1>
-          <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}>
+          <select
+            value={variant}
+            onChange={handleVariantChange}
+            style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}
+          >
             {['shipper', 'carrier', 'broker'].map(v => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
           </select>
         </div>
@@ -52,7 +128,7 @@ export default function Dashboard() {
       </div>
 
       {loading && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.info}`, borderRadius: 4, fontSize: '13px', color: t.info, marginBottom: 24 }}>
+        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.accent}`, borderRadius: 4, fontSize: '13px', color: t.accent, marginBottom: 24 }}>
           Loading dashboard data...
         </div>
       )}
