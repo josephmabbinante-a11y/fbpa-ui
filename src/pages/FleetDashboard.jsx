@@ -40,27 +40,7 @@ const mockDrivers = [
       status: 'Sleeper',
       times: ['06:42', '01:29', '01:29', '29:30'],
     },
-  },
-          <table style={{ width: '100%', fontSize: 14 }}>
-            <thead>
-              <tr style={{ color: t.textSecondary }}>
-                <th>Driver</th>
-                <th>Status</th>
-                <th>ETA</th>
-                <th>Times</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockELD.map((row, i) => (
-                <tr key={i}>
-                  <td>{row.driver}</td>
-                  <td>{row.status}</td>
-                  <td>{row.eta}</td>
-                  <td>{row.times.join(' · ')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  }
           <div style={{ fontWeight: 600, marginBottom: 8, marginTop: 24 }}>Driver Application</div>
           <div style={{ fontSize: 14, color: t.textSecondary }}>Mobile app preview and driver features.</div>
           <div style={{ height: 120, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
