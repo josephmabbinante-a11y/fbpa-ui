@@ -1,16 +1,8 @@
-/* Enhanced appearance for comfort and accessibility */
 #root {
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding: 2.5rem;
+  padding: 2rem;
   text-align: center;
-  background: var(--bg, #f4f8fc);
-  color: var(--text, #1a2330);
-  font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
-  font-size: 17px;
-  line-height: 1.6;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(60, 80, 120, 0.08);
 }
 
 .logo {
@@ -42,15 +34,9 @@
 }
 
 .card {
-  padding: 2.5em;
-  background: var(--surface, #fff);
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(60, 80, 120, 0.06);
-  margin-bottom: 2em;
+  padding: 2em;
 }
 
 .read-the-docs {
-  color: var(--text-secondary, #6b7a90);
-  font-size: 15px;
-  margin-top: 1em;
+  color: #888;
 }
