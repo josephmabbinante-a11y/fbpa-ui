@@ -59,7 +59,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(() => dashboardEnhanced);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
@@ -77,7 +77,7 @@ export default function Dashboard() {
       if (res && !res.error) {
         setData(mergeDashboardData(res));
       } else {
-        setData(dashboardEnhanced);
+        // Keep currently rendered data to avoid UI popping/disappearing on API failures.
         if (res?.error) setError(res.error);
       }
       setLoading(false);
@@ -129,12 +129,12 @@ export default function Dashboard() {
           Error loading dashboard: {error}
         </div>
       )}
-      {!loading && !error && !data && (
+      {!loading && !data && (
         <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
           No dashboard data available.
         </div>
       )}
-      {data && !loading && !error && (
+      {data && (
         <>
           {/* KPIs with Trends */}
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
