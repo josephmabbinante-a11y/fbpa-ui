@@ -42,22 +42,8 @@ export default function Dashboard() {
 
   // Tailwind Freight Intelligence Command Center Layout
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-[1400px] mx-auto px-8 py-8">
-        {/* FILTER BAR */}
-        <div className="grid grid-cols-12 gap-6 mb-6">
-          <div className="col-span-12 bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4 flex justify-between items-center sticky top-0 z-10 transition-all duration-200 ease-in-out">
-            <div className="flex items-center gap-4">
-              <select value={variant} onChange={handleVariantChange} className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all duration-200">
-                {DASH_VARIANTS.map(v => <option key={v.key} value={v.key}>{v.label}</option>)}
-              </select>
-              {/* Date range picker placeholder */}
-              <input type="date" className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700" />
-              <input type="date" className="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700" />
-              <button className="bg-blue-50 text-blue-700 rounded-lg px-3 py-2 text-sm font-medium border border-blue-100 hover:bg-blue-100 transition-all duration-200">Compare vs Previous</button>
-            </div>
-            <button className="bg-gray-100 text-gray-700 rounded-lg px-3 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-200 transition-all duration-200">Export</button>
-          </div>
+    <div></div>
+  );
         </div>
 
         {/* KPI ROW */}

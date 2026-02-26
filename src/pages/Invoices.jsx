@@ -134,7 +134,70 @@ export default function Invoices() {
     <div className="ui-page">
       <PageHeader title="Invoices" loading={loading} />
 
-      {error && <InlineAlert>Backend error, using mock data: {error}</InlineAlert>}
+      {/* Summary Cards */}
+      <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
+        <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #e5e7eb', padding: '24px 32px', minWidth: 220 }}>
+          <div style={{ fontSize: 15, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>TOTAL INVOICES</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#111827', marginBottom: 4 }}>1,247</div>
+          <div style={{ color: '#10b981', fontWeight: 600, fontSize: 14 }}>↑ 5%</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #e5e7eb', padding: '24px 32px', minWidth: 220 }}>
+          <div style={{ fontSize: 15, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>EXCEPTIONS</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#111827', marginBottom: 4 }}>89</div>
+          <div style={{ color: '#ef4444', fontWeight: 600, fontSize: 14 }}>↓ 2%</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #e5e7eb', padding: '24px 32px', minWidth: 220 }}>
+          <div style={{ fontSize: 15, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>TOTAL SAVINGS</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#111827', marginBottom: 4 }}>$12,451</div>
+          <div style={{ color: '#10b981', fontWeight: 600, fontSize: 14 }}>↑ 12%</div>
+        </div>
+        <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.04)', border: '1px solid #e5e7eb', padding: '24px 32px', minWidth: 220 }}>
+          <div style={{ fontSize: 15, color: '#6b7280', fontWeight: 600, marginBottom: 8 }}>PENDING</div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: '#111827', marginBottom: 4 }}>23</div>
+          <div style={{ color: '#10b981', fontWeight: 600, fontSize: 14 }}>↑ 0%</div>
+        </div>
+      </div>
+
+      {/* Recent Activity Table */}
+      <div style={{ background: '#f9fafb', borderRadius: 8, marginBottom: 32, padding: '16px 0', boxShadow: '0 1px 4px rgba(0,0,0,0.03)' }}>
+        <div style={{ fontWeight: 600, fontSize: 18, color: '#111827', marginLeft: 24, marginBottom: 8 }}>Recent Activity</div>
+        <div style={{ overflowX: 'auto', padding: '0 24px' }}>
+          <table style={{ width: '100%', fontSize: 15, background: 'transparent' }}>
+            <thead style={{ background: '#f3f4f6' }}>
+              <tr>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#374151', fontWeight: 600 }}>TYPE</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#374151', fontWeight: 600 }}>INVOICE/FILE</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#374151', fontWeight: 600 }}>AMOUNT</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#374151', fontWeight: 600 }}>STATUS</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: '#374151', fontWeight: 600 }}>TIMESTAMP</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>exception</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>INV-1001</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>$1,245.67</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>Review</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>2/9/2026</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>upload</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>feb-9-invoices.csv</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>42</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>Processed</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>2/9/2026</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>exception</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>INV-1002</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>$980.5</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>Fail</td>
+                <td style={{ padding: '8px 12px', color: '#374151' }}>2/9/2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="ui-row">
         <input
