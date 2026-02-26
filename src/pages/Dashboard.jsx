@@ -187,37 +187,7 @@ function KPICompact({ title, value, change, accent }) {
     </div>
   );
 }
-                    <th className="px-3 py-2 text-left">Disputes</th>
-                    <th className="px-3 py-2 text-left">Recovery $</th>
-                    <th className="px-3 py-2 text-left">Overcharge %</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Replace with actual leaderboard data */}
-                  <tr className="even:bg-gray-50 hover:bg-gray-100">
-                    <td className="px-3 py-2 font-semibold text-gray-900">FastShip</td>
-                    <td className="px-3 py-2">12</td>
-                    <td className="px-3 py-2">$2,450.75</td>
-                    <td className="px-3 py-2 text-red-600 font-bold">18.2%</td>
-                  </tr>
-                  <tr className="even:bg-gray-50 hover:bg-gray-100">
-                    <td className="px-3 py-2 font-semibold text-gray-900">Oceanic</td>
-                    <td className="px-3 py-2">9</td>
-                    <td className="px-3 py-2">$1,980.50</td>
-                    <td className="px-3 py-2">12.7%</td>
-                  </tr>
-                  <tr className="even:bg-gray-50 hover:bg-gray-100">
-                    <td className="px-3 py-2 font-semibold text-gray-900">LandExpress</td>
-                    <td className="px-3 py-2">7</td>
-                    <td className="px-3 py-2">$1,120.00</td>
-                    <td className="px-3 py-2">9.5%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        {/* Recent Activity Section */}
+// ...existing code...
         <div className="grid grid-cols-12 gap-6 mb-6">
           <div className="col-span-12 bg-white rounded-xl shadow-sm border border-gray-100 p-5 transition-all duration-200">
             <div className="flex items-center justify-between mb-4">
