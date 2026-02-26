@@ -13,4 +13,18 @@ export default defineConfig({
       }
     }
   }
+  ,
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // Example: Split vendor code by package
+            const dirs = id.split('node_modules/')[1].split('/');
+            return dirs[0];
+          }
+        }
+      }
+    }
+  }
 })
