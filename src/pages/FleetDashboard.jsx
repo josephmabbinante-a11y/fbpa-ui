@@ -1,7 +1,7 @@
+
 import React, { useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
-// Mock data
 const mockDrivers = [
   {
     id: 1,
@@ -86,7 +86,7 @@ export default function FleetDashboard() {
         </div>
       </div>
 
-      {/* Main Content: Merge all fields into Driver Profile */}
+      {/* Main Content: Driver Profile */}
       <div style={{ flex: 1, padding: 32 }}>
         <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 24, marginBottom: 24, maxWidth: 900 }}>
           <div style={{ fontWeight: 700, fontSize: 22, marginBottom: 8 }}>{selectedDriver.name}</div>
@@ -138,11 +138,11 @@ export default function FleetDashboard() {
           <div style={{ height: 120, background: t.bgAlt, borderRadius: 8, marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary }}>
             <span>Mobile App (placeholder)</span>
           </div>
-
         </div>
       </div>
     </div>
   );
+}
 }
       <div style={{ width: 220, background: t.surface, borderRight: `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div style={{ padding: '24px 0 0 0' }}>
