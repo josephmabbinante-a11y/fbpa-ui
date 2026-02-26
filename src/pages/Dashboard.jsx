@@ -89,14 +89,6 @@ export default function Dashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    try {
-      setDashboardPrefs(readDashboardPrefs());
-    } catch {
-      setDashboardPrefs(DEFAULT_DASHBOARD_PREFS);
-    }
-  }, []);
-
   const handleVariantChange = (event) => {
     const nextVariant = event.target.value;
     setVariant(nextVariant);
