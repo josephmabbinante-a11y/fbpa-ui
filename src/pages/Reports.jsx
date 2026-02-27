@@ -69,21 +69,24 @@ export default function Reports() {
 
   useEffect(() => {
     let mounted = true;
-    getReports()
-      .then((res) => {
-        if (!mounted) return;
-        if (res?.error) setError(res.error);
-        if (res?.warning) setWarning(res.warning);
-        setData((prev) => mergeReportsData(prev || mockReports, res));
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err.message || String(err));
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
+    // Always use mock data as default
+    setData(mockReports);
+    setLoading(false);
+    // Optionally, allow API override if needed
+    // getReports()
+    //   .then((res) => {
+    //     if (!mounted) return;
+    //     if (res?.error) setError(res.error);
+    //     if (res?.warning) setWarning(res.warning);
+    //     setData((prev) => mergeReportsData(prev || mockReports, res));
+    //   })
+    //   .catch((err) => {
+    //     if (!mounted) return;
+    //     setError(err.message || String(err));
+    //   })
+    //   .finally(() => {
+    //     if (mounted) setLoading(false);
+    //   });
     return () => {
       mounted = false;
     };

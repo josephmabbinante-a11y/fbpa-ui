@@ -114,23 +114,24 @@ export default function Dashboard() {
   useEffect(() => {
     let mounted = true;
 
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError(null);
-      const res = await getDashboard();
-      if (!mounted) return;
+    // Always use mock data as default
+    setData(dashboardEnhanced);
+    setLoading(false);
 
-      if (res && !res.error && res.data && Object.keys(res.data).length > 0) {
-        setData(mergeDashboardData(res));
-      } else {
-        // Keep currently rendered data to avoid UI popping/disappearing on API failures or empty responses.
-        if (res?.error) setError(res.error);
-        // Optionally, show a warning or fallback UI here
-      }
-      setLoading(false);
-    };
-
-    loadDashboard();
+    // Optionally, allow API override if needed
+    // const loadDashboard = async () => {
+    //   setLoading(true);
+    //   setError(null);
+    //   const res = await getDashboard();
+    //   if (!mounted) return;
+    //   if (res && !res.error && res.data && Object.keys(res.data).length > 0) {
+    //     setData(mergeDashboardData(res));
+    //   } else {
+    //     if (res?.error) setError(res.error);
+    //   }
+    //   setLoading(false);
+    // };
+    // loadDashboard();
     return () => {
       mounted = false;
     };

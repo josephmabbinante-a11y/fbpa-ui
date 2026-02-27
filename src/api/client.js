@@ -24,11 +24,8 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
 }
 
 function isMockMode() {
-  try {
-    return localStorage.getItem('mockMode') === 'true';
-  } catch {
-    return false;
-  }
+  // Always return true for default mock mode
+  return true;
 }
 
 // Removed JWT token retrieval

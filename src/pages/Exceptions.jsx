@@ -24,23 +24,26 @@ export default function Exceptions() {
 
   useEffect(() => {
     let mounted = true;
-    getExceptions()
-      .then((res) => {
-        if (!mounted) return;
-        if (res && !res.error && Array.isArray(res.exceptions)) {
-          setData(res.exceptions);
-        } else if (res?.error) {
-          setError(res.error);
-        }
-      })
-      .catch((err) => {
-        if (!mounted) return;
-        setError(err.message || String(err));
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-
+    // Always use mock data as default
+    setData(mockExceptions.exceptions || []);
+    setLoading(false);
+    // Optionally, allow API override if needed
+    // getExceptions()
+    //   .then((res) => {
+    //     if (!mounted) return;
+    //     if (res && !res.error && Array.isArray(res.exceptions)) {
+    //       setData(res.exceptions);
+    //     } else if (res?.error) {
+    //       setError(res.error);
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     if (!mounted) return;
+    //     setError(err.message || String(err));
+    //   })
+    //   .finally(() => {
+    //     if (mounted) setLoading(false);
+    //   });
     return () => {
       mounted = false;
     };
