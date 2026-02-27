@@ -122,103 +122,98 @@ export default function Sidebar() {
               flex: 1,
             }}
           >
-            {navItems.map((item) => {
-              if (item.dropdown) {
-                // Dropdown group
-                return (
-                  <div key={item.id} style={{ marginBottom: 4 }}>
-                    <button
-                      type="button"
-                      onClick={() => handleDropdownToggle(item.id)}
+            {navItems.map((item) =>
+              item.dropdown ? (
+                <div key={item.id} style={{ marginBottom: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDropdownToggle(item.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      borderRadius: 12,
+                      border: `1px solid ${openDropdowns[item.id] ? t.accent : t.border}`,
+                      background: openDropdowns[item.id]
+                        ? `linear-gradient(140deg, rgba(24, 210, 255, 0.12), rgba(95, 140, 255, 0.10))`
+                        : 'transparent',
+                      color: openDropdowns[item.id] ? t.text : t.textSecondary,
+                      padding: collapsed ? '10px 8px' : '10px 12px',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      width: '100%',
+                      cursor: 'pointer',
+                      transition: 'all 180ms ease',
+                    }}
+                    aria-expanded={openDropdowns[item.id]}
+                    aria-controls={`dropdown-${item.id}`}
+                  >
+                    <span
                       style={{
-                        display: 'flex',
+                        minWidth: 34,
+                        height: 30,
+                        display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 10,
-                        borderRadius: 12,
-                        border: `1px solid ${openDropdowns[item.id] ? t.accent : t.border}`,
-                        background: openDropdowns[item.id]
-                          ? `linear-gradient(140deg, rgba(24, 210, 255, 0.12), rgba(95, 140, 255, 0.10))`
-                          : 'transparent',
-                        color: openDropdowns[item.id] ? t.text : t.textSecondary,
-                        padding: collapsed ? '10px 8px' : '10px 12px',
-                        fontSize: 13,
-                        fontWeight: 600,
-                        width: '100%',
-                        cursor: 'pointer',
-                        transition: 'all 180ms ease',
+                        justifyContent: 'center',
+                        borderRadius: 8,
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${t.border}`,
+                        fontSize: 11,
+                        letterSpacing: 0.4,
                       }}
-                      aria-expanded={openDropdowns[item.id]}
-                      aria-controls={`dropdown-${item.id}`}
                     >
-                      <span
-                        style={{
-                          minWidth: 34,
-                          height: 30,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: 8,
-                          backgroundColor: 'rgba(255,255,255,0.05)',
-                          border: `1px solid ${t.border}`,
-                          fontSize: 11,
-                          letterSpacing: 0.4,
-                        }}
-                      >
-                        {item.icon}
-                      </span>
-                      {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
-                      {!collapsed && <span style={{ marginLeft: 'auto', fontSize: 16 }}>{openDropdowns[item.id] ? '▾' : '▸'}</span>}
-                    </button>
-                    {openDropdowns[item.id] && (
-                      <div id={`dropdown-${item.id}`} style={{ marginLeft: collapsed ? 0 : 36, marginTop: 2 }}>
-                        {item.items.map((sub) => (
-                          <NavLink
-                            key={sub.id}
-                            to={sub.path}
-                            className="neon-outline"
-                            style={({ isActive }) => ({
-                              display: 'flex',
+                      {item.icon}
+                    </span>
+                    {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+                    {!collapsed && <span style={{ marginLeft: 'auto', fontSize: 16 }}>{openDropdowns[item.id] ? '▾' : '▸'}</span>}
+                  </button>
+                  {openDropdowns[item.id] && (
+                    <div id={`dropdown-${item.id}`} style={{ marginLeft: collapsed ? 0 : 36, marginTop: 2 }}>
+                      {item.items.map((sub) => (
+                        <NavLink
+                          key={sub.id}
+                          to={sub.path}
+                          className="neon-outline"
+                          style={({ isActive }) => ({
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            borderRadius: 10,
+                            border: `1px solid ${isActive ? t.accent : t.border}`,
+                            background: isActive
+                              ? `linear-gradient(140deg, rgba(24, 210, 255, 0.18), rgba(95, 140, 255, 0.14))`
+                              : 'transparent',
+                            color: isActive ? t.text : t.textSecondary,
+                            padding: collapsed ? '8px 8px' : '8px 12px',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            marginBottom: 2,
+                            transition: 'all 180ms ease',
+                          })}
+                        >
+                          <span
+                            style={{
+                              minWidth: 24,
+                              height: 22,
+                              display: 'inline-flex',
                               alignItems: 'center',
-                              gap: 10,
-                              borderRadius: 10,
-                              border: `1px solid ${isActive ? t.accent : t.border}`,
-                              background: isActive
-                                ? `linear-gradient(140deg, rgba(24, 210, 255, 0.18), rgba(95, 140, 255, 0.14))`
-                                : 'transparent',
-                              color: isActive ? t.text : t.textSecondary,
-                              padding: collapsed ? '8px 8px' : '8px 12px',
-                              fontSize: 12,
-                              fontWeight: 500,
-                              marginBottom: 2,
-                              transition: 'all 180ms ease',
-                            })}
+                              justifyContent: 'center',
+                              borderRadius: 6,
+                              backgroundColor: 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${t.border}`,
+                              fontSize: 10,
+                              letterSpacing: 0.3,
+                            }}
                           >
-                            <span
-                              style={{
-                                minWidth: 24,
-                                height: 22,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: 6,
-                                backgroundColor: 'rgba(255,255,255,0.04)',
-                                border: `1px solid ${t.border}`,
-                                fontSize: 10,
-                                letterSpacing: 0.3,
-                              }}
-                            >
-                              {sub.icon}
-                            </span>
-                            {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{sub.label}</span>}
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-              // Regular nav item
-              return (
+                            {sub.icon}
+                          </span>
+                          {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{sub.label}</span>}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <NavLink
                   key={item.id}
                   to={item.path}
@@ -259,8 +254,8 @@ export default function Sidebar() {
                   </span>
                   {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
                 </NavLink>
-              );
-            })}
+              )
+            )}
           </nav>
                 ? `linear-gradient(140deg, rgba(24, 210, 255, 0.22), rgba(95, 140, 255, 0.18))`
                 : 'transparent',
