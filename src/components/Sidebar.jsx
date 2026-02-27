@@ -8,15 +8,43 @@ import { clearAccessToken } from '../utils/authToken';
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
   { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet-dashboard' },
+  {
+    id: 'orders-group',
+    label: 'Orders',
+    icon: 'OD',
+    dropdown: true,
+    items: [
+      { id: 'loads', label: 'Loads', icon: 'LD', path: '/loads' },
+      { id: 'ltl-orders', label: 'LTL Orders', icon: 'LO', path: '/ltl-orders' },
+      { id: 'edi-tenders', label: 'EDI / Tenders', icon: 'ET', path: '/edi-tenders' },
+    ],
+  },
+  {
+    id: 'customers-group',
+    label: 'Customers',
+    icon: 'CU',
+    dropdown: true,
+    items: [
+      { id: 'customers', label: 'Customer List', icon: 'CL', path: '/customers' },
+      { id: 'find-shippers', label: 'Find Shippers', icon: 'FS', path: '/find-shippers' },
+    ],
+  },
+  {
+    id: 'carriers-group',
+    label: 'Carriers',
+    icon: 'CA',
+    dropdown: true,
+    items: [
+      { id: 'carriers', label: 'Carrier List', icon: 'CR', path: '/carriers' },
+      { id: 'locations', label: 'Locations', icon: 'LC', path: '/locations' },
+    ],
+  },
   { id: 'invoices', label: 'Invoices', icon: 'IN', path: '/invoices' },
   { id: 'exceptions', label: 'Exceptions', icon: 'EX', path: '/exceptions' },
   { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic' },
   { id: 'reports', label: 'Reports', icon: 'RP', path: '/reports' },
-  { id: 'carriers', label: 'Carrier Performance', icon: 'CP', path: '/carriers' },
-  { id: 'loads', label: 'Loads', icon: 'LD', path: '/loads' },
   { id: 'uploads', label: 'Uploads', icon: 'UP', path: '/uploads' },
-  { id: 'customers', label: 'Customers', icon: 'CU', path: '/customers' },
-  { id: 'profile', label: 'My Audit IQ Profile', icon: 'PR', path: '/profile' },
+  { id: 'profile', label: 'Profile', icon: 'PR', path: '/profile' },
   { id: 'settings', label: 'Settings', icon: 'ST', path: '/settings' },
 ];
 
@@ -31,105 +59,209 @@ export default function Sidebar() {
     const updateViewport = () => {
       const mobile = window.innerWidth < 900;
       setIsMobile(mobile);
-      if (mobile) {
-        setCollapsed(true);
-      } else {
-        const stored = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-        setCollapsed(stored);
-      }
-    };
+      // Dropdown state for groups
+      const [openDropdowns, setOpenDropdowns] = useState({});
 
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-    return () => window.removeEventListener('resize', updateViewport);
-  }, []);
+      const handleDropdownToggle = (groupId) => {
+        setOpenDropdowns((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+      };
 
-  useEffect(() => {
-    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
-  }, [collapsed]);
-
-  const sidebarWidth = collapsed ? 74 : 264;
-  const navGap = useMemo(() => (collapsed ? 10 : 8), [collapsed]);
-
-  const toggleCollapsed = () => {
-    if (isMobile) {
-      setCollapsed((prev) => !prev);
-      return;
-    }
-    const newState = !collapsed;
-    setCollapsed(newState);
-    localStorage.setItem('opscale_sidebar_collapsed', String(newState));
-  };
-
-  return (
-    <aside
-      style={{
-        width: sidebarWidth,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        inset: '0 auto 0 0',
-        background: `linear-gradient(185deg, ${t.bgAlt}, ${t.surface})`,
-        borderRight: `1px solid ${t.border}`,
-        boxShadow: '18px 0 36px rgba(1, 5, 18, 0.45)',
-        zIndex: 100,
-        transition: 'width 200ms ease',
-      }}
-    >
-      <header
-        style={{
-          minHeight: 70,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          padding: collapsed ? '12px 8px' : '12px 14px',
-          borderBottom: `1px solid ${t.border}`,
-          gap: 8,
-        }}
-      >
-        {!collapsed && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          className="neon-outline"
+      return (
+        <aside
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            border: `1px solid ${t.border}`,
-            backgroundColor: t.surfaceStrong,
-            color: t.textSecondary,
-            cursor: 'pointer',
+            width: sidebarWidth,
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'fixed',
+            inset: '0 auto 0 0',
+            background: `linear-gradient(185deg, ${t.bgAlt}, ${t.surface})`,
+            borderRight: `1px solid ${t.border}`,
+            boxShadow: '18px 0 36px rgba(1, 5, 18, 0.45)',
+            zIndex: 100,
+            transition: 'width 200ms ease',
           }}
-          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
-          {collapsed ? '>' : '<'}
-        </button>
-      </header>
-
-      <nav
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: navGap,
-          padding: '14px 10px',
-          overflowY: 'auto',
-          flex: 1,
-        }}
-      >
-        {navItems.map((item) => (
-          <NavLink
-            key={item.id}
-            to={item.path}
-            className="neon-outline"
-            end={item.path === '/'}
-            style={({ isActive }) => ({
+          <header
+            style={{
+              minHeight: 70,
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              borderRadius: 12,
-              border: `1px solid ${isActive ? t.accent : t.border}`,
-              background: isActive
+              justifyContent: collapsed ? 'center' : 'space-between',
+              padding: collapsed ? '12px 8px' : '12px 14px',
+              borderBottom: `1px solid ${t.border}`,
+              gap: 8,
+            }}
+          >
+            {!collapsed && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              className="neon-outline"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                border: `1px solid ${t.border}`,
+                backgroundColor: t.surfaceStrong,
+                color: t.textSecondary,
+                cursor: 'pointer',
+              }}
+              title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            >
+              {collapsed ? '>' : '<'}
+            </button>
+          </header>
+
+          <nav
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: navGap,
+              padding: '14px 10px',
+              overflowY: 'auto',
+              flex: 1,
+            }}
+          >
+            {navItems.map((item) => {
+              if (item.dropdown) {
+                // Dropdown group
+                return (
+                  <div key={item.id} style={{ marginBottom: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDropdownToggle(item.id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        borderRadius: 12,
+                        border: `1px solid ${openDropdowns[item.id] ? t.accent : t.border}`,
+                        background: openDropdowns[item.id]
+                          ? `linear-gradient(140deg, rgba(24, 210, 255, 0.12), rgba(95, 140, 255, 0.10))`
+                          : 'transparent',
+                        color: openDropdowns[item.id] ? t.text : t.textSecondary,
+                        padding: collapsed ? '10px 8px' : '10px 12px',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        width: '100%',
+                        cursor: 'pointer',
+                        transition: 'all 180ms ease',
+                      }}
+                      aria-expanded={openDropdowns[item.id]}
+                      aria-controls={`dropdown-${item.id}`}
+                    >
+                      <span
+                        style={{
+                          minWidth: 34,
+                          height: 30,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: 8,
+                          backgroundColor: 'rgba(255,255,255,0.05)',
+                          border: `1px solid ${t.border}`,
+                          fontSize: 11,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {item.icon}
+                      </span>
+                      {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+                      {!collapsed && <span style={{ marginLeft: 'auto', fontSize: 16 }}>{openDropdowns[item.id] ? '▾' : '▸'}</span>}
+                    </button>
+                    {openDropdowns[item.id] && (
+                      <div id={`dropdown-${item.id}`} style={{ marginLeft: collapsed ? 0 : 36, marginTop: 2 }}>
+                        {item.items.map((sub) => (
+                          <NavLink
+                            key={sub.id}
+                            to={sub.path}
+                            className="neon-outline"
+                            style={({ isActive }) => ({
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              borderRadius: 10,
+                              border: `1px solid ${isActive ? t.accent : t.border}`,
+                              background: isActive
+                                ? `linear-gradient(140deg, rgba(24, 210, 255, 0.18), rgba(95, 140, 255, 0.14))`
+                                : 'transparent',
+                              color: isActive ? t.text : t.textSecondary,
+                              padding: collapsed ? '8px 8px' : '8px 12px',
+                              fontSize: 12,
+                              fontWeight: 500,
+                              marginBottom: 2,
+                              transition: 'all 180ms ease',
+                            })}
+                          >
+                            <span
+                              style={{
+                                minWidth: 24,
+                                height: 22,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: 6,
+                                backgroundColor: 'rgba(255,255,255,0.04)',
+                                border: `1px solid ${t.border}`,
+                                fontSize: 10,
+                                letterSpacing: 0.3,
+                              }}
+                            >
+                              {sub.icon}
+                            </span>
+                            {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{sub.label}</span>}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              // Regular nav item
+              return (
+                <NavLink
+                  key={item.id}
+                  to={item.path}
+                  className="neon-outline"
+                  end={item.path === '/'}
+                  style={({ isActive }) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    borderRadius: 12,
+                    border: `1px solid ${isActive ? t.accent : t.border}`,
+                    background: isActive
+                      ? `linear-gradient(140deg, rgba(24, 210, 255, 0.22), rgba(95, 140, 255, 0.18))`
+                      : 'transparent',
+                    color: isActive ? t.text : t.textSecondary,
+                    padding: collapsed ? '10px 8px' : '10px 12px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    transition: 'all 180ms ease',
+                    boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.04)' : 'none',
+                  })}
+                >
+                  <span
+                    style={{
+                      minWidth: 34,
+                      height: 30,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 8,
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${t.border}`,
+                      fontSize: 11,
+                      letterSpacing: 0.4,
+                    }}
+                  >
+                    {item.icon}
+                  </span>
+                  {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+                </NavLink>
+              );
+            })}
+          </nav>
                 ? `linear-gradient(140deg, rgba(24, 210, 255, 0.22), rgba(95, 140, 255, 0.18))`
                 : 'transparent',
               color: isActive ? t.text : t.textSecondary,
