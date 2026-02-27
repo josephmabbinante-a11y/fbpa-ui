@@ -93,15 +93,11 @@ function AppRoutes() {
             <Route path="/loads" element={<Loads />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/settings" element={<Settings />} />
-      {/* AI Bot for step-by-step instructions and chat */}
-      <AIBot />
             <Route path="/rate-logic" element={<RateLogicTool />} />
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/profile" element={<MyAuditIQProfile />} />
-            import AIBot from './components/AIBot';
             <Route path="/system-status" element={<SystemStatus />} />
             <Route path="/smoke-test" element={<LoginTest />} />
-
             <Route path="/load-board" element={<LoadBoard />} />
             <Route path="/shipments" element={<Shipments />} />
             <Route path="/fleet" element={<FleetDashboard />} />
@@ -111,12 +107,10 @@ function AppRoutes() {
             <Route path="/lane-intelligence" element={<LaneIntelligence />} />
             <Route path="/carriers-list" element={<Carriers />} />
             <Route path="/account" element={<Account />} />
-
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Suspense>
       </Layout>
-      <DemoGuide />
     </>
   );
 }
