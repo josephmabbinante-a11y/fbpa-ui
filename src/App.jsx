@@ -1,5 +1,5 @@
-const OrderManagementPage = lazy(() => import('./pages/OrderManagement'));
 import { lazy, Suspense } from 'react';
+const OrderManagementPage = lazy(() => import('./pages/OrderManagement'));
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DemoProvider } from './demo/DemoContext';
