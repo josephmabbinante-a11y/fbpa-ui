@@ -15,10 +15,10 @@ const navItems = [
     dropdown: true,
     items: [
       { id: 'loads', label: 'Load Management', icon: 'LD', path: '/loads' },
-      { id: 'order-management', label: 'Order Management', icon: 'OM', path: '/loads' },
       { id: 'edi-tenders', label: 'EDI / Tenders', icon: 'ET', path: '/edi-tenders' },
     ],
   },
+  { id: 'order-management', label: 'Order Management', icon: 'OM', path: '/order-management' },
   {
     id: 'customers-group',
     label: 'Customers',

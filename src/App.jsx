@@ -1,3 +1,4 @@
+const OrderManagementPage = lazy(() => import('./pages/OrderManagement'));
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -91,6 +92,7 @@ function AppRoutes() {
             <Route path="/carriers" element={<CarriersPerformance />} />
             <Route path="/carriers/:carrier" element={<CarrierScorecard />} />
             <Route path="/loads" element={<Loads />} />
+            <Route path="/order-management" element={<OrderManagementPage />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/rate-logic" element={<RateLogicTool />} />
