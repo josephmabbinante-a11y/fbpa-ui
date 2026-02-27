@@ -1,3 +1,4 @@
+import RoleManagement from '../components/admin/RoleManagement';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminControlCard from '../components/admin/AdminControlCard';
@@ -288,7 +289,7 @@ export default function Settings() {
                   case 'Notification Settings':
                     return <NotificationSettings onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
                   case 'Manage Roles':
-                    return 'Role management form goes here.';
+                    return <RoleManagement />;
                   case 'Permission Groups':
                     return 'Permission groups configuration goes here.';
                   case 'Commission Overrides':
