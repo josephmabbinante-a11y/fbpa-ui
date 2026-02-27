@@ -99,7 +99,17 @@ export default function Login() {
     <div className="auth-shell">
       <div className="auth-wrap">
         <div className="auth-logo-panel">
-          <img src={logo} alt="Opscale Audit IQ" style={{ width: 220, maxWidth: "100%", height: "auto", display: "block" }} />
+          <img
+            src={logo}
+            alt="Opscale Audit IQ"
+            style={{
+              width: 320,
+              maxWidth: "100%",
+              height: "auto",
+              display: "block",
+              filter: "drop-shadow(0 10px 22px rgba(24, 210, 255, 0.24))",
+            }}
+          />
         </div>
 
         <div className="ui-card auth-card">
