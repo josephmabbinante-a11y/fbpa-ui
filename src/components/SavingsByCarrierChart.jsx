@@ -37,7 +37,7 @@ export default function SavingsByCarrierChart({ data, onClick }) {
         flexDirection: 'column',
         boxSizing: 'border-box',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s ease',
+        transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
         transform: onClick && isHovered ? 'translateY(-2px)' : 'translateY(0)',
         boxShadow: onClick && isHovered ? `0 4px 12px ${t.accent}20` : 'none',
       }}

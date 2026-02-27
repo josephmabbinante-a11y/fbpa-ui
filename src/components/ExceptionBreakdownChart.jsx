@@ -32,7 +32,7 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
         boxSizing: 'border-box',
         overflow: 'hidden',
         cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.2s ease',
+        transition: 'background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
         transform: onClick && isHovered ? 'translateY(-2px)' : 'translateY(0)',
         boxShadow: onClick && isHovered ? '0 4px 12px #ef444420' : 'none',
       }}
