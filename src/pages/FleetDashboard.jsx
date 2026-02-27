@@ -464,7 +464,7 @@ function ELDTableCard({ rows }) {
   );
 }
 
-
+function FleetDashboard() {
   const [selectedDriver, setSelectedDriver] = useState(mockDrivers[0]);
   const mockELD = useMemo(
     () =>
@@ -625,7 +625,10 @@ function ELDTableCard({ rows }) {
             </tr>
           </tbody>
         </table>
+
       </div>
     </>
   );
 }
+
+export default FleetDashboard;
