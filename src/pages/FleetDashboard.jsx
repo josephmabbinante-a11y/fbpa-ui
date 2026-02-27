@@ -185,10 +185,14 @@ function FleetOverviewCard({ driver }) {
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">{driver.name}</h1>
-              <p className="text-sm text-gray-500">Company Driver</p>
+              <p className="text-sm text-gray-500">{driver.company}</p>
               <span className={`mt-2 inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${getDutyBadgeClasses(dutyStatus)}`}>
                 {dutyStatus}
               </span>
+              <div className="mt-2 flex gap-2">
+                <button className="rounded-full bg-blue-200 px-3 py-1 text-xs font-semibold text-blue-700">VoIP Call</button>
+                <button className="rounded-full bg-green-200 px-3 py-1 text-xs font-semibold text-green-700">SMS</button>
+              </div>
             </div>
           </div>
 
@@ -210,6 +214,33 @@ function FleetOverviewCard({ driver }) {
               <p className="text-2xl font-bold text-gray-900">{driver.telematics.times[1] || '--:--'}</p>
             </div>
           </div>
+        </div>
+
+        {/* DQF Checklist */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-2">Safety & Compliance</h3>
+          <div className="mb-2 text-sm text-gray-500">DQF: 36% Completed</div>
+          <ul className="space-y-1">
+            {driver.docs.map((doc) => (
+              <li key={doc.name} className="flex items-center gap-2">
+                {getDocumentIcon(doc.status)}
+                <span className="text-sm text-gray-800">{doc.name}</span>
+                <span className={`ml-auto text-xs font-semibold ${doc.status === 'Complete' ? 'text-green-700' : doc.status === 'Expired' ? 'text-red-700' : 'text-yellow-700'}`}>{doc.status}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Tabs for License, Medical, MVRs, PSPs, Uploaded */}
+        <div className="mt-6">
+          <div className="flex gap-2 mb-2">
+            <button className="px-3 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-700">License</button>
+            <button className="px-3 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-700">Medical</button>
+            <button className="px-3 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-700">MVRs</button>
+            <button className="px-3 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-700">PSPs</button>
+            <button className="px-3 py-1 rounded-lg bg-gray-100 text-xs font-semibold text-gray-700">Uploaded</button>
+          </div>
+          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-500">Checklist and document management tabs (UI only)</div>
         </div>
 
         <div className={`mt-4 rounded-lg p-3 ${complianceTone.barClass}`}>
