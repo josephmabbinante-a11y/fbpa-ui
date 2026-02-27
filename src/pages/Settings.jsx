@@ -80,7 +80,8 @@ const adminSections = [
 
 export default function Settings() {
   const { theme, toggleTheme } = useTheme();
-  const { demoMode, enableDemo, disableDemo } = typeof useDemo === 'function' ? useDemo() : { demoMode: false, enableDemo: () => {}, disableDemo: () => {} };
+  // Always use the real hook, not a fallback
+  const { demoMode, enableDemo, disableDemo } = useDemo();
   const t = themes[theme];
 
   const [activeSectionTitle, setActiveSectionTitle] = useState(adminSections[0].title);
@@ -100,44 +101,54 @@ export default function Settings() {
         <button
           onClick={toggleTheme}
           style={{
-            borderRadius: 8,
-            border: `1px solid ${t.border}`,
-            background: theme === 'dark' ? t.bgAlt : t.surface,
-            color: t.text,
-            fontSize: 13,
-            fontWeight: 600,
-            padding: '6px 16px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            transition: 'background 0.2s',
-          }}
-        >
-          {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
-        </button>
-        <button
-          onClick={demoMode ? disableDemo : enableDemo}
-          style={{
-            borderRadius: 8,
-            border: `1px solid ${demoMode ? t.accent : t.border}`,
-            background: demoMode ? t.accent : t.surface,
-            color: demoMode ? t.text : t.textSecondary,
-            fontSize: 13,
-            fontWeight: 600,
-            padding: '6px 16px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            transition: 'background 0.2s',
-          }}
-        >
-          {demoMode ? '🟢 Mock Data Mode: ON' : '⚪ Mock Data Mode: OFF'}
-        </button>
-      </div>
-      <div
-        style={{
-          marginBottom: 18,
-          borderRadius: 16,
-          border: `1px solid ${t.border}`,
-          background:
+            return (
+              <div style={{ width: '100%', minHeight: '100%', padding: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 8 }}>
+                  {/* Theme toggle button */}
+                  <button
+                    onClick={toggleTheme}
+                    style={{
+                      borderRadius: 8,
+                      border: `1.5px solid ${theme === 'dark' ? t.accent : t.border}`,
+                      background: theme === 'dark' ? t.bgAlt : t.surface,
+                      color: theme === 'dark' ? t.text : t.text,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      padding: '7px 18px',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      transition: 'background 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                    aria-label="Toggle light/dark theme"
+                  >
+                    {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+                  </button>
+                  {/* Mock data mode toggle button */}
+                  <button
+                    onClick={demoMode ? disableDemo : enableDemo}
+                    style={{
+                      borderRadius: 8,
+                      border: `1.5px solid ${demoMode ? t.accent : t.border}`,
+                      background: demoMode ? t.accent : t.surface,
+                      color: demoMode ? t.text : t.textSecondary,
+                      fontSize: 14,
+                      fontWeight: 700,
+                      padding: '7px 18px',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      transition: 'background 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                    aria-label="Toggle mock data mode"
+                  >
+                    {demoMode ? '🟢 Mock Data Mode: ON' : '⚪ Mock Data Mode: OFF'}
+                  </button>
+                </div>
             theme === 'light'
               ? 'linear-gradient(145deg, rgba(239, 247, 255, 0.96), rgba(227, 239, 255, 0.95))'
               : 'linear-gradient(155deg, rgba(16, 30, 58, 0.94), rgba(9, 19, 38, 0.94))',
