@@ -23,9 +23,15 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
   }
 }
 
+// Unify mock mode: check both env and DemoContext (if available)
+let _demoMode = false;
+try {
+  // If running in browser, try to read localStorage
+  _demoMode = typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
+} catch {}
 function isMockMode() {
-  // Use environment variable for mock mode
-  return import.meta.env.VITE_MOCK_MODE === 'true';
+  // Use environment variable or demoMode from localStorage
+  return import.meta.env.VITE_MOCK_MODE === 'true' || _demoMode;
 }
 
 // Removed JWT token retrieval
