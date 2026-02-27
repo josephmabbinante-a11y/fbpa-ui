@@ -249,19 +249,89 @@ export default function Settings() {
             </div>
           </div>
 
+          {/* Implementation area for selected action */}
           <div
             style={{
               marginTop: 14,
               borderRadius: 10,
-              border: `1px dashed ${t.border}`,
-              background: theme === 'light' ? 'rgba(255, 255, 255, 0.75)' : 'rgba(6, 14, 28, 0.42)',
-              padding: 12,
+              border: `1.5px dashed ${t.accent}`,
+              background: theme === 'light' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(6, 14, 28, 0.55)',
+              padding: 16,
+              minHeight: 80,
             }}
           >
             <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 700, marginBottom: 4 }}>SELECTED ACTION</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: t.text }}>{activeAction}</div>
-            <div style={{ marginTop: 5, fontSize: 12, color: t.textSecondary }}>
-              This area is now active for implementation and policy updates.
+            <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 6 }}>{activeAction}</div>
+            {/* Placeholder for future implementation: route to correct admin form/component here */}
+            <div style={{ fontSize: 13, color: t.textSecondary }}>
+              {(() => {
+                switch (activeAction) {
+                  case 'Edit Company Info':
+                    return 'Edit company information form goes here.';
+                  case 'Upload Logo':
+                    return 'Logo upload component goes here.';
+                  case 'Currency & Units Settings':
+                    return 'Currency and units settings form goes here.';
+                  case 'Default Margin Targets':
+                    return 'Default margin targets configuration goes here.';
+                  case 'Routing Defaults':
+                    return 'Routing defaults configuration goes here.';
+                  case 'Notification Settings':
+                    return 'Notification settings configuration goes here.';
+                  case 'Add/Edit Users':
+                    return 'User management form goes here.';
+                  case 'Manage Roles':
+                    return 'Role management form goes here.';
+                  case 'Permission Groups':
+                    return 'Permission groups configuration goes here.';
+                  case 'Commission Overrides':
+                    return 'Commission overrides configuration goes here.';
+                  case 'Branch Management':
+                    return 'Branch management form goes here.';
+                  case 'Load Numbering Rules':
+                    return 'Load numbering rules configuration goes here.';
+                  case 'Manifest Settings':
+                    return 'Manifest settings configuration goes here.';
+                  case 'Default Equipment Types':
+                    return 'Default equipment types configuration goes here.';
+                  case 'Workflow Automation Rules':
+                    return 'Workflow automation rules configuration goes here.';
+                  case 'Rate Logic Configuration':
+                    return 'Rate logic configuration form goes here.';
+                  case 'Accessorial Validation Rules':
+                    return 'Accessorial validation rules configuration goes here.';
+                  case 'Carrier Overcharge Thresholds':
+                    return 'Carrier overcharge thresholds configuration goes here.';
+                  case 'Invoice Audit Settings':
+                    return 'Invoice audit settings form goes here.';
+                  case 'Profit Margin Alerts':
+                    return 'Profit margin alerts configuration goes here.';
+                  case 'Payment Terms Settings':
+                    return 'Payment terms settings configuration goes here.';
+                  case 'Carrier Confirmations':
+                    return 'Carrier confirmations template configuration goes here.';
+                  case 'Invoice Templates':
+                    return 'Invoice templates configuration goes here.';
+                  case 'Bill of Lading Defaults':
+                    return 'Bill of Lading defaults configuration goes here.';
+                  case 'Font & Branding Settings':
+                    return 'Font and branding settings configuration goes here.';
+                  case 'Reporting Configuration':
+                    return 'Reporting configuration form goes here.';
+                  case 'View Current Plan':
+                    return 'Current subscription plan details go here.';
+                  case 'Upgrade Plan':
+                    return 'Upgrade plan options go here.';
+                  case 'Payment Methods':
+                    return 'Payment methods management goes here.';
+                  case 'Usage Limits':
+                    return 'Usage limits configuration goes here.';
+                  case 'Feature Access Controls':
+                    return 'Feature access controls configuration goes here.';
+                  default:
+                    return 'Select an action to begin configuration.';
+                }
+              })()}
             </div>
           </div>
         </aside>
