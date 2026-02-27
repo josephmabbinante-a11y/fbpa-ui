@@ -164,9 +164,9 @@
 }
 
 .auth-wrap {
-  width: min(980px, 100%);
+  width: min(1040px, 100%);
   display: grid;
-  grid-template-columns: 140px minmax(300px, 440px);
+  grid-template-columns: minmax(220px, 280px) minmax(300px, 440px);
   gap: 22px;
   align-items: start;
 }

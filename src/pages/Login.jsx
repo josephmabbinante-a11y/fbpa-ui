@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/client";
 import logo from "../assets/opscale-logo.svg";
+import shieldLogo from "../assets/opscale-shield.svg";
 import RegisterForm from "../components/Register";
 import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
 import { setAccessToken } from "../utils/authToken";
@@ -98,26 +99,12 @@ export default function Login() {
     <div className="auth-shell">
       <div className="auth-wrap">
         <div className="auth-logo-panel">
-          <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Security badge">
-            <circle cx="60" cy="60" r="56" stroke="rgba(24, 210, 255, 0.45)" strokeWidth="2" />
-            <circle cx="60" cy="60" r="46" fill="rgba(15, 27, 54, 0.75)" />
-            <path d="M60 22L90 34V58C90 76 76 92 60 98C44 92 30 76 30 58V34L60 22Z" fill="url(#badgeFill)" stroke="#7dd9ff" strokeWidth="2" />
-            <rect x="46" y="62" width="8" height="14" rx="1.5" fill="#5f8cff" />
-            <rect x="58" y="54" width="8" height="22" rx="1.5" fill="#18d2ff" />
-            <rect x="70" y="46" width="8" height="30" rx="1.5" fill="#4ade80" />
-            <path d="M48 44L57 52L73 37" stroke="#9cff6d" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            <defs>
-              <linearGradient id="badgeFill" x1="60" y1="22" x2="60" y2="98" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#163265" />
-                <stop offset="1" stopColor="#0b1633" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src={logo} alt="Opscale Audit IQ" style={{ width: 220, maxWidth: "100%", height: "auto", display: "block" }} />
         </div>
 
         <div className="ui-card auth-card">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <img src={logo} alt="Opscale" style={{ height: 40, width: "auto", display: "block" }} />
+            <img src={shieldLogo} alt="Opscale shield" style={{ height: 40, width: 40, display: "block", objectFit: "contain" }} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
               <div className="ui-subtitle">Sign in to continue</div>
