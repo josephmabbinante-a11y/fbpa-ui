@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useDemo } from '../demo/DemoContext';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
@@ -111,21 +112,25 @@ export default function Dashboard() {
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
   // Demo/mock mode
-  const { demoMode } = require('../demo/DemoContext').useDemo ? require('../demo/DemoContext').useDemo() : { demoMode: false };
+  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
 
   useEffect(() => {
     let mounted = true;
     async function load() {
       setLoading(true);
       setError(null);
+      // Debug log demoMode
+      console.log('[Dashboard] demoMode:', demoMode);
       // Use mock mode if enabled
       if (demoMode) {
+        console.log('[Dashboard] Using mock dashboardEnhanced');
         setData(dashboardEnhanced);
         setLoading(false);
         return;
       }
       try {
         const res = await getDashboard();
+        console.log('[Dashboard] getDashboard result:', res);
         if (!mounted) return;
         if (res && !res.error && (res.data || Object.keys(res).length > 0)) {
           setData(mergeDashboardData(res.data || res));
@@ -136,6 +141,7 @@ export default function Dashboard() {
       } catch (err) {
         setData(dashboardEnhanced);
         setError(err.message || String(err));
+        console.error('[Dashboard] Error loading dashboard:', err);
       }
       setLoading(false);
     }
@@ -183,13 +189,16 @@ export default function Dashboard() {
           Error loading dashboard: {error}
         </div>
       )}
-      {!loading && !data && (
+      {!loading && (!data || typeof data !== 'object' || Object.keys(data).length === 0) && (
         <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-          No dashboard data available.
+          <b>Dashboard fallback:</b> No dashboard data available.<br />
+          <pre style={{ fontSize: 12, color: t.textSecondary, marginTop: 8 }}>data: {JSON.stringify(data, null, 2)}</pre>
         </div>
       )}
-      {data && (
+      {data && typeof data === 'object' && Object.keys(data).length > 0 && (
         <>
+          {/* Debug log for dashboard state */}
+          <pre style={{ fontSize: 12, color: t.textSecondary, marginBottom: 8 }}>[DEBUG] Dashboard state:\nloading: {JSON.stringify(loading)}\nerror: {JSON.stringify(error)}\ndata: {JSON.stringify(data, null, 2)}</pre>
           {/* KPIs with Trends */}
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
             {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
