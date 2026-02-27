@@ -1,5 +1,17 @@
 import React, { useMemo, useState } from 'react';
-import DriverCommandCardModern from '../components/DriverCommandCardModern';
+// import DriverCommandCardModern from '../components/DriverCommandCardModern';
+// Placeholder icons (replace with your icon components or SVGs)
+const IconBus = () => <span role="img" aria-label="bus" style={{fontSize: 24}}>🚌</span>;
+const IconCheck = () => <span role="img" aria-label="check" style={{fontSize: 24}}>✅</span>;
+const IconGauge = () => <span role="img" aria-label="gauge" style={{fontSize: 24}}>⏱️</span>;
+
+// Mock summary data
+const summary = {
+  totalVehicles: 350,
+  vehiclesActive: 284,
+  utilization: 78,
+  avgFuel: 8.9,
+};
 
 const mockDrivers = [
   {
@@ -419,9 +431,9 @@ function ELDTableCard({ rows }) {
   );
 }
 
+
 export default function FleetDashboard() {
   const [selectedDriver, setSelectedDriver] = useState(mockDrivers[0]);
-
   const mockELD = useMemo(
     () =>
       mockDrivers.map((driver) => ({
@@ -435,50 +447,163 @@ export default function FleetDashboard() {
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
-      {/* Sidebar */}
-      <aside className="w-20 lg:w-56 bg-white border-r border-gray-200 flex flex-col py-6 px-2 lg:px-4 transition-all duration-200">
-        <nav className="flex flex-col gap-4">
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
-            <span className="inline-block w-6 h-6 bg-blue-200 rounded-full" />
-            <span className="hidden lg:block text-sm font-medium">Hours of Service</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
-            <span className="inline-block w-6 h-6 bg-green-200 rounded-full" />
-            <span className="hidden lg:block text-sm font-medium">Drivers</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
-            <span className="inline-block w-6 h-6 bg-yellow-200 rounded-full" />
-            <span className="hidden lg:block text-sm font-medium">Assets</span>
-          </button>
-          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
-            <span className="inline-block w-6 h-6 bg-purple-200 rounded-full" />
-            <span className="hidden lg:block text-sm font-medium">Accounting</span>
-          </button>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 mx-auto max-w-[1400px] px-8 py-8">
-        <DriverCommandCardModern driver={selectedDriver} />
-        <div className="grid grid-cols-12 gap-8">
-          <DriverListCard
-            drivers={mockDrivers}
-            selectedDriverId={selectedDriver.id}
-            onSelectDriver={setSelectedDriver}
-          />
-
-          <main className="col-span-12 lg:col-span-9">
-            <div className="grid grid-cols-12 gap-8">
-              <FleetOverviewCard driver={selectedDriver} />
-              <LiveMapCard driver={selectedDriver} />
-              <TelemetryCard driver={selectedDriver} />
-              <ComplianceCard driver={selectedDriver} />
-              <ELDTableCard rows={mockELD} />
-            </div>
-          </main>
+    <div className="min-h-screen w-full" style={{ background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
+      {/* Header */}
+      <header className="flex items-center justify-between px-10 pt-8 pb-4">
+        <div className="flex items-center gap-3">
+          <span className="bg-blue-900 p-2 rounded-lg"><IconBus /></span>
+          <h1 className="text-3xl font-bold text-white">Management</h1>
         </div>
-      </div>
+        <div className="flex items-center gap-4">
+          <button className="bg-[#232b3e] p-2 rounded-full"><span role="img" aria-label="bell">🔔</span></button>
+          <button className="bg-[#232b3e] p-2 rounded-full"><span role="img" aria-label="settings">⚙️</span></button>
+          <div className="bg-[#232b3e] px-4 py-2 rounded-lg text-white font-semibold">Spencer Waters ▾</div>
+        </div>
+      </header>
+
+      {/* Top Summary Cards */}
+      <section className="grid grid-cols-4 gap-6 px-10">
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+          <span className="mb-2"><IconBus /></span>
+          <span className="text-gray-400 text-sm">Total Vehicles</span>
+          <span className="text-3xl font-bold text-white">{summary.totalVehicles}</span>
+        </div>
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+          <span className="mb-2"><IconCheck /></span>
+          <span className="text-gray-400 text-sm">Vehicles Active</span>
+          <span className="text-3xl font-bold text-white">{summary.vehiclesActive}</span>
+        </div>
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+          <span className="mb-2"><IconGauge /></span>
+          <span className="text-gray-400 text-sm">Active Utilization</span>
+          <span className="text-3xl font-bold text-white">{summary.utilization}%</span>
+        </div>
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+          <span className="mb-2"><IconGauge /></span>
+          <span className="text-gray-400 text-sm">Fuel & Maintenance</span>
+          <span className="text-3xl font-bold text-white">{summary.avgFuel} <span className="text-base font-normal">MPG</span></span>
+        </div>
+      </section>
+
+      {/* Map and Main Cards */}
+      <section className="grid grid-cols-12 gap-6 px-10 mt-6">
+        {/* Map */}
+        <div className="col-span-12 bg-[#232b3e] rounded-xl shadow p-0 overflow-hidden" style={{height: 320}}>
+          <iframe
+            title="Fleet Map"
+            width="100%"
+            height="320"
+            className="rounded-xl"
+            style={{ border: 0 }}
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+            src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=Los+Angeles,CA`}
+          />
+        </div>
+      </section>
+
+      {/* Lower Cards and Table */}
+      <section className="grid grid-cols-12 gap-6 px-10 mt-6">
+        {/* Fleet Status Donut, Fuel Consumption Line, Driver Leaderboard, Vehicles in Maintenance, Vehicles List */}
+        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col items-center">
+          <span className="text-gray-400 text-sm mb-2">Fleet Status</span>
+          {/* Placeholder Donut Chart */}
+          <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-blue-500 to-green-400 flex items-center justify-center text-3xl font-bold text-white">
+            {summary.vehiclesActive}
+          </div>
+          <div className="mt-4 w-full flex flex-col gap-1">
+            <span className="text-blue-400 text-xs">78% Active</span>
+            <span className="text-yellow-400 text-xs">14% Inactive</span>
+            <span className="text-pink-400 text-xs">15% Maintenance</span>
+          </div>
+        </div>
+        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
+          <span className="text-gray-400 text-sm mb-2">Fuel Consumption</span>
+          {/* Placeholder Line Chart */}
+          <div className="w-full h-32 bg-gradient-to-tr from-blue-900 to-blue-400 rounded-lg flex items-center justify-center text-blue-200 font-bold">Line Chart</div>
+        </div>
+        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
+          <span className="text-gray-400 text-sm mb-2">Driver Leaderboard</span>
+          <div className="flex flex-col gap-2 mt-2">
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">A</span>
+              <span className="text-white font-semibold">Alex Miller</span>
+              <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">S</span>
+              <span className="text-white font-semibold">Sarah Lee</span>
+              <span className="ml-auto text-green-400 font-bold">1,150 miles</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">J</span>
+              <span className="text-white font-semibold">John Smith</span>
+              <span className="ml-auto text-green-400 font-bold">1,000 miles</span>
+            </div>
+          </div>
+        </div>
+        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
+          <span className="text-gray-400 text-sm mb-2">Vehicles in Maintenance</span>
+          <div className="flex flex-col gap-2 mt-2">
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">A</span>
+              <span className="text-white font-semibold">Alex Miller</span>
+              <span className="ml-auto text-green-400 font-bold">1,229 miles</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">S</span>
+              <span className="text-white font-semibold">Sarah Lee</span>
+              <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">J</span>
+              <span className="text-white font-semibold">John Smith</span>
+              <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Vehicle List Table */}
+      <section className="px-10 mt-6 pb-10">
+        <div className="bg-[#232b3e] rounded-xl shadow p-6 overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="text-gray-400 text-xs uppercase">
+                <th className="px-4 py-2 text-left">Vehicle List</th>
+                <th className="px-4 py-2 text-left">Driver</th>
+                <th className="px-4 py-2 text-left">Location</th>
+                <th className="px-4 py-2 text-left">Last Trip</th>
+                <th className="px-4 py-2 text-left">Odometer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="text-white border-b border-[#2e3650]">
+                <td className="px-4 py-2"><span className="bg-green-700 px-2 py-1 rounded text-xs">Active</span> Active</td>
+                <td className="px-4 py-2">Ford Banson</td>
+                <td className="px-4 py-2">Dalla F-150</td>
+                <td className="px-4 py-2">Mercedes Capcadia</td>
+                <td className="px-4 py-2">Dallas, TX</td>
+              </tr>
+              <tr className="text-white border-b border-[#2e3650]">
+                <td className="px-4 py-2"><span className="bg-blue-700 px-2 py-1 rounded text-xs">Active</span> Active</td>
+                <td className="px-4 py-2">Joe Carter</td>
+                <td className="px-4 py-2">Meredad Spriner</td>
+                <td className="px-4 py-2">Freight Cascadia</td>
+                <td className="px-4 py-2">Chicago, FL</td>
+              </tr>
+              <tr className="text-white">
+                <td className="px-4 py-2"><span className="bg-green-700 px-2 py-1 rounded text-xs">Active</span> Miami FL</td>
+                <td className="px-4 py-2">Emma Whison</td>
+                <td className="px-4 py-2">Emma Seminson</td>
+                <td className="px-4 py-2">Freightliner Cassadia</td>
+                <td className="px-4 py-2">Chicago, IL</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }
