@@ -137,7 +137,7 @@ export default function Dashboard() {
       {data && (
         <>
           {/* KPIs with Trends */}
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
             {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
               <KPIWithTrend 
                 label="Total Invoices" 
@@ -196,24 +196,24 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
             {variant !== 'carrier' && dashboardPrefs.showExceptionDistribution && data.exceptionBreakdown && (
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, width: '100%' }}>
                 <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
               </div>
             )}
             {variant === 'carrier' && (
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, width: '100%' }}>
                 <ExceptionBreakdownChart data={data.claimsBreakdown || data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
               </div>
             )}
             {variant !== 'carrier' && dashboardPrefs.showSavingsByCarrier && data.savingsByCarrier && (
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, width: '100%' }}>
                 <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
               </div>
             )}
             {variant === 'carrier' && (
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, width: '100%' }}>
                 <SavingsByCarrierChart data={data.volumeByLane || data.savingsByCarrier} onClick={() => navigate('/reports')} />
               </div>
             )}
