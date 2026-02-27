@@ -1,9 +1,14 @@
+
 import { useEffect, useState } from 'react';
 import { useDemo } from '../demo/DemoContext';
 import { useNavigate } from 'react-router-dom';
-import { getDashboard } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import KPIWithTrend from '../components/KPIWithTrend';
+import CollapsibleSection from '../components/CollapsibleSection';
+import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
+import mockShipments from '../mock/shipments';
 
 const DASH_PREFS_KEY = 'dashboardPrefs';
 const DASH_VARIANT_KEY = 'dashboardVariant';
@@ -92,99 +97,134 @@ function mergeDashboardData(incoming) {
   };
 }
 
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
   const [data, setData] = useState(() => dashboardEnhanced);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
-  // Demo/mock mode
   const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
 
-  useEffect(() => {
-    let mounted = true;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      // Debug log demoMode
-      console.log('[Dashboard] demoMode:', demoMode);
-      // Use mock mode if enabled
-      if (demoMode) {
-        console.log('[Dashboard] Using mock dashboardEnhanced');
-        setData(dashboardEnhanced);
-        setLoading(false);
-        return;
-      }
-      try {
-        const res = await getDashboard();
-        console.log('[Dashboard] getDashboard result:', res);
-        if (!mounted) return;
-        if (res && !res.error && (res.data || Object.keys(res).length > 0)) {
-          setData(mergeDashboardData(res.data || res));
-        } else {
-          setData(dashboardEnhanced);
-          if (res?.error) setError(res.error);
-        }
-      } catch (err) {
-        setData(dashboardEnhanced);
-        setError(err.message || String(err));
-        console.error('[Dashboard] Error loading dashboard:', err);
-      }
-      setLoading(false);
-    }
-    load();
-    return () => { mounted = false; };
-  }, [demoMode]);
-
-  const handleVariantChange = (event) => {
-    const nextVariant = event.target.value;
-    setVariant(nextVariant);
-    try {
-      localStorage.setItem(DASH_VARIANT_KEY, nextVariant);
-    } catch {
-      // localStorage may be blocked.
-    }
-  };
-
+  // --- Operational Command Center Layout ---
   return (
-    <div style={{ padding: 24 }}>
+    <div style={{ padding: 24, minHeight: '100vh', background: t.bg }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Dashboard</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, justifyContent: 'space-between' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Operational Command Center</h1>
+          <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}>
+            <option value="shipper">Shipper</option>
+            <option value="carrier">Carrier</option>
+            <option value="broker">Broker</option>
+          </select>
         </div>
         <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
-          {/* Add variant description here if needed */}
+          Manage shipments, monitor daily operations, and analyze financial & KPI performance in real time.
         </div>
-        {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
       </div>
 
-      {loading && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.accent}`, borderRadius: 4, fontSize: '13px', color: t.accent, marginBottom: 24 }}>
-          Loading dashboard data...
+      {/* KPI Section */}
+      <CollapsibleSection title="Key Performance Indicators" defaultOpen>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+          {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
+            <KPIWithTrend label="Total Invoices" value={data.summary?.totalInvoices || 0} delta={5} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" onClick={() => navigate('/invoices')} />
+          )}
+          {variant === 'shipper' && dashboardPrefs.showExceptions && (
+            <KPIWithTrend label="Exceptions" value={data.summary?.totalExceptions || 0} delta={-2} trendData={data.trends?.exceptionTrend} trendColor="#ef4444" onClick={() => navigate('/exceptions')} />
+          )}
+          {variant === 'shipper' && dashboardPrefs.showTotalSavings && (
+            <KPIWithTrend label="Total Savings" value={data.summary?.totalSavings || 0} format="currency" delta={12} trendData={data.trends?.savingsTrend} trendColor="#10b981" onClick={() => navigate('/reports')} />
+          )}
+          {variant === 'shipper' && dashboardPrefs.showPending && (
+            <KPIWithTrend label="Pending" value={data.summary?.pendingReview || 0} delta={0} trendData={data.trends?.pendingTrend} trendColor="#f59e0b" />
+          )}
+          {variant === 'carrier' && (
+            <>
+              <KPIWithTrend label="On-Time %" value={data.summary?.onTime || 0} delta={2} trendData={data.trends?.onTimeTrend} trendColor="#10b981" />
+              <KPIWithTrend label="Claims %" value={data.summary?.claimsRate || 0} delta={-1} trendData={data.trends?.claimsTrend} trendColor="#ef4444" />
+              <KPIWithTrend label="Volume" value={data.summary?.totalInvoices || 0} delta={3} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" />
+            </>
+          )}
+          {variant === 'broker' && (
+            <>
+              <KPIWithTrend label="Margin %" value={data.summary?.margin || 0} delta={1} trendData={data.trends?.marginTrend} trendColor="#10b981" />
+              <KPIWithTrend label="Loads" value={data.summary?.loads || 0} delta={4} trendData={data.trends?.loadsTrend} trendColor="#0066cc" />
+              <KPIWithTrend label="Revenue" value={data.summary?.revenue || 0} format="currency" delta={7} trendData={data.trends?.revenueTrend} trendColor="#f59e0b" />
+            </>
+          )}
         </div>
-      )}
-      {error && !loading && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.error}`, borderRadius: 4, fontSize: '13px', color: t.error, marginBottom: 24 }}>
-          Error loading dashboard: {error}
+      </CollapsibleSection>
+
+      {/* Analytics & Shipment Summary */}
+      <CollapsibleSection title="Shipment Analytics & Distribution" defaultOpen>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+          {dashboardPrefs.showExceptionDistribution && data.exceptionBreakdown && (
+            <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
+          )}
+          {dashboardPrefs.showSavingsByCarrier && data.savingsByCarrier && (
+            <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
+          )}
         </div>
-      )}
-      {!loading && (!data || typeof data !== 'object' || Object.keys(data).length === 0) && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-          <b>Dashboard fallback:</b> No dashboard data available.<br />
-          <pre style={{ fontSize: 12, color: t.textSecondary, marginTop: 8 }}>data: {JSON.stringify(data, null, 2)}</pre>
+      </CollapsibleSection>
+
+      {/* Operational Table: Shipments */}
+      <CollapsibleSection title="Today's Shipments Overview" defaultOpen>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Load #</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Customer</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Carrier</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Origin</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Destination</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Revenue</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Cost</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Margin</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(mockShipments || []).map((ship) => (
+                <tr key={ship.id} style={{ cursor: 'pointer' }}>
+                  <td style={{ padding: '8px 12px' }}><strong>{ship.id}</strong></td>
+                  <td style={{ padding: '8px 12px' }}>{ship.customer}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.carrier}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.origin}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.destination}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.status}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.revenue}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.cost}</td>
+                  <td style={{ padding: '8px 12px' }}><strong>{ship.margin}</strong></td>
+                  <td style={{ padding: '8px 12px' }}>{ship.dueDate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
-      {data && typeof data === 'object' && Object.keys(data).length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <details style={{ fontSize: 12, color: t.textSecondary }}>
-            <summary>[DEBUG] Dashboard state (click to expand)</summary>
-            <pre>loading: {JSON.stringify(loading)}{"\n"}error: {JSON.stringify(error)}{"\n"}data: {JSON.stringify(data, null, 2)}</pre>
-          </details>
+      </CollapsibleSection>
+
+      {/* Financial & Statistical Reports */}
+      <CollapsibleSection title="Operational & Financial Reports" defaultOpen>
+        <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 12 }}>
+          Access detailed analytics and exportable reports for finance, KPIs, and operational metrics.
         </div>
-      )}
+        <button style={{ padding: '10px 18px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
+          View Full Reports
+        </button>
+      </CollapsibleSection>
+
+      {/* Debug State */}
+      <div style={{ marginTop: 32 }}>
+        <details style={{ fontSize: 12, color: t.textSecondary }}>
+          <summary>[DEBUG] Dashboard state (click to expand)</summary>
+          <pre>loading: {JSON.stringify(loading)}{"\n"}error: {JSON.stringify(error)}{"\n"}data: {JSON.stringify(data, null, 2)}</pre>
+        </details>
+      </div>
     </div>
   );
 }
