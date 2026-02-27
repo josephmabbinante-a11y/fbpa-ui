@@ -7,8 +7,10 @@ import AllLoads from './Loads/AllLoads';
 import AscendLTLLoads from './Loads/AscendLTLLoads';
 import MyLoads from './Loads/MyLoads';
 import ExternallyPostedLoads from './Loads/ExternallyPostedLoads';
+import OrderManagement from './Loads/OrderManagement';
 
 const tabs = [
+  { label: 'Order Management', component: OrderManagement },
   { label: 'Load Workflow', component: LoadWorkflow },
   { label: 'Active Loads', component: ActiveLoads },
   { label: 'Planning Loads', component: PlanningLoads },
