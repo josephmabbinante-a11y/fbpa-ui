@@ -172,6 +172,14 @@ export default function Dashboard() {
 
       {/* Operational Table: Shipments */}
       <CollapsibleSection title="Today's Shipments Overview" defaultOpen>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <button style={{ marginRight: 8, padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Export to Excel coming soon!')}>Export to Excel</button>
+            <button style={{ marginRight: 8, padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Filter fields coming soon!')}>Filter Fields</button>
+            <button style={{ padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Advanced search coming soon!')}>Show Advanced</button>
+          </div>
+          <button style={{ padding: '8px 18px', background: t.positive, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }} onClick={() => alert('New shipment creation coming soon!')}>Add New Shipment</button>
+        </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
             <thead>
@@ -190,7 +198,7 @@ export default function Dashboard() {
             </thead>
             <tbody>
               {(mockShipments || []).map((ship) => (
-                <tr key={ship.id} style={{ cursor: 'pointer' }}>
+                <tr key={ship.id} style={{ cursor: 'pointer' }} onClick={() => alert(`Navigate to shipment detail for ${ship.id}`)}>
                   <td style={{ padding: '8px 12px' }}><strong>{ship.id}</strong></td>
                   <td style={{ padding: '8px 12px' }}>{ship.customer}</td>
                   <td style={{ padding: '8px 12px' }}>{ship.carrier}</td>
