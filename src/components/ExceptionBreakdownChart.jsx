@@ -13,9 +13,10 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
   const [isHovered, setIsHovered] = useState(false);
   const fallbackPalette = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0099cc'];
 
-  const normalizedData = useMemo(
-    () =>
-      (data || [])
+
+    const [lastValidData, setLastValidData] = useState([]);
+    const normalizedData = useMemo(() => {
+      const arr = (data || [])
         .map((entry, index) => {
           const raw = Number(entry?.value ?? entry?.count ?? entry?.total ?? 0);
           return {
@@ -24,10 +25,25 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
             fill: entry?.fill || fallbackPalette[index % fallbackPalette.length],
           };
         })
-        .filter((entry) => entry.value > 0),
-    [data]
-  );
+        .filter((entry) => entry.value > 0);
+      if (arr.length) setLastValidData(arr);
+      return arr;
+    }, [data]);
 
+    const chartDataToUse = normalizedData.length ? normalizedData : lastValidData;
+
+    if (!chartDataToUse.length) {
+      return (
+        <div style={{ width: '100%' }}>
+          <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Exception Distribution
+          </h3>
+          <div style={{ height: 220, width: '100%', display: 'grid', placeItems: 'center', border: '1px dashed #3a3a3a', borderRadius: 6, color: '#9a9a9a', fontSize: 12 }}>
+            No chart data available
+          </div>
+        </div>
+      );
+    }
   return (
     <div
       onClick={onClick}
