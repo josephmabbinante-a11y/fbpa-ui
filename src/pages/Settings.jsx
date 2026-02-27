@@ -1,6 +1,8 @@
+
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminControlCard from '../components/admin/AdminControlCard';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 
 const adminSections = [
   {
