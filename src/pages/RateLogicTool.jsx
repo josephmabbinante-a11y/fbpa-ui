@@ -58,17 +58,20 @@ export default function RateLogicTool() {
   return (
     <div style={{ padding: 24, background: t.bg, color: t.text, minHeight: '100vh' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700 }}>Rate Logic Tool</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700 }}>Truckload Quoting</h1>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 14px', cursor: 'pointer' }}>Return to Shipper</button>
-          <button style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 14px', cursor: 'pointer' }}>Return to Search</button>
+          <button style={{ background: t.warning, color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontWeight: 600 }}>Activity Log</button>
+          <button style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 14px', cursor: 'pointer' }}>Update Status</button>
+          <button style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 14px', cursor: 'pointer' }}>Send Message</button>
+          <button style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 6, padding: '6px 14px', cursor: 'pointer' }}>Add New Carrier Quote</button>
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+        {/* Left: Market Intelligence & Lane Data */}
         <div style={{ flex: 2, minWidth: 340 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 16, marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Lane Selector</div>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Market Intelligence</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="Origin" style={{ flex: 1, padding: 6, borderRadius: 4, border: `1px solid ${t.borderLight}` }} />
               <span style={{ alignSelf: 'center' }}>-&gt;</span>
@@ -89,7 +92,7 @@ export default function RateLogicTool() {
           </div>
 
           <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 16, marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Market Rate Table</div>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Lane Data</div>
             <table style={{ width: '100%', fontSize: 13, marginBottom: 8 }}>
               <thead>
                 <tr style={{ color: t.textSecondary }}>
@@ -152,6 +155,7 @@ export default function RateLogicTool() {
           </div>
         </div>
 
+        {/* Center: Quote Calculation & Map */}
         <div style={{ flex: 1, minWidth: 320, maxWidth: 400 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 16, marginBottom: 16 }}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Quote Calculation</div>
@@ -170,11 +174,12 @@ export default function RateLogicTool() {
           </div>
 
           <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 16 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Map</div>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Lane Map</div>
             <GoogleMapEmbed origin={origin} destination={destination} height={160} />
           </div>
         </div>
 
+        {/* Right: Shipment Info & Capacity Tools */}
         <div style={{ flex: 1, minWidth: 320, maxWidth: 400 }}>
           <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 16, marginBottom: 16 }}>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Shipment Info</div>
