@@ -1,28 +1,75 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 70" width="300" height="70" preserveAspectRatio="xMidYMid meet">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 220" width="780" height="220" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <style>
-      .logo-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 24px; font-weight: 700; fill: #0066cc; }
-      .logo-sub { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 10px; font-weight: 600; fill: #00aa99; letter-spacing: 1.5px; }
-    </style>
-    <linearGradient id="shield" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0066cc" />
-      <stop offset="100%" stop-color="#0050aa" />
+    <linearGradient id="shieldOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1bc6ff" />
+      <stop offset="55%" stop-color="#0a5ddb" />
+      <stop offset="100%" stop-color="#062f93" />
     </linearGradient>
+    <linearGradient id="shieldInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67dcff" />
+      <stop offset="100%" stop-color="#0f4fbc" />
+    </linearGradient>
+    <linearGradient id="bar1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8efb2b" />
+      <stop offset="100%" stop-color="#2daa22" />
+    </linearGradient>
+    <linearGradient id="bar2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#30d7ff" />
+      <stop offset="100%" stop-color="#0f73e8" />
+    </linearGradient>
+    <linearGradient id="bar3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b6f2ff" />
+      <stop offset="100%" stop-color="#27a0ff" />
+    </linearGradient>
+    <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c7ecff" />
+      <stop offset="100%" stop-color="#1452bf" />
+    </linearGradient>
+    <linearGradient id="wordmark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#89d8ff" />
+    </linearGradient>
+    <linearGradient id="submark" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#98ff3f" />
+      <stop offset="100%" stop-color="#ecf7ff" />
+    </linearGradient>
+    <filter id="glowBlue" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2.6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
   </defs>
-  
-  <!-- Shield Icon Group -->
-  <g transform="translate(8, 8)">
-    <!-- Shield shape -->
-    <path d="M 20 4 L 35 0 L 50 4 L 50 24 Q 35 42 35 52 Q 35 42 20 24 Z" fill="url(#shield)" stroke="none"/>
-    <!-- Inner circle -->
-    <circle cx="35" cy="28" r="14" fill="#003d80"/>
-    <!-- Checkmark -->
-    <g stroke="#00ff00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M 30 30 L 33 33 L 41 25"/>
+
+  <g opacity="0.72" stroke="#3fc7ff" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M265 92h95l18-18h55" />
+    <path d="M280 106h125l14 16h92" />
+    <path d="M262 148h88l22 24h136" />
+    <circle cx="430" cy="74" r="7" />
+    <circle cx="498" cy="106" r="7" />
+    <circle cx="540" cy="166" r="7" />
+  </g>
+
+  <g transform="translate(28,22)">
+    <path d="M124 6L12 42v74c0 49 39 90 112 116 73-26 112-67 112-116V42L124 6z" fill="url(#shieldOuter)" stroke="#2ed0ff" stroke-width="5" />
+    <path d="M124 28L36 54v57c0 38 30 70 88 92 58-22 88-54 88-92V54l-88-26z" fill="url(#shieldInner)" stroke="#6de5ff" stroke-width="3" />
+
+    <rect x="70" y="95" width="28" height="64" fill="url(#bar1)" stroke="#0a2f75" stroke-width="3" />
+    <rect x="106" y="70" width="28" height="89" fill="url(#bar2)" stroke="#0a2f75" stroke-width="3" />
+    <rect x="142" y="46" width="28" height="113" fill="url(#bar3)" stroke="#0a2f75" stroke-width="3" />
+
+    <g filter="url(#glowBlue)">
+      <circle cx="168" cy="122" r="45" fill="#081f58" stroke="url(#lens)" stroke-width="8" />
+      <circle cx="168" cy="122" r="34" fill="#0b3a8b" stroke="#5ec8ff" stroke-width="2" />
+      <path d="M151 122l11 11 23-25" fill="none" stroke="#8df43e" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+      <path d="M137 155L88 196" stroke="#0a1f57" stroke-width="18" stroke-linecap="round" />
+      <path d="M137 155L88 196" stroke="#5cb9ff" stroke-width="8" stroke-linecap="round" />
     </g>
   </g>
-  
-  <!-- Logo Text -->
-  <text x="64" y="28" class="logo-text">Opscale</text>
-  <text x="64" y="48" class="logo-sub">AUDIT IQ</text>
+
+  <g transform="translate(312,72)">
+    <text x="0" y="78" fill="url(#wordmark)" font-family="Segoe UI, Arial, sans-serif" font-size="120" font-style="italic" font-weight="900" letter-spacing="1">Opscale</text>
+    <text x="146" y="136" fill="url(#submark)" font-family="Segoe UI, Arial, sans-serif" font-size="74" font-style="italic" font-weight="900" letter-spacing="2">AUDIT IQ</text>
+  </g>
 </svg>
