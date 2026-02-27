@@ -110,32 +110,38 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
+  // Demo/mock mode
+  const { demoMode } = require('../demo/DemoContext').useDemo ? require('../demo/DemoContext').useDemo() : { demoMode: false };
 
   useEffect(() => {
     let mounted = true;
-
-    // Always use mock data as default
-    setData(dashboardEnhanced);
-    setLoading(false);
-
-    // Optionally, allow API override if needed
-    // const loadDashboard = async () => {
-    //   setLoading(true);
-    //   setError(null);
-    //   const res = await getDashboard();
-    //   if (!mounted) return;
-    //   if (res && !res.error && res.data && Object.keys(res.data).length > 0) {
-    //     setData(mergeDashboardData(res));
-    //   } else {
-    //     if (res?.error) setError(res.error);
-    //   }
-    //   setLoading(false);
-    // };
-    // loadDashboard();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    async function load() {
+      setLoading(true);
+      setError(null);
+      // Use mock mode if enabled
+      if (demoMode) {
+        setData(dashboardEnhanced);
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await getDashboard();
+        if (!mounted) return;
+        if (res && !res.error && (res.data || Object.keys(res).length > 0)) {
+          setData(mergeDashboardData(res.data || res));
+        } else {
+          setData(dashboardEnhanced);
+          if (res?.error) setError(res.error);
+        }
+      } catch (err) {
+        setData(dashboardEnhanced);
+        setError(err.message || String(err));
+      }
+      setLoading(false);
+    }
+    load();
+    return () => { mounted = false; };
+  }, [demoMode]);
 
   const handleVariantChange = (event) => {
     const nextVariant = event.target.value;
