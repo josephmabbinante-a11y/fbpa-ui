@@ -262,18 +262,27 @@ function FleetOverviewCard({ driver }) {
 function LiveMapCard({ driver }) {
   return (
     <section className="col-span-12 lg:col-span-8">
-      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Live Location &amp; Traffic</h2>
-          <p className="text-sm text-gray-500">Last Updated: {driver.telematics.updatedMinutesAgo} minutes ago</p>
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-200">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">EDI Tracking &amp; Live Location</h2>
+            <p className="text-sm text-gray-500">Last Updated: {driver.telematics.updatedMinutesAgo} minutes ago</p>
+          </div>
+          <button className="rounded-lg bg-blue-600 text-white px-4 py-2 text-xs font-semibold shadow hover:bg-blue-700">View EDI Details</button>
         </div>
         <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-          <div
-            id="trimble-map-container"
-            className="flex h-72 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-sm text-gray-500"
-          >
-            Trimble map stream container
-          </div>
+          {/* Google Maps Embed for EDI tracking */}
+          <iframe
+            title="Google Maps EDI Tracking"
+            width="100%"
+            height="300"
+            className="rounded-lg border border-gray-300"
+            style={{ border: 0 }}
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+            src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=${encodeURIComponent(driver.telematics.location)}`}
+          />
         </div>
       </div>
     </section>
@@ -292,8 +301,8 @@ function TelemetryCard({ driver }) {
 
   return (
     <section className="col-span-12 lg:col-span-4">
-      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">Live Telemetry</h2>
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-200">
+        <h2 className="mb-4 text-lg font-semibold text-gray-800">Driver Analytics &amp; Telemetry</h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
           {stats.map((stat) => (
             <div key={stat.label} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3">
@@ -301,6 +310,14 @@ function TelemetryCard({ driver }) {
               <p className="mt-1 text-sm font-semibold text-gray-900">{stat.value}</p>
             </div>
           ))}
+        </div>
+        {/* Placeholder for modern analytics/graphs */}
+        <div className="mt-6 rounded-lg border border-gray-100 bg-white p-4 shadow">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Performance Metrics</h3>
+          <div className="flex flex-col gap-2">
+            <div className="h-24 bg-gradient-to-r from-blue-100 to-blue-300 rounded-lg flex items-center justify-center text-blue-700 text-lg font-bold">Graph: Drive Time vs Compliance</div>
+            <div className="h-24 bg-gradient-to-r from-green-100 to-green-300 rounded-lg flex items-center justify-center text-green-700 text-lg font-bold">Graph: Speed &amp; Location Trends</div>
+          </div>
         </div>
       </div>
     </section>
