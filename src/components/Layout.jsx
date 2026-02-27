@@ -34,6 +34,21 @@ function Layout({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    // Recharts can keep a stale width after parent layout transitions (sidebar collapse/expand).
+    // Emit resize signals during and after the margin transition so charts re-measure reliably.
+    const emitResize = () => window.dispatchEvent(new Event('resize'));
+    const rafId = window.requestAnimationFrame(emitResize);
+    const t1 = window.setTimeout(emitResize, 120);
+    const t2 = window.setTimeout(emitResize, 260);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [sidebarWidth, theme]);
+
   return (
     <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', color: t.text }}>
       <main
