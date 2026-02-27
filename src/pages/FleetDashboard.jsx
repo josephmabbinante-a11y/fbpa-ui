@@ -82,8 +82,8 @@ function getComplianceAccent(compliance) {
 function getDocumentIcon(status) {
   if (status === 'Complete') {
     return (
-      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-700">
-        ✓
+      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-[10px] font-bold text-green-700">
+        OK
       </span>
     );
   }
@@ -137,7 +137,12 @@ function DriverListCard({ drivers, selectedDriverId, onSelectDriver }) {
         <div className="space-y-2">
           {filteredDrivers.map((driver) => {
             const isActive = driver.id === selectedDriverId;
-            const dotClass = driver.telematics.status === 'Driving' ? 'bg-green-500' : driver.telematics.status === 'Sleeper' ? 'bg-blue-500' : 'bg-gray-400';
+            const dotClass =
+              driver.telematics.status === 'Driving'
+                ? 'bg-green-500'
+                : driver.telematics.status === 'Sleeper'
+                  ? 'bg-blue-500'
+                  : 'bg-gray-400';
 
             return (
               <button
@@ -160,7 +165,10 @@ function DriverListCard({ drivers, selectedDriverId, onSelectDriver }) {
 }
 
 function FleetOverviewCard({ driver }) {
-  const dutyStatus = driver.telematics.status === 'Driving' || driver.telematics.status === 'Sleeper' ? driver.telematics.status : 'Off Duty';
+  const dutyStatus =
+    driver.telematics.status === 'Driving' || driver.telematics.status === 'Sleeper'
+      ? driver.telematics.status
+      : 'Off Duty';
   const complianceTone = getComplianceAccent(driver.compliance);
 
   return (
@@ -177,7 +185,7 @@ function FleetOverviewCard({ driver }) {
             </div>
             <div>
               <h1 className="text-2xl font-semibold text-gray-900">{driver.name}</h1>
-              <p className="text-sm text-gray-500">{driver.company === 'Company Driver' ? 'Company Driver' : 'Company Driver'}</p>
+              <p className="text-sm text-gray-500">Company Driver</p>
               <span className={`mt-2 inline-flex rounded-md px-2.5 py-1 text-xs font-semibold ${getDutyBadgeClasses(dutyStatus)}`}>
                 {dutyStatus}
               </span>
@@ -298,7 +306,11 @@ function ComplianceCard({ driver }) {
               </div>
               <p
                 className={`text-xs font-semibold ${
-                  doc.status === 'Complete' ? 'text-green-700' : doc.status === 'Expired' ? 'text-red-700' : 'text-yellow-700'
+                  doc.status === 'Complete'
+                    ? 'text-green-700'
+                    : doc.status === 'Expired'
+                      ? 'text-red-700'
+                      : 'text-yellow-700'
                 }`}
               >
                 {doc.status}
@@ -377,7 +389,11 @@ export default function FleetDashboard() {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-[1400px] px-8 py-8">
         <div className="grid grid-cols-12 gap-6">
-          <DriverListCard drivers={mockDrivers} selectedDriverId={selectedDriver.id} onSelectDriver={setSelectedDriver} />
+          <DriverListCard
+            drivers={mockDrivers}
+            selectedDriverId={selectedDriver.id}
+            onSelectDriver={setSelectedDriver}
+          />
 
           <main className="col-span-12 lg:col-span-9">
             <div className="grid grid-cols-12 gap-6">
@@ -385,24 +401,6 @@ export default function FleetDashboard() {
               <LiveMapCard driver={selectedDriver} />
               <TelemetryCard driver={selectedDriver} />
               <ComplianceCard driver={selectedDriver} />
-              <section className="col-span-12 lg:col-span-6">
-                <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200">
-                  <h2 className="text-lg font-semibold text-gray-800">Operational Notes</h2>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Dispatch and compliance teams can use this panel for shift handoff notes, immediate risk calls, and route-level exceptions.
-                  </p>
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3">
-                      <p className="text-sm text-gray-500">Phone</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900">{selectedDriver.phone}</p>
-                    </div>
-                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3">
-                      <p className="text-sm text-gray-500">Driver Type</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900">{selectedDriver.company}</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
               <ELDTableCard rows={mockELD} />
             </div>
           </main>
