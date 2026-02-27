@@ -479,9 +479,9 @@ function ELDTableCard({ rows }) {
   );
 
   return (
-    <div style={{ minHeight: '100vh', width: '100%', background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)', padding: 0 }}>
+    <>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 48px 16px 48px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 0 16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ background: '#1e2a4a', padding: 8, borderRadius: 12 }}><IconBus /></span>
           <span style={{ color: '#fff', fontWeight: 700, fontSize: 32 }}>Management</span>
@@ -494,7 +494,7 @@ function ELDTableCard({ rows }) {
       </div>
 
       {/* Top Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32, padding: '0 48px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32 }}>
         <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', boxShadow: '0 2px 12px #0002' }}>
           <span style={{ marginBottom: 8 }}><IconBus /></span>
           <span style={{ color: '#bfc9e0', fontSize: 15 }}>Total Vehicles</span>
@@ -519,7 +519,7 @@ function ELDTableCard({ rows }) {
       </div>
 
       {/* Map */}
-      <div style={{ margin: '32px 48px 0 48px', borderRadius: 18, overflow: 'hidden', background: '#232b3e', boxShadow: '0 2px 12px #0002', height: 320 }}>
+      <div style={{ margin: '32px 0 0 0', borderRadius: 18, overflow: 'hidden', background: '#232b3e', boxShadow: '0 2px 12px #0002', height: 320 }}>
         <iframe
           title="Fleet Map"
           width="100%"
@@ -533,7 +533,7 @@ function ELDTableCard({ rows }) {
       </div>
 
       {/* Lower Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32, margin: '32px 48px 0 48px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32, margin: '32px 0 0 0' }}>
         <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 12px #0002' }}>
           <span style={{ color: '#bfc9e0', fontSize: 15, marginBottom: 8 }}>Fleet Status</span>
           <DonutChart value={284} color="#1ecbe1" />
@@ -590,7 +590,7 @@ function ELDTableCard({ rows }) {
       </div>
 
       {/* Vehicle List Table */}
-      <div style={{ margin: '32px 48px 0 48px', background: '#232b3e', borderRadius: 18, boxShadow: '0 2px 12px #0002', padding: 28, overflowX: 'auto' }}>
+      <div style={{ margin: '32px 0 0 0', background: '#232b3e', borderRadius: 18, boxShadow: '0 2px 12px #0002', padding: 28, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ color: '#bfc9e0', fontSize: 13, textTransform: 'uppercase' }}>
@@ -626,6 +626,6 @@ function ELDTableCard({ rows }) {
           </tbody>
         </table>
       </div>
-    </div>
+    </>
   );
 }

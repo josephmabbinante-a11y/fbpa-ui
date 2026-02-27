@@ -7,38 +7,9 @@ import { clearAccessToken } from '../utils/authToken';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
-  { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet-dashboard' },
-  {
-    id: 'orders-group',
-    label: 'Orders',
-    icon: 'OD',
-    dropdown: true,
-    items: [
-      { id: 'loads', label: 'Load Management', icon: 'LD', path: '/loads' },
-      { id: 'edi-tenders', label: 'EDI / Tenders', icon: 'ET', path: '/edi-tenders' },
-    ],
-  },
-  { id: 'order-management', label: 'Order Management', icon: 'OM', path: '/order-management' },
-  {
-    id: 'customers-group',
-    label: 'Customers',
-    icon: 'CU',
-    dropdown: true,
-    items: [
-      { id: 'customers', label: 'Customer List', icon: 'CL', path: '/customers' },
-      { id: 'find-shippers', label: 'Find Shippers', icon: 'FS', path: '/find-shippers' },
-    ],
-  },
-  {
-    id: 'carriers-group',
-    label: 'Carriers',
-    icon: 'CA',
-    dropdown: true,
-    items: [
-      { id: 'carriers', label: 'Carrier List', icon: 'CR', path: '/carriers' },
-      { id: 'locations', label: 'Locations', icon: 'LC', path: '/locations' },
-    ],
-  },
+    // { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet-dashboard' },
+    // Orders and Order Management removed
+    // Customers and Carriers removed
   { id: 'invoices', label: 'Invoices', icon: 'IN', path: '/invoices' },
   { id: 'exceptions', label: 'Exceptions', icon: 'EX', path: '/exceptions' },
   { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic' },

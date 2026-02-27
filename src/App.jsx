@@ -89,15 +89,8 @@ function AppRoutes() {
             <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/:reportId" element={<ReportDetail />} />
-            <Route path="/carriers" element={<CarriersPerformance />} />
-            <Route path="/carriers/:carrier" element={<CarrierScorecard />} />
-            <Route path="/loads" element={<Loads />} />
-            <Route path="/order-management" element={<OrderManagementPage />} />
-            <Route path="/customers" element={<Customers />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/rate-logic" element={<RateLogicTool />} />
-            <Route path="/fleet-dashboard" element={<FleetDashboard />} />
-            <Route path="/profile" element={<MyAuditIQProfile />} />
             <Route path="/system-status" element={<SystemStatus />} />
             <Route path="/smoke-test" element={<LoginTest />} />
             <Route path="/load-board" element={<LoadBoard />} />
@@ -110,6 +103,7 @@ function AppRoutes() {
             <Route path="/carriers-list" element={<Carriers />} />
             <Route path="/account" element={<Account />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              {/* Removed Fleet dashboard, orders, customers, and carriers pages */}
           </Routes>
         </Suspense>
       </Layout>
