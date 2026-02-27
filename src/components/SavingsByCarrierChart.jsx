@@ -92,38 +92,7 @@ export default function SavingsByCarrierChart({ data, onClick }) {
                   borderRadius: '4px',
                   color: t.text,
                   fontSize: '12px',
-                  const [lastValidData, setLastValidData] = useState([]);
-                  const chartData = useMemo(() => {
-                    const arr = (data || [])
-                      .map((item, index) => {
-                        const rawSavings = Number(item?.savings ?? item?.total ?? item?.value ?? 0);
-                        const rawCount = Number(item?.invoiceCount ?? item?.count ?? 0);
-                        return {
-                          carrier: item?.carrier || item?.lane || `Item ${index + 1}`,
-                          savings: Number.isFinite(rawSavings) ? rawSavings : 0,
-                          invoiceCount: Number.isFinite(rawCount) ? rawCount : 0,
-                        };
-                      })
-                      .filter((item) => item.savings > 0);
-                    if (arr.length) setLastValidData(arr);
-                    return arr;
-                  }, [data]);
-
-                  const chartDataToUse = chartData.length ? chartData : lastValidData;
-
-                  if (!chartDataToUse.length) {
-                    return (
-                      <div style={{ width: '100%' }}>
-                        <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Savings By Carrier
-                        </h3>
-                        <div style={{ height: 220, width: '100%', display: 'grid', placeItems: 'center', border: '1px dashed #3a3a3a', borderRadius: 6, color: '#9a9a9a', fontSize: 12 }}>
-                          No chart data available
-                        </div>
-                      </div>
-                    );
-                  }
-
+                }}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
