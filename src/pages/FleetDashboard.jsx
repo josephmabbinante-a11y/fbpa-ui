@@ -4,6 +4,39 @@ import React, { useMemo, useState } from 'react';
 const IconBus = () => <span role="img" aria-label="bus" style={{fontSize: 24}}>🚌</span>;
 const IconCheck = () => <span role="img" aria-label="check" style={{fontSize: 24}}>✅</span>;
 const IconGauge = () => <span role="img" aria-label="gauge" style={{fontSize: 24}}>⏱️</span>;
+const IconFuel = () => <span role="img" aria-label="fuel" style={{fontSize: 24}}>⛽</span>;
+const Avatar = ({ name, src }) => (
+  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', background: '#222', overflow: 'hidden', marginRight: 8 }}>
+    {src ? <img src={src} alt={name} style={{ width: 36, height: 36, objectFit: 'cover' }} /> : <span style={{ color: '#fff', fontWeight: 700 }}>{name.split(' ').map(n => n[0]).join('').slice(0,2)}</span>}
+  </span>
+);
+
+// Placeholder Donut Chart
+const DonutChart = ({ value, color }) => (
+  <svg width="120" height="120" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="50" fill="#232b3e" />
+    <circle cx="60" cy="60" r="50" fill="none" stroke="#444" strokeWidth="16" />
+    <circle cx="60" cy="60" r="50" fill="none" stroke={color} strokeWidth="16" strokeDasharray={`${value * 3.14}, 314`} strokeLinecap="round" transform="rotate(-90 60 60)" />
+    <text x="60" y="68" textAnchor="middle" fontSize="32" fill="#fff" fontWeight="bold">{value}</text>
+  </svg>
+);
+
+// Placeholder Gauge
+const Gauge = ({ value }) => (
+  <svg width="120" height="60" viewBox="0 0 120 60">
+    <path d="M10,60 A50,50 0 0,1 110,60" fill="none" stroke="#444" strokeWidth="12" />
+    <path d="M10,60 A50,50 0 0,1 110,60" fill="none" stroke="#1ecbe1" strokeWidth="12" strokeDasharray={`${value/10*78}, 78`} />
+    <circle cx={60 + 50 * Math.cos(Math.PI * (1 - value/10))} cy={60 - 50 * Math.sin(Math.PI * (1 - value/10))} r="7" fill="#ffb300" />
+  </svg>
+);
+
+// Placeholder Line Chart
+const LineChart = () => (
+  <svg width="180" height="80" viewBox="0 0 180 80">
+    <polyline fill="none" stroke="#1ecbe1" strokeWidth="3" points="0,60 30,50 60,55 90,40 120,45 150,30 180,40" />
+    <circle cx="180" cy="40" r="4" fill="#1ecbe1" />
+  </svg>
+);
 
 // Mock summary data
 const summary = {
@@ -463,25 +496,26 @@ export default function FleetDashboard() {
 
       {/* Top Summary Cards */}
       <section className="grid grid-cols-4 gap-6 px-10">
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
           <span className="mb-2"><IconBus /></span>
           <span className="text-gray-400 text-sm">Total Vehicles</span>
           <span className="text-3xl font-bold text-white">{summary.totalVehicles}</span>
         </div>
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
           <span className="mb-2"><IconCheck /></span>
           <span className="text-gray-400 text-sm">Vehicles Active</span>
           <span className="text-3xl font-bold text-white">{summary.vehiclesActive}</span>
         </div>
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
           <span className="mb-2"><IconGauge /></span>
           <span className="text-gray-400 text-sm">Active Utilization</span>
           <span className="text-3xl font-bold text-white">{summary.utilization}%</span>
         </div>
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow">
-          <span className="mb-2"><IconGauge /></span>
+        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
+          <span className="mb-2"><IconFuel /></span>
           <span className="text-gray-400 text-sm">Fuel & Maintenance</span>
           <span className="text-3xl font-bold text-white">{summary.avgFuel} <span className="text-base font-normal">MPG</span></span>
+          <Gauge value={summary.avgFuel} />
         </div>
       </section>
 
@@ -508,10 +542,7 @@ export default function FleetDashboard() {
         {/* Fleet Status Donut, Fuel Consumption Line, Driver Leaderboard, Vehicles in Maintenance, Vehicles List */}
         <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col items-center">
           <span className="text-gray-400 text-sm mb-2">Fleet Status</span>
-          {/* Placeholder Donut Chart */}
-          <div className="w-32 h-32 rounded-full bg-gradient-to-tr from-blue-500 to-green-400 flex items-center justify-center text-3xl font-bold text-white">
-            {summary.vehiclesActive}
-          </div>
+          <DonutChart value={284} color="#1ecbe1" />
           <div className="mt-4 w-full flex flex-col gap-1">
             <span className="text-blue-400 text-xs">78% Active</span>
             <span className="text-yellow-400 text-xs">14% Inactive</span>
@@ -520,24 +551,23 @@ export default function FleetDashboard() {
         </div>
         <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
           <span className="text-gray-400 text-sm mb-2">Fuel Consumption</span>
-          {/* Placeholder Line Chart */}
-          <div className="w-full h-32 bg-gradient-to-tr from-blue-900 to-blue-400 rounded-lg flex items-center justify-center text-blue-200 font-bold">Line Chart</div>
+          <div className="w-full h-32 flex items-center justify-center"><LineChart /></div>
         </div>
         <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
           <span className="text-gray-400 text-sm mb-2">Driver Leaderboard</span>
           <div className="flex flex-col gap-2 mt-2">
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">A</span>
+              <Avatar name="Alex Miller" src="https://randomuser.me/api/portraits/men/32.jpg" />
               <span className="text-white font-semibold">Alex Miller</span>
               <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">S</span>
+              <Avatar name="Sarah Lee" src="https://randomuser.me/api/portraits/women/44.jpg" />
               <span className="text-white font-semibold">Sarah Lee</span>
               <span className="ml-auto text-green-400 font-bold">1,150 miles</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">J</span>
+              <Avatar name="John Smith" src="https://randomuser.me/api/portraits/men/45.jpg" />
               <span className="text-white font-semibold">John Smith</span>
               <span className="ml-auto text-green-400 font-bold">1,000 miles</span>
             </div>
@@ -547,17 +577,17 @@ export default function FleetDashboard() {
           <span className="text-gray-400 text-sm mb-2">Vehicles in Maintenance</span>
           <div className="flex flex-col gap-2 mt-2">
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">A</span>
+              <Avatar name="Alex Miller" src="https://randomuser.me/api/portraits/men/32.jpg" />
               <span className="text-white font-semibold">Alex Miller</span>
               <span className="ml-auto text-green-400 font-bold">1,229 miles</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">S</span>
+              <Avatar name="Sarah Lee" src="https://randomuser.me/api/portraits/women/44.jpg" />
               <span className="text-white font-semibold">Sarah Lee</span>
               <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">J</span>
+              <Avatar name="John Smith" src="https://randomuser.me/api/portraits/men/45.jpg" />
               <span className="text-white font-semibold">John Smith</span>
               <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
             </div>

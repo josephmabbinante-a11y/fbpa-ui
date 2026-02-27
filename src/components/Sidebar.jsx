@@ -54,7 +54,17 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
+  // Responsive: detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 900);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Dropdown state for groups
   const [openDropdowns, setOpenDropdowns] = useState({});
@@ -66,21 +76,39 @@ export default function Sidebar() {
   const sidebarWidth = collapsed ? 60 : 240;
   const navGap = collapsed ? 4 : 10;
 
+  // Show sidebar on mobile only when showMobileSidebar is true
+  // On desktop, always show (collapsed or not)
+  const sidebarVisible = isMobile ? showMobileSidebar : true;
+
   return (
-    <aside
-      style={{
-        width: sidebarWidth,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        inset: '0 auto 0 0',
-        background: `linear-gradient(185deg, ${t.bgAlt}, ${t.surface})`,
-        borderRight: `1px solid ${t.border}`,
-        boxShadow: '18px 0 36px rgba(1, 5, 18, 0.45)',
-        zIndex: 100,
-        transition: 'width 200ms ease',
-      }}
-    >
+    <>
+      {/* Overlay for mobile menu */}
+      {isMobile && showMobileSidebar && (
+        <div
+          onClick={() => setShowMobileSidebar(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: 99,
+            transition: 'opacity 0.2s',
+          }}
+        />
+      )}
+      <aside
+        style={{
+          width: sidebarWidth,
+          display: sidebarVisible ? 'flex' : 'none',
+          flexDirection: 'column',
+          position: 'fixed',
+          inset: '0 auto 0 0',
+          background: `linear-gradient(185deg, ${t.bgAlt}, ${t.surface})`,
+          borderRight: `1px solid ${t.border}`,
+          boxShadow: '18px 0 36px rgba(1, 5, 18, 0.45)',
+          zIndex: 100,
+          transition: 'width 200ms ease',
+        }}
+      >
       <header
         style={{
           minHeight: 70,
@@ -95,7 +123,13 @@ export default function Sidebar() {
         {!collapsed && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
         <button
           type="button"
-          onClick={() => setCollapsed((c) => !c)}
+          onClick={() => {
+            if (isMobile) {
+              setShowMobileSidebar((v) => !v);
+            } else {
+              setCollapsed((c) => !c);
+            }
+          }}
           className="neon-outline"
           style={{
             width: 32,
@@ -108,7 +142,7 @@ export default function Sidebar() {
           }}
           title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
-          {collapsed ? '>' : '<'}
+          {isMobile ? (showMobileSidebar ? '×' : '≡') : collapsed ? '>' : '<'}
         </button>
       </header>
 
@@ -281,6 +315,7 @@ export default function Sidebar() {
           Log Out
         </button>
       </footer>
-    </aside>
+      </aside>
+    </>
   );
 }
