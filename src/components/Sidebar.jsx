@@ -290,6 +290,7 @@ export default function Sidebar() {
             </span>
             {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
 
+
           </NavLink>
         ))}
       </nav>

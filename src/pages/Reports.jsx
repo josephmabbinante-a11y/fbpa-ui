@@ -63,7 +63,7 @@ export default function Reports() {
   const t = themes[theme];
   const navigate = useNavigate();
   const [data, setData] = useState(mockReports);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Always false to force UI
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
 
@@ -72,6 +72,11 @@ export default function Reports() {
     // Always use mock data as default
     setData(mockReports);
     setLoading(false);
+    // Debug log
+    if (typeof window !== 'undefined') {
+      window.__REPORTS_DEBUG__ = { data: mockReports };
+      console.log('[Reports Debug] mockReports:', mockReports);
+    }
     // Optionally, allow API override if needed
     // getReports()
     //   .then((res) => {
