@@ -465,7 +465,6 @@ function ELDTableCard({ rows }) {
 }
 
 
-export default function FleetDashboard() {
   const [selectedDriver, setSelectedDriver] = useState(mockDrivers[0]);
   const mockELD = useMemo(
     () =>
@@ -480,160 +479,153 @@ export default function FleetDashboard() {
   );
 
   return (
-    <div className="min-h-screen w-full" style={{ background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
+    <div style={{ minHeight: '100vh', width: '100%', background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)', padding: 0 }}>
       {/* Header */}
-      <header className="flex items-center justify-between px-10 pt-8 pb-4">
-        <div className="flex items-center gap-3">
-          <span className="bg-blue-900 p-2 rounded-lg"><IconBus /></span>
-          <h1 className="text-3xl font-bold text-white">Management</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 48px 16px 48px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ background: '#1e2a4a', padding: 8, borderRadius: 12 }}><IconBus /></span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 32 }}>Management</span>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="bg-[#232b3e] p-2 rounded-full"><span role="img" aria-label="bell">🔔</span></button>
-          <button className="bg-[#232b3e] p-2 rounded-full"><span role="img" aria-label="settings">⚙️</span></button>
-          <div className="bg-[#232b3e] px-4 py-2 rounded-lg text-white font-semibold">Spencer Waters ▾</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button style={{ background: '#232b3e', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', fontSize: 20 }}>🔔</button>
+          <button style={{ background: '#232b3e', border: 'none', borderRadius: '50%', padding: 10, color: '#fff', fontSize: 20 }}>⚙️</button>
+          <div style={{ background: '#232b3e', color: '#fff', borderRadius: 10, padding: '10px 24px', fontWeight: 600 }}>Spencer Waters ▾</div>
         </div>
-      </header>
+      </div>
 
       {/* Top Summary Cards */}
-      <section className="grid grid-cols-4 gap-6 px-10">
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
-          <span className="mb-2"><IconBus /></span>
-          <span className="text-gray-400 text-sm">Total Vehicles</span>
-          <span className="text-3xl font-bold text-white">{summary.totalVehicles}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32, padding: '0 48px' }}>
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ marginBottom: 8 }}><IconBus /></span>
+          <span style={{ color: '#bfc9e0', fontSize: 15 }}>Total Vehicles</span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 36 }}>{summary.totalVehicles}</span>
         </div>
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
-          <span className="mb-2"><IconCheck /></span>
-          <span className="text-gray-400 text-sm">Vehicles Active</span>
-          <span className="text-3xl font-bold text-white">{summary.vehiclesActive}</span>
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ marginBottom: 8 }}><IconCheck /></span>
+          <span style={{ color: '#bfc9e0', fontSize: 15 }}>Vehicles Active</span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 36 }}>{summary.vehiclesActive}</span>
         </div>
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
-          <span className="mb-2"><IconGauge /></span>
-          <span className="text-gray-400 text-sm">Active Utilization</span>
-          <span className="text-3xl font-bold text-white">{summary.utilization}%</span>
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ marginBottom: 8 }}><IconGauge /></span>
+          <span style={{ color: '#bfc9e0', fontSize: 15 }}>Active Utilization</span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 36 }}>{summary.utilization}%</span>
         </div>
-        <div className="bg-[#232b3e] rounded-xl p-6 flex flex-col items-start shadow min-h-[120px]">
-          <span className="mb-2"><IconFuel /></span>
-          <span className="text-gray-400 text-sm">Fuel & Maintenance</span>
-          <span className="text-3xl font-bold text-white">{summary.avgFuel} <span className="text-base font-normal">MPG</span></span>
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ marginBottom: 8 }}><IconFuel /></span>
+          <span style={{ color: '#bfc9e0', fontSize: 15 }}>Fuel & Maintenance</span>
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 36 }}>{summary.avgFuel} <span style={{ fontWeight: 400, fontSize: 18 }}>MPG</span></span>
           <Gauge value={summary.avgFuel} />
         </div>
-      </section>
+      </div>
 
-      {/* Map and Main Cards */}
-      <section className="grid grid-cols-12 gap-6 px-10 mt-6">
-        {/* Map */}
-        <div className="col-span-12 bg-[#232b3e] rounded-xl shadow p-0 overflow-hidden" style={{height: 320}}>
-          <iframe
-            title="Fleet Map"
-            width="100%"
-            height="320"
-            className="rounded-xl"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-            src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=Los+Angeles,CA`}
-          />
-        </div>
-      </section>
+      {/* Map */}
+      <div style={{ margin: '32px 48px 0 48px', borderRadius: 18, overflow: 'hidden', background: '#232b3e', boxShadow: '0 2px 12px #0002', height: 320 }}>
+        <iframe
+          title="Fleet Map"
+          width="100%"
+          height="320"
+          style={{ border: 0, width: '100%', display: 'block' }}
+          loading="lazy"
+          allowFullScreen
+          referrerPolicy="no-referrer-when-downgrade"
+          src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=Los+Angeles,CA`}
+        />
+      </div>
 
-      {/* Lower Cards and Table */}
-      <section className="grid grid-cols-12 gap-6 px-10 mt-6">
-        {/* Fleet Status Donut, Fuel Consumption Line, Driver Leaderboard, Vehicles in Maintenance, Vehicles List */}
-        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col items-center">
-          <span className="text-gray-400 text-sm mb-2">Fleet Status</span>
+      {/* Lower Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 32, margin: '32px 48px 0 48px' }}>
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ color: '#bfc9e0', fontSize: 15, marginBottom: 8 }}>Fleet Status</span>
           <DonutChart value={284} color="#1ecbe1" />
-          <div className="mt-4 w-full flex flex-col gap-1">
-            <span className="text-blue-400 text-xs">78% Active</span>
-            <span className="text-yellow-400 text-xs">14% Inactive</span>
-            <span className="text-pink-400 text-xs">15% Maintenance</span>
+          <div style={{ marginTop: 16, width: '100%' }}>
+            <span style={{ color: '#1ecbe1', fontSize: 13 }}>78% Active</span><br />
+            <span style={{ color: '#ffd600', fontSize: 13 }}>14% Inactive</span><br />
+            <span style={{ color: '#ff4d8b', fontSize: 13 }}>15% Maintenance</span>
           </div>
         </div>
-        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
-          <span className="text-gray-400 text-sm mb-2">Fuel Consumption</span>
-          <div className="w-full h-32 flex items-center justify-center"><LineChart /></div>
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 220, display: 'flex', flexDirection: 'column', alignItems: 'center', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ color: '#bfc9e0', fontSize: 15, marginBottom: 8 }}>Fuel Consumption</span>
+          <div style={{ width: '100%', height: 90, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LineChart /></div>
         </div>
-        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
-          <span className="text-gray-400 text-sm mb-2">Driver Leaderboard</span>
-          <div className="flex flex-col gap-2 mt-2">
-            <div className="flex items-center gap-3">
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 220, display: 'flex', flexDirection: 'column', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ color: '#bfc9e0', fontSize: 15, marginBottom: 8 }}>Driver Leaderboard</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name="Alex Miller" src="https://randomuser.me/api/portraits/men/32.jpg" />
-              <span className="text-white font-semibold">Alex Miller</span>
-              <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>Alex Miller</span>
+              <span style={{ marginLeft: 'auto', color: '#1ecbe1', fontWeight: 700 }}>1,250 miles</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name="Sarah Lee" src="https://randomuser.me/api/portraits/women/44.jpg" />
-              <span className="text-white font-semibold">Sarah Lee</span>
-              <span className="ml-auto text-green-400 font-bold">1,150 miles</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>Sarah Lee</span>
+              <span style={{ marginLeft: 'auto', color: '#1ecbe1', fontWeight: 700 }}>1,150 miles</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name="John Smith" src="https://randomuser.me/api/portraits/men/45.jpg" />
-              <span className="text-white font-semibold">John Smith</span>
-              <span className="ml-auto text-green-400 font-bold">1,000 miles</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>John Smith</span>
+              <span style={{ marginLeft: 'auto', color: '#1ecbe1', fontWeight: 700 }}>1,000 miles</span>
             </div>
           </div>
         </div>
-        <div className="col-span-3 bg-[#232b3e] rounded-xl p-6 shadow flex flex-col">
-          <span className="text-gray-400 text-sm mb-2">Vehicles in Maintenance</span>
-          <div className="flex flex-col gap-2 mt-2">
-            <div className="flex items-center gap-3">
+        <div style={{ background: '#232b3e', borderRadius: 18, padding: 28, minHeight: 220, display: 'flex', flexDirection: 'column', boxShadow: '0 2px 12px #0002' }}>
+          <span style={{ color: '#bfc9e0', fontSize: 15, marginBottom: 8 }}>Vehicles in Maintenance</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name="Alex Miller" src="https://randomuser.me/api/portraits/men/32.jpg" />
-              <span className="text-white font-semibold">Alex Miller</span>
-              <span className="ml-auto text-green-400 font-bold">1,229 miles</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>Alex Miller</span>
+              <span style={{ marginLeft: 'auto', color: '#1ecbe1', fontWeight: 700 }}>1,229 miles</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name="Sarah Lee" src="https://randomuser.me/api/portraits/women/44.jpg" />
-              <span className="text-white font-semibold">Sarah Lee</span>
-              <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>Sarah Lee</span>
+              <span style={{ marginLeft: 'auto', color: '#1ecbe1', fontWeight: 700 }}>1,250 miles</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <Avatar name="John Smith" src="https://randomuser.me/api/portraits/men/45.jpg" />
-              <span className="text-white font-semibold">John Smith</span>
-              <span className="ml-auto text-green-400 font-bold">1,250 miles</span>
+              <span style={{ color: '#fff', fontWeight: 600 }}>John Smith</span>
+              <span style={{ marginLeft: 'auto', color: '#1ecbe1', fontWeight: 700 }}>1,250 miles</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Vehicle List Table */}
-      <section className="px-10 mt-6 pb-10">
-        <div className="bg-[#232b3e] rounded-xl shadow p-6 overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="text-gray-400 text-xs uppercase">
-                <th className="px-4 py-2 text-left">Vehicle List</th>
-                <th className="px-4 py-2 text-left">Driver</th>
-                <th className="px-4 py-2 text-left">Location</th>
-                <th className="px-4 py-2 text-left">Last Trip</th>
-                <th className="px-4 py-2 text-left">Odometer</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="text-white border-b border-[#2e3650]">
-                <td className="px-4 py-2"><span className="bg-green-700 px-2 py-1 rounded text-xs">Active</span> Active</td>
-                <td className="px-4 py-2">Ford Banson</td>
-                <td className="px-4 py-2">Dalla F-150</td>
-                <td className="px-4 py-2">Mercedes Capcadia</td>
-                <td className="px-4 py-2">Dallas, TX</td>
-              </tr>
-              <tr className="text-white border-b border-[#2e3650]">
-                <td className="px-4 py-2"><span className="bg-blue-700 px-2 py-1 rounded text-xs">Active</span> Active</td>
-                <td className="px-4 py-2">Joe Carter</td>
-                <td className="px-4 py-2">Meredad Spriner</td>
-                <td className="px-4 py-2">Freight Cascadia</td>
-                <td className="px-4 py-2">Chicago, FL</td>
-              </tr>
-              <tr className="text-white">
-                <td className="px-4 py-2"><span className="bg-green-700 px-2 py-1 rounded text-xs">Active</span> Miami FL</td>
-                <td className="px-4 py-2">Emma Whison</td>
-                <td className="px-4 py-2">Emma Seminson</td>
-                <td className="px-4 py-2">Freightliner Cassadia</td>
-                <td className="px-4 py-2">Chicago, IL</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div style={{ margin: '32px 48px 0 48px', background: '#232b3e', borderRadius: 18, boxShadow: '0 2px 12px #0002', padding: 28, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ color: '#bfc9e0', fontSize: 13, textTransform: 'uppercase' }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left' }}>Vehicle List</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left' }}>Driver</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left' }}>Location</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left' }}>Last Trip</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left' }}>Odometer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ color: '#fff', borderBottom: '1px solid #2e3650' }}>
+              <td style={{ padding: '12px 16px' }}><span style={{ background: '#1ecbe1', color: '#fff', padding: '2px 10px', borderRadius: 8, fontSize: 13, marginRight: 8 }}>Active</span>Active</td>
+              <td style={{ padding: '12px 16px' }}>Ford Banson</td>
+              <td style={{ padding: '12px 16px' }}>Dalla F-150</td>
+              <td style={{ padding: '12px 16px' }}>Mercedes Capcadia</td>
+              <td style={{ padding: '12px 16px' }}>Dallas, TX</td>
+            </tr>
+            <tr style={{ color: '#fff', borderBottom: '1px solid #2e3650' }}>
+              <td style={{ padding: '12px 16px' }}><span style={{ background: '#3b82f6', color: '#fff', padding: '2px 10px', borderRadius: 8, fontSize: 13, marginRight: 8 }}>Active</span>Active</td>
+              <td style={{ padding: '12px 16px' }}>Joe Carter</td>
+              <td style={{ padding: '12px 16px' }}>Meredad Spriner</td>
+              <td style={{ padding: '12px 16px' }}>Freight Cascadia</td>
+              <td style={{ padding: '12px 16px' }}>Chicago, FL</td>
+            </tr>
+            <tr style={{ color: '#fff' }}>
+              <td style={{ padding: '12px 16px' }}><span style={{ background: '#1ecbe1', color: '#fff', padding: '2px 10px', borderRadius: 8, fontSize: 13, marginRight: 8 }}>Active</span>Miami FL</td>
+              <td style={{ padding: '12px 16px' }}>Emma Whison</td>
+              <td style={{ padding: '12px 16px' }}>Emma Seminson</td>
+              <td style={{ padding: '12px 16px' }}>Freightliner Cassadia</td>
+              <td style={{ padding: '12px 16px' }}>Chicago, IL</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
