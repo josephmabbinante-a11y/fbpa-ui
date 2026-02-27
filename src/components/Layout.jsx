@@ -48,6 +48,7 @@ function Layout({ children }) {
           className="card-surface page-shell"
           style={{
             minHeight: 'calc(100vh - 40px)',
+            gridTemplateColumns: 'minmax(0, 1fr)',
             backgroundColor: 'rgba(8, 17, 35, 0.56)',
             borderColor: t.border,
           }}
