@@ -386,8 +386,31 @@ export default function FleetDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-[1400px] px-8 py-8">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className="w-20 lg:w-56 bg-white border-r border-gray-200 flex flex-col py-6 px-2 lg:px-4 transition-all duration-200">
+        <nav className="flex flex-col gap-4">
+          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+            <span className="inline-block w-6 h-6 bg-blue-200 rounded-full" />
+            <span className="hidden lg:block text-sm font-medium">Hours of Service</span>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+            <span className="inline-block w-6 h-6 bg-green-200 rounded-full" />
+            <span className="hidden lg:block text-sm font-medium">Drivers</span>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+            <span className="inline-block w-6 h-6 bg-yellow-200 rounded-full" />
+            <span className="hidden lg:block text-sm font-medium">Assets</span>
+          </button>
+          <button className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100">
+            <span className="inline-block w-6 h-6 bg-purple-200 rounded-full" />
+            <span className="hidden lg:block text-sm font-medium">Accounting</span>
+          </button>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 mx-auto max-w-[1400px] px-8 py-8">
         <div className="grid grid-cols-12 gap-6">
           <DriverListCard
             drivers={mockDrivers}
