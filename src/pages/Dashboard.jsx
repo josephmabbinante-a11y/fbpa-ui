@@ -120,11 +120,12 @@ export default function Dashboard() {
       const res = await getDashboard();
       if (!mounted) return;
 
-      if (res && !res.error) {
+      if (res && !res.error && res.data && Object.keys(res.data).length > 0) {
         setData(mergeDashboardData(res));
       } else {
-        // Keep currently rendered data to avoid UI popping/disappearing on API failures.
+        // Keep currently rendered data to avoid UI popping/disappearing on API failures or empty responses.
         if (res?.error) setError(res.error);
+        // Optionally, show a warning or fallback UI here
       }
       setLoading(false);
     };

@@ -10,27 +10,30 @@ import {
 } from 'recharts';
 
 export default function TrendLineChart({ data, dataKey, title, color = '#8884d8', yAxisLabel = 'Value' }) {
-  const normalizedData = useMemo(
-    () =>
-      (data || [])
-        .map((row, index) => {
-          const rawY = Number(row?.[dataKey]);
-          return {
-            ...row,
-            __x:
-              row?.date ||
-              row?.day ||
-              row?.month ||
-              row?.period ||
-              `Point ${index + 1}`,
-            __y: Number.isFinite(rawY) ? rawY : 0,
-          };
-        })
-        .filter((row) => row.__x),
-    [data, dataKey]
-  );
+  const [lastValidData, setLastValidData] = useState([]);
+  const normalizedData = useMemo(() => {
+    const arr = (data || [])
+      .map((row, index) => {
+        const rawY = Number(row?.[dataKey]);
+        return {
+          ...row,
+          __x:
+            row?.date ||
+            row?.day ||
+            row?.month ||
+            row?.period ||
+            `Point ${index + 1}`,
+          __y: Number.isFinite(rawY) ? rawY : 0,
+        };
+      })
+      .filter((row) => row.__x);
+    if (arr.length) setLastValidData(arr);
+    return arr;
+  }, [data, dataKey]);
 
-  if (!normalizedData.length) {
+  const chartDataToUse = normalizedData.length ? normalizedData : lastValidData;
+
+  if (!chartDataToUse.length) {
     return (
       <div style={{ width: '100%' }}>
         <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
