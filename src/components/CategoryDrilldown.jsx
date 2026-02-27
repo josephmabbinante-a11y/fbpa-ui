@@ -24,10 +24,29 @@ export default function CategoryDrilldown({ data }) {
   const { theme } = useTheme();
   const t = themes[theme];
   const [activeCategory, setActiveCategory] = useState(data && data.length ? data[0].category : '');
+  const [lastValidData, setLastValidData] = useState([]);
 
-  const active = useMemo(() => (data || []).find((item) => item.category === activeCategory), [data, activeCategory]);
+  const active = useMemo(() => {
+    const found = (data || []).find((item) => item.category === activeCategory);
+    if (data && data.length && found) setLastValidData(data);
+    return found;
+  }, [data, activeCategory]);
 
-  if (!data || data.length === 0 || !active) return null;
+  const dataToUse = data && data.length ? data : lastValidData;
+  const activeToUse = dataToUse.find((item) => item.category === activeCategory);
+
+  if (!dataToUse || dataToUse.length === 0 || !activeToUse) {
+    return (
+      <div style={{ width: '100%' }}>
+        <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Category Drilldown
+        </h3>
+        <div style={{ height: 220, width: '100%', display: 'grid', placeItems: 'center', border: '1px dashed #3a3a3a', borderRadius: 6, color: '#9a9a9a', fontSize: 12 }}>
+          No chart data available
+        </div>
+      </div>
+    );
+  }
 
   const cardStyle = {
     backgroundColor: t.surface,

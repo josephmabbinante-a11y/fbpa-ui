@@ -12,21 +12,23 @@ export default function SavingsByCarrierChart({ data, onClick }) {
   const t = themes[theme];
   const [isHovered, setIsHovered] = useState(false);
 
-  const chartData = useMemo(
-    () =>
-      (data || [])
-        .map((item, index) => {
-          const rawSavings = Number(item?.savings ?? item?.total ?? item?.value ?? 0);
-          const rawCount = Number(item?.invoiceCount ?? item?.count ?? 0);
-          return {
-            carrier: item?.carrier || item?.lane || `Item ${index + 1}`,
-            savings: Number.isFinite(rawSavings) ? rawSavings : 0,
-            invoiceCount: Number.isFinite(rawCount) ? rawCount : 0,
-          };
-        })
-        .filter((item) => item.savings > 0),
-    [data]
-  );
+  const [lastValidData, setLastValidData] = useState([]);
+  const chartData = useMemo(() => {
+    const arr = (data || [])
+      .map((item, index) => {
+        const rawSavings = Number(item?.savings ?? item?.total ?? item?.value ?? 0);
+        const rawCount = Number(item?.invoiceCount ?? item?.count ?? 0);
+        return {
+          carrier: item?.carrier || item?.lane || `Item ${index + 1}`,
+          savings: Number.isFinite(rawSavings) ? rawSavings : 0,
+          invoiceCount: Number.isFinite(rawCount) ? rawCount : 0,
+        };
+      })
+      .filter((item) => item.savings > 0);
+    if (arr.length) setLastValidData(arr);
+    return arr;
+  }, [data]);
+  const chartDataToUse = chartData.length ? chartData : lastValidData;
 
   return (
     <div
