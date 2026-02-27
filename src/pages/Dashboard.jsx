@@ -3,10 +3,6 @@ import { useDemo } from '../demo/DemoContext';
 import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
-import KPIWithTrend from '../components/KPIWithTrend';
-import CollapsibleSection from '../components/CollapsibleSection';
-import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
-import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
 
 const DASH_PREFS_KEY = 'dashboardPrefs';
@@ -51,7 +47,6 @@ function readDashboardVariant() {
 
 function mergeDashboardData(incoming) {
   if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
-
   const hasUsableSeries = (series) =>
     Array.isArray(series) &&
     series.length > 0 &&
@@ -61,26 +56,21 @@ function mergeDashboardData(incoming) {
         return Number.isFinite(Number(value));
       })
     );
-
   const hasUsableBreakdown = (items) =>
     Array.isArray(items) &&
     items.length > 0 &&
     items.some((item) => Number(item?.value ?? item?.count ?? item?.total ?? 0) > 0);
-
   const hasUsableSavings = (items) =>
     Array.isArray(items) &&
     items.length > 0 &&
     items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
-
   const fallbackTrends = dashboardEnhanced.trends || {};
   const incomingTrends = incoming.trends || {};
   const mergedTrends = {};
-
   Object.keys(fallbackTrends).forEach((key) => {
     const nextSeries = incomingTrends[key];
     mergedTrends[key] = hasUsableSeries(nextSeries) ? nextSeries : fallbackTrends[key];
   });
-
   return {
     ...dashboardEnhanced,
     ...incoming,
@@ -159,13 +149,12 @@ export default function Dashboard() {
     }
   };
 
-  // TODO: Implement Dashboard JSX here
   return (
     <div style={{ padding: 24 }}>
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Dashboard</h1>
-          </div>
+        </div>
         <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
           {/* Add variant description here if needed */}
         </div>
@@ -189,93 +178,13 @@ export default function Dashboard() {
         </div>
       )}
       {data && typeof data === 'object' && Object.keys(data).length > 0 && (
-        <>
-          {/* Collapsible debug log for dashboard state at the bottom */}
-          <div style={{ marginTop: 32 }}>
-            <details style={{ fontSize: 12, color: t.textSecondary }}>
-              <summary>[DEBUG] Dashboard state (click to expand)</summary>
-              <pre>loading: {JSON.stringify(loading)}\nerror: {JSON.stringify(error)}\ndata: {JSON.stringify(data, null, 2)}</pre>
-            </details>
-          </div>
-          {/* KPIs with Trends */}
-          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
-            {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
-              <KPIWithTrend 
-                label="Total Invoices" 
-                value={data.summary?.totalInvoices || 0} 
-                delta={5}
-                trendData={data.trends?.invoiceTrend}
-                trendColor="#0066cc"
-                onClick={() => navigate('/invoices')}
-              />
-            )}
-            {variant === 'shipper' && dashboardPrefs.showExceptions && (
-              <KPIWithTrend 
-                label="Exceptions" 
-                value={data.summary?.totalExceptions || 0} 
-                delta={-2}
-                trendData={data.trends?.exceptionTrend}
-                trendColor="#ef4444"
-                onClick={() => navigate('/exceptions')}
-              />
-            )}
-            {variant === 'shipper' && dashboardPrefs.showTotalSavings && (
-              <KPIWithTrend 
-                label="Total Savings" 
-                value={data.summary?.totalSavings || 0} 
-                  {/* Dashboard asset blocks removed. Only debug log remains. */}
-              <div style={{ minWidth: 0, width: '100%' }}>
-                <ExceptionBreakdownChart data={data.claimsBreakdown || data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
-              </div>
-            )}
-            {variant !== 'carrier' && dashboardPrefs.showSavingsByCarrier && data.savingsByCarrier && (
-              <div style={{ minWidth: 0, width: '100%' }}>
-                <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
-              </div>
-            )}
-            {variant === 'carrier' && (
-              <div style={{ minWidth: 0, width: '100%' }}>
-                <SavingsByCarrierChart data={data.volumeByLane || data.savingsByCarrier} onClick={() => navigate('/reports')} />
-              </div>
-            )}
-          </div>
-
-          {dashboardPrefs.showRecentActivity && (
-            <CollapsibleSection title={variant === 'broker' ? 'Recent Loads' : 'Recent Activity'} defaultOpen={true}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>{variant === 'broker' ? 'Load/File' : 'Invoice/File'}</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>{variant === 'broker' ? 'Margin' : 'Amount'}</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-                    <th style={{ textAlign: 'left', padding: 8 }}>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.recentActivity?.slice(0, 5).map((activity) => (
-                    <tr key={activity.id}>
-                      <td style={{ padding: 8 }}>{activity.type}</td>
-                      <td style={{ padding: 8 }}>{activity.invoiceNumber || activity.fileName}</td>
-                      <td style={{ padding: 8 }}>
-                        {variant === 'broker'
-                          ? (activity.margin ? `${activity.margin}%` : activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)
-                          : (activity.amount ? `$${activity.amount.toLocaleString()}` : activity.count)}
-                      </td>
-                      <td style={{ padding: 8 }}>{activity.status}</td>
-                      <td style={{ padding: 8, fontSize: '12px', color: t.textSecondary }}>
-                        {new Date(activity.timestamp).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CollapsibleSection>
-          )}
-        </>
+        <div style={{ marginTop: 32 }}>
+          <details style={{ fontSize: 12, color: t.textSecondary }}>
+            <summary>[DEBUG] Dashboard state (click to expand)</summary>
+            <pre>loading: {JSON.stringify(loading)}{"\n"}error: {JSON.stringify(error)}{"\n"}data: {JSON.stringify(data, null, 2)}</pre>
+          </details>
+        </div>
       )}
     </div>
   );
 }
-// Demo mode: Uncomment to use mock data
-// useEffect(() => { setData(dashboardEnhanced); setLoading(false); }, []);
