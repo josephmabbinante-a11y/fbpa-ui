@@ -111,18 +111,20 @@ export default function Dashboard() {
 
   // --- Operational Command Center Layout ---
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: t.bg }}>
+    <div style={{ padding: 24, minHeight: '100vh', background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, justifyContent: 'space-between' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Operational Command Center</h1>
-          <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}>
-            <option value="shipper">Shipper</option>
-            <option value="carrier">Carrier</option>
-            <option value="broker">Broker</option>
-          </select>
-        </div>
-        <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
-          Manage shipments, monitor daily operations, and analyze financial & KPI performance in real time.
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, justifyContent: 'space-between' }}>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: '#fff', letterSpacing: 0.2 }}>Operational Command Center</h1>
+            <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text, marginTop: 12 }}>
+              <option value="shipper">Shipper</option>
+              <option value="carrier">Carrier</option>
+              <option value="broker">Broker</option>
+            </select>
+            <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 12, marginBottom: 2 }}>
+              Manage shipments, monitor daily operations, and analyze financial & KPI performance in real time.
+            </div>
+          </div>
         </div>
       </div>
 

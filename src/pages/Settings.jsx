@@ -1,6 +1,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import AdminControlCard from '../components/admin/AdminControlCard';
+import CompanyInfoForm from '../components/admin/CompanyInfoForm';
+import LogoUpload from '../components/admin/LogoUpload';
+import CurrencyUnitsForm from '../components/admin/CurrencyUnitsForm';
+import UserManagement from '../components/admin/UserManagement';
+import DefaultMarginTargets from '../components/admin/DefaultMarginTargets';
+import RoutingDefaults from '../components/admin/RoutingDefaults';
+import NotificationSettings from '../components/admin/NotificationSettings';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 
@@ -266,19 +273,20 @@ export default function Settings() {
               {(() => {
                 switch (activeAction) {
                   case 'Edit Company Info':
-                    return 'Edit company information form goes here.';
+                    return <CompanyInfoForm onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
                   case 'Upload Logo':
-                    return 'Logo upload component goes here.';
+                    return <LogoUpload onUpload={file => alert('Logo uploaded: ' + file.name)} />;
                   case 'Currency & Units Settings':
-                    return 'Currency and units settings form goes here.';
-                  case 'Default Margin Targets':
-                    return 'Default margin targets configuration goes here.';
-                  case 'Routing Defaults':
-                    return 'Routing defaults configuration goes here.';
-                  case 'Notification Settings':
-                    return 'Notification settings configuration goes here.';
+                    return <CurrencyUnitsForm onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
                   case 'Add/Edit Users':
-                    return 'User management form goes here.';
+                    return <UserManagement />;
+                  // Placeholders for other actions:
+                  case 'Default Margin Targets':
+                    return <DefaultMarginTargets onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
+                  case 'Routing Defaults':
+                    return <RoutingDefaults onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
+                  case 'Notification Settings':
+                    return <NotificationSettings onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
                   case 'Manage Roles':
                     return 'Role management form goes here.';
                   case 'Permission Groups':

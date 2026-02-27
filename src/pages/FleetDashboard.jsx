@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import DriverCommandCardModern from '../components/DriverCommandCardModern';
 
 const mockDrivers = [
   {
@@ -434,7 +435,7 @@ export default function FleetDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex" style={{ background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
       {/* Sidebar */}
       <aside className="w-20 lg:w-56 bg-white border-r border-gray-200 flex flex-col py-6 px-2 lg:px-4 transition-all duration-200">
         <nav className="flex flex-col gap-4">
@@ -459,7 +460,8 @@ export default function FleetDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 mx-auto max-w-[1400px] px-8 py-8">
-        <div className="grid grid-cols-12 gap-6">
+        <DriverCommandCardModern driver={selectedDriver} />
+        <div className="grid grid-cols-12 gap-8">
           <DriverListCard
             drivers={mockDrivers}
             selectedDriverId={selectedDriver.id}
@@ -467,7 +469,7 @@ export default function FleetDashboard() {
           />
 
           <main className="col-span-12 lg:col-span-9">
-            <div className="grid grid-cols-12 gap-6">
+            <div className="grid grid-cols-12 gap-8">
               <FleetOverviewCard driver={selectedDriver} />
               <LiveMapCard driver={selectedDriver} />
               <TelemetryCard driver={selectedDriver} />
