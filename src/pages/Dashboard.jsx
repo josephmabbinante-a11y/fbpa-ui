@@ -223,47 +223,7 @@ export default function Dashboard() {
               <KPIWithTrend 
                 label="Total Savings" 
                 value={data.summary?.totalSavings || 0} 
-                format="currency" 
-                delta={12}
-                trendData={data.trends?.savingsTrend}
-                trendColor="#10b981"
-                onClick={() => navigate('/reports')}
-              />
-            )}
-            {variant === 'shipper' && dashboardPrefs.showPending && (
-              <KPIWithTrend 
-                label="Pending" 
-                value={data.summary?.pendingReview || 0} 
-                delta={0}
-                trendData={data.trends?.pendingTrend}
-                trendColor="#f59e0b"
-              />
-            )}
-
-            {variant === 'carrier' && (
-              <>
-                <KPIWithTrend label="On-Time %" value={data.summary?.onTime || 0} delta={2} trendData={data.trends?.onTimeTrend} trendColor="#10b981" />
-                <KPIWithTrend label="Claims %" value={data.summary?.claimsRate || 0} delta={-1} trendData={data.trends?.claimsTrend} trendColor="#ef4444" />
-                <KPIWithTrend label="Volume" value={data.summary?.totalInvoices || 0} delta={3} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" />
-              </>
-            )}
-
-            {variant === 'broker' && (
-              <>
-                <KPIWithTrend label="Margin %" value={data.summary?.margin || 0} delta={1} trendData={data.trends?.marginTrend} trendColor="#10b981" />
-                <KPIWithTrend label="Loads" value={data.summary?.loads || 0} delta={4} trendData={data.trends?.loadsTrend} trendColor="#0066cc" />
-                <KPIWithTrend label="Revenue" value={data.summary?.revenue || 0} format="currency" delta={7} trendData={data.trends?.revenueTrend} trendColor="#f59e0b" />
-              </>
-            )}
-          </div>
-
-          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
-            {variant !== 'carrier' && dashboardPrefs.showExceptionDistribution && data.exceptionBreakdown && (
-              <div style={{ minWidth: 0, width: '100%' }}>
-                <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
-              </div>
-            )}
-            {variant === 'carrier' && (
+                  {/* Dashboard asset blocks removed. Only debug log remains. */}
               <div style={{ minWidth: 0, width: '100%' }}>
                 <ExceptionBreakdownChart data={data.claimsBreakdown || data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
               </div>
