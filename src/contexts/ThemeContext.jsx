@@ -9,13 +9,31 @@ export const ThemeProvider = ({ children }) => {
   const previousThemeRef = useRef(null);
   const transitionTimerRef = useRef(null);
 
+  const getSystemTheme = () => {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+    return 'dark';
+  };
   const [theme, setTheme] = useState(() => {
     try {
-      return localStorage.getItem(THEME_STORAGE_KEY) || 'dark';
+      return localStorage.getItem(THEME_STORAGE_KEY) || getSystemTheme();
     } catch {
-      return 'dark';
+      return getSystemTheme();
     }
   });
+  useEffect(() => {
+    const systemThemeListener = (e) => {
+      if (e.matches) {
+        setTheme(getSystemTheme());
+      }
+    };
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', systemThemeListener);
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', systemThemeListener);
+    return () => {
+      window.matchMedia('(prefers-color-scheme: dark)').removeEventListener('change', systemThemeListener);
+      window.matchMedia('(prefers-color-scheme: light)').removeEventListener('change', systemThemeListener);
+    };
+  }, []);
 
   const toggleTheme = () => {
     setTheme((prev) => {

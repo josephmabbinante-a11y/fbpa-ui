@@ -92,9 +92,12 @@ function AppRoutes() {
             <Route path="/loads" element={<Loads />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/settings" element={<Settings />} />
+      {/* AI Bot for step-by-step instructions and chat */}
+      <AIBot />
             <Route path="/rate-logic" element={<RateLogicTool />} />
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/profile" element={<MyAuditIQProfile />} />
+            import AIBot from './components/AIBot';
             <Route path="/system-status" element={<SystemStatus />} />
             <Route path="/smoke-test" element={<LoginTest />} />
 

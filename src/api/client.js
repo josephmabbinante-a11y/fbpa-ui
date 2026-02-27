@@ -24,8 +24,8 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
 }
 
 function isMockMode() {
-  // Always return true for default mock mode
-  return true;
+  // Use environment variable for mock mode
+  return import.meta.env.VITE_MOCK_MODE === 'true';
 }
 
 // Removed JWT token retrieval

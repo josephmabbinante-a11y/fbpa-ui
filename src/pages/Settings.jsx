@@ -79,7 +79,8 @@ const adminSections = [
 ];
 
 export default function Settings() {
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
+  const { demoMode, enableDemo, disableDemo } = typeof useDemo === 'function' ? useDemo() : { demoMode: false, enableDemo: () => {}, disableDemo: () => {} };
   const t = themes[theme];
 
   const [activeSectionTitle, setActiveSectionTitle] = useState(adminSections[0].title);
@@ -95,6 +96,42 @@ export default function Settings() {
 
   return (
     <div style={{ width: '100%', minHeight: '100%', padding: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 8 }}>
+        <button
+          onClick={toggleTheme}
+          style={{
+            borderRadius: 8,
+            border: `1px solid ${t.border}`,
+            background: theme === 'dark' ? t.bgAlt : t.surface,
+            color: t.text,
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '6px 16px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            transition: 'background 0.2s',
+          }}
+        >
+          {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+        </button>
+        <button
+          onClick={demoMode ? disableDemo : enableDemo}
+          style={{
+            borderRadius: 8,
+            border: `1px solid ${demoMode ? t.accent : t.border}`,
+            background: demoMode ? t.accent : t.surface,
+            color: demoMode ? t.text : t.textSecondary,
+            fontSize: 13,
+            fontWeight: 600,
+            padding: '6px 16px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            transition: 'background 0.2s',
+          }}
+        >
+          {demoMode ? '🟢 Mock Data Mode: ON' : '⚪ Mock Data Mode: OFF'}
+        </button>
+      </div>
       <div
         style={{
           marginBottom: 18,
