@@ -85,6 +85,15 @@ export default function SavingsByCarrierChart({ data, onClick }) {
                 tick={{ fill: t.textSecondary, fontSize: 11 }}
                 width={95}
               />
+              <Bar
+                dataKey="savings"
+                fill={t.accent}
+                radius={[4, 4, 0, 0]}
+                minPointSize={2}
+                maxBarSize={32}
+              >
+                {/* Add <Cell> elements here if needed */}
+              </Bar>
               <Tooltip
                 contentStyle={{
                   backgroundColor: t.bgAlt,
@@ -93,7 +102,7 @@ export default function SavingsByCarrierChart({ data, onClick }) {
                   color: t.text,
                   fontSize: '12px',
                 }}
-              </Bar>
+              />
             </BarChart>
           </ResponsiveContainer>
         ) : (
