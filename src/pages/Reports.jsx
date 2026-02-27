@@ -48,16 +48,26 @@ export default function Reports() {
 
   const monthlyRows = useMemo(() => data?.monthlySummary || [], [data]);
 
-  if (loading) {
-    return <div style={{ padding: 24, color: t.textSecondary }}>Loading reports...</div>;
-  }
-
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Reports</h1>
         {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
       </div>
+      {loading ? (
+        <div
+          style={{
+            padding: '8px 12px',
+            backgroundColor: t.bgAlt,
+            border: `1px solid ${t.accent}`,
+            borderRadius: 6,
+            fontSize: 13,
+            color: t.accent,
+          }}
+        >
+          Loading reports...
+        </div>
+      ) : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
         {reportCards.map((card) => (
@@ -81,7 +91,7 @@ export default function Reports() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12 }}>
           <h3 style={{ marginTop: 0 }}>Monthly Summary</h3>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -97,9 +107,9 @@ export default function Reports() {
               {monthlyRows.map((row) => (
                 <tr key={row.month}>
                   <td>{row.month}</td>
-                  <td>{row.invoices.toLocaleString()}</td>
-                  <td>{row.exceptions}</td>
-                  <td>${row.savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td>{Number(row.invoices || 0).toLocaleString()}</td>
+                  <td>{Number(row.exceptions || 0).toLocaleString()}</td>
+                  <td>${Number(row.savings || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               ))}
             </tbody>
@@ -119,7 +129,7 @@ export default function Reports() {
               {(data?.topSavingsCarriers || []).map((row) => (
                 <tr key={row.carrier}>
                   <td>{row.carrier}</td>
-                  <td>${row.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td>${Number(row.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               ))}
             </tbody>
@@ -127,7 +137,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <TrendLineChart
           data={data?.savingsTrend || []}
           dataKey="savings"

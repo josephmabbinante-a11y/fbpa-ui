@@ -159,7 +159,26 @@ router.get('/', async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json({
+      monthlySummary: [],
+      exceptionBreakdown: [],
+      statusDistribution: [],
+      topSavingsCarriers: [],
+      savingsTrend: [],
+      exceptionTrend: [],
+      spendByCarrier: [],
+      spendByLane: [],
+      overchargeFrequency: [],
+      auditRecoveryAmount: 0,
+      categoryDrilldown: [],
+      auditMetrics: {
+        freightBillAudit: [],
+        paymentRecovery: [],
+        auditFindings: [],
+        paymentProcessing: [],
+      },
+      warning: `Using fallback reports data: ${err.message}`,
+    });
   }
 });
 

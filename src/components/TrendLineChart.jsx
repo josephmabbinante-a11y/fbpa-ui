@@ -38,9 +38,12 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
                 padding: 8,
                 color: '#e8e8e8',
               }}
-              formatter={(value) => 
-                yAxisLabel === 'Count' ? value : `$${value.toLocaleString()}`
-              }
+              formatter={(value) => {
+                const n = Number(value);
+                if (!Number.isFinite(n)) return '-';
+                if (yAxisLabel === 'Count') return n.toLocaleString();
+                return `$${n.toLocaleString()}`;
+              }}
               labelStyle={{ color: '#e8e8e8' }}
             />
             <Line
