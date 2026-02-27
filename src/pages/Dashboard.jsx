@@ -165,7 +165,7 @@ export default function Dashboard() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Dashboard</h1>
-        </div
+          </div>
         <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
           {/* Add variant description here if needed */}
         </div>
