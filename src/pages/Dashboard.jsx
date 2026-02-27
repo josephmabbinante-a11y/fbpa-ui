@@ -165,14 +165,7 @@ export default function Dashboard() {
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>Dashboard</h1>
-          <select
-            value={variant}
-            onChange={handleVariantChange}
-            style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text }}
-          >
-            {['shipper', 'carrier', 'broker'].map(v => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
-          </select>
-        </div>
+        </div
         <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 2, marginBottom: 2 }}>
           {/* Add variant description here if needed */}
         </div>
@@ -197,8 +190,13 @@ export default function Dashboard() {
       )}
       {data && typeof data === 'object' && Object.keys(data).length > 0 && (
         <>
-          {/* Debug log for dashboard state */}
-          <pre style={{ fontSize: 12, color: t.textSecondary, marginBottom: 8 }}>[DEBUG] Dashboard state:\nloading: {JSON.stringify(loading)}\nerror: {JSON.stringify(error)}\ndata: {JSON.stringify(data, null, 2)}</pre>
+          {/* Collapsible debug log for dashboard state at the bottom */}
+          <div style={{ marginTop: 32 }}>
+            <details style={{ fontSize: 12, color: t.textSecondary }}>
+              <summary>[DEBUG] Dashboard state (click to expand)</summary>
+              <pre>loading: {JSON.stringify(loading)}\nerror: {JSON.stringify(error)}\ndata: {JSON.stringify(data, null, 2)}</pre>
+            </details>
+          </div>
           {/* KPIs with Trends */}
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
             {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
