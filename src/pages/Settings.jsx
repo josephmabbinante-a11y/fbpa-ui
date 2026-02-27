@@ -98,57 +98,54 @@ export default function Settings() {
   return (
     <div style={{ width: '100%', minHeight: '100%', padding: 8 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 8 }}>
+        {/* Theme toggle button */}
         <button
           onClick={toggleTheme}
           style={{
-            return (
-              <div style={{ width: '100%', minHeight: '100%', padding: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 8 }}>
-                  {/* Theme toggle button */}
-                  <button
-                    onClick={toggleTheme}
-                    style={{
-                      borderRadius: 8,
-                      border: `1.5px solid ${theme === 'dark' ? t.accent : t.border}`,
-                      background: theme === 'dark' ? t.bgAlt : t.surface,
-                      color: theme === 'dark' ? t.text : t.text,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      padding: '7px 18px',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                      transition: 'background 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
-                    aria-label="Toggle light/dark theme"
-                  >
-                    {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
-                  </button>
-                  {/* Mock data mode toggle button */}
-                  <button
-                    onClick={demoMode ? disableDemo : enableDemo}
-                    style={{
-                      borderRadius: 8,
-                      border: `1.5px solid ${demoMode ? t.accent : t.border}`,
-                      background: demoMode ? t.accent : t.surface,
-                      color: demoMode ? t.text : t.textSecondary,
-                      fontSize: 14,
-                      fontWeight: 700,
-                      padding: '7px 18px',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                      transition: 'background 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
-                    aria-label="Toggle mock data mode"
-                  >
-                    {demoMode ? '🟢 Mock Data Mode: ON' : '⚪ Mock Data Mode: OFF'}
-                  </button>
-                </div>
+            borderRadius: 8,
+            border: `1.5px solid ${theme === 'dark' ? t.accent : t.border}`,
+            background: theme === 'dark' ? t.bgAlt : t.surface,
+            color: theme === 'dark' ? t.text : t.text,
+            fontSize: 14,
+            fontWeight: 700,
+            padding: '7px 18px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            transition: 'background 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+          aria-label="Toggle light/dark theme"
+        >
+          {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
+        </button>
+        {/* Mock data mode toggle button */}
+        <button
+          onClick={demoMode ? disableDemo : enableDemo}
+          style={{
+            borderRadius: 8,
+            border: `1.5px solid ${demoMode ? t.accent : t.border}`,
+            background: demoMode ? t.accent : t.surface,
+            color: demoMode ? t.text : t.textSecondary,
+            fontSize: 14,
+            fontWeight: 700,
+            padding: '7px 18px',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            transition: 'background 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+          aria-label="Toggle mock data mode"
+        >
+          {demoMode ? '🟢 Mock Data Mode: ON' : '⚪ Mock Data Mode: OFF'}
+        </button>
+      </div>
+      <div
+        style={{
+          background:
             theme === 'light'
               ? 'linear-gradient(145deg, rgba(239, 247, 255, 0.96), rgba(227, 239, 255, 0.95))'
               : 'linear-gradient(155deg, rgba(16, 30, 58, 0.94), rgba(9, 19, 38, 0.94))',
