@@ -15,7 +15,7 @@ const navItems = [
     dropdown: true,
     items: [
       { id: 'loads', label: 'Loads', icon: 'LD', path: '/loads' },
-      { id: 'ltl-orders', label: 'LTL Orders', icon: 'LO', path: '/ltl-orders' },
+      { id: 'order-management', label: 'Order Management', icon: 'OM', path: '/loads' },
       { id: 'edi-tenders', label: 'EDI / Tenders', icon: 'ET', path: '/edi-tenders' },
     ],
   },
