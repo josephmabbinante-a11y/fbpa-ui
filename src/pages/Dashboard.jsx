@@ -24,7 +24,13 @@ function readDashboardPrefs() {
   try {
     const parsed = JSON.parse(localStorage.getItem(DASH_PREFS_KEY) || 'null');
     if (!parsed || typeof parsed !== 'object') return DEFAULT_DASHBOARD_PREFS;
-    return { ...DEFAULT_DASHBOARD_PREFS, ...parsed };
+    const normalized = { ...DEFAULT_DASHBOARD_PREFS };
+    Object.keys(DEFAULT_DASHBOARD_PREFS).forEach((key) => {
+      if (typeof parsed[key] === 'boolean') {
+        normalized[key] = parsed[key];
+      }
+    });
+    return normalized;
   } catch {
     return DEFAULT_DASHBOARD_PREFS;
   }
