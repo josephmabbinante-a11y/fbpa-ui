@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -9,7 +10,38 @@ import {
 } from 'recharts';
 
 export default function TrendLineChart({ data, dataKey, title, color = '#8884d8', yAxisLabel = 'Value' }) {
-  if (!data || data.length === 0) return null;
+  const normalizedData = useMemo(
+    () =>
+      (data || [])
+        .map((row, index) => {
+          const rawY = Number(row?.[dataKey]);
+          return {
+            ...row,
+            __x:
+              row?.date ||
+              row?.day ||
+              row?.month ||
+              row?.period ||
+              `Point ${index + 1}`,
+            __y: Number.isFinite(rawY) ? rawY : 0,
+          };
+        })
+        .filter((row) => row.__x),
+    [data, dataKey]
+  );
+
+  if (!normalizedData.length) {
+    return (
+      <div style={{ width: '100%' }}>
+        <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          {title}
+        </h3>
+        <div style={{ height: 280, width: '100%', display: 'grid', placeItems: 'center', border: '1px dashed #3a3a3a', borderRadius: 6, color: '#9a9a9a', fontSize: 12 }}>
+          No chart data available
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: '100%' }}>
@@ -17,11 +49,11 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
         {title}
       </h3>
       <div style={{ height: 280, width: '100%' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height="100%" debounce={60}>
+          <LineChart data={normalizedData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" />
             <XAxis
-              dataKey="date"
+              dataKey="__x"
               fontSize={12}
               stroke="#9a9a9a"
             />
@@ -48,11 +80,12 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
             />
             <Line
               type="monotone"
-              dataKey={dataKey}
+              dataKey="__y"
               stroke={color}
               strokeWidth={2}
               dot={{ fill: color, r: 4 }}
               activeDot={{ r: 6 }}
+              isAnimationActive={false}
             />
           </LineChart>
         </ResponsiveContainer>

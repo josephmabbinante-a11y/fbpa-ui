@@ -14,6 +14,50 @@ const reportCards = [
   { id: 'audit', title: 'Audit Drilldown', description: 'Freight bill audit metrics' },
 ];
 
+const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
+
+function mergeReportsData(base, incoming) {
+  if (!incoming || typeof incoming !== 'object') {
+    return base;
+  }
+
+  const next = {
+    ...base,
+    ...incoming,
+    monthlySummary: isNonEmptyArray(incoming.monthlySummary) ? incoming.monthlySummary : base.monthlySummary,
+    exceptionBreakdown: isNonEmptyArray(incoming.exceptionBreakdown) ? incoming.exceptionBreakdown : base.exceptionBreakdown,
+    statusDistribution: isNonEmptyArray(incoming.statusDistribution) ? incoming.statusDistribution : base.statusDistribution,
+    topSavingsCarriers: isNonEmptyArray(incoming.topSavingsCarriers) ? incoming.topSavingsCarriers : base.topSavingsCarriers,
+    savingsTrend: isNonEmptyArray(incoming.savingsTrend) ? incoming.savingsTrend : base.savingsTrend,
+    exceptionTrend: isNonEmptyArray(incoming.exceptionTrend) ? incoming.exceptionTrend : base.exceptionTrend,
+    categoryDrilldown: isNonEmptyArray(incoming.categoryDrilldown) ? incoming.categoryDrilldown : base.categoryDrilldown,
+  };
+
+  const incomingAudit = incoming.auditMetrics && typeof incoming.auditMetrics === 'object' ? incoming.auditMetrics : null;
+  const baseAudit = base.auditMetrics && typeof base.auditMetrics === 'object' ? base.auditMetrics : {};
+
+  next.auditMetrics = incomingAudit
+    ? {
+        ...baseAudit,
+        ...incomingAudit,
+        freightBillAudit: isNonEmptyArray(incomingAudit.freightBillAudit)
+          ? incomingAudit.freightBillAudit
+          : baseAudit.freightBillAudit,
+        paymentRecovery: isNonEmptyArray(incomingAudit.paymentRecovery)
+          ? incomingAudit.paymentRecovery
+          : baseAudit.paymentRecovery,
+        auditFindings: isNonEmptyArray(incomingAudit.auditFindings)
+          ? incomingAudit.auditFindings
+          : baseAudit.auditFindings,
+        paymentProcessing: isNonEmptyArray(incomingAudit.paymentProcessing)
+          ? incomingAudit.paymentProcessing
+          : baseAudit.paymentProcessing,
+      }
+    : baseAudit;
+
+  return next;
+}
+
 export default function Reports() {
   const { theme } = useTheme();
   const t = themes[theme];
@@ -21,17 +65,16 @@ export default function Reports() {
   const [data, setData] = useState(mockReports);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [warning, setWarning] = useState(null);
 
   useEffect(() => {
     let mounted = true;
     getReports()
       .then((res) => {
         if (!mounted) return;
-        if (res && !res.error && res.monthlySummary) {
-          setData(res);
-        } else if (res?.error) {
-          setError(res.error);
-        }
+        if (res?.error) setError(res.error);
+        if (res?.warning) setWarning(res.warning);
+        setData((prev) => mergeReportsData(prev || mockReports, res));
       })
       .catch((err) => {
         if (!mounted) return;
@@ -54,6 +97,7 @@ export default function Reports() {
         <h1 style={{ margin: 0, fontSize: 28 }}>Reports</h1>
         {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
       </div>
+      {warning ? <div style={{ fontSize: 12, color: t.textSecondary }}>{warning}</div> : null}
       {loading ? (
         <div
           style={{

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
@@ -12,14 +12,21 @@ export default function SavingsByCarrierChart({ data, onClick }) {
   const t = themes[theme];
   const [isHovered, setIsHovered] = useState(false);
 
-  if (!data || data.length === 0) return null;
-
-  // Format data for horizontal bar chart
-  const chartData = data.map((item) => ({
-    carrier: item.carrier,
-    savings: item.savings,
-    invoiceCount: item.invoiceCount,
-  }));
+  const chartData = useMemo(
+    () =>
+      (data || [])
+        .map((item, index) => {
+          const rawSavings = Number(item?.savings ?? item?.total ?? item?.value ?? 0);
+          const rawCount = Number(item?.invoiceCount ?? item?.count ?? 0);
+          return {
+            carrier: item?.carrier || item?.lane || `Item ${index + 1}`,
+            savings: Number.isFinite(rawSavings) ? rawSavings : 0,
+            invoiceCount: Number.isFinite(rawCount) ? rawCount : 0,
+          };
+        })
+        .filter((item) => item.savings > 0),
+    [data]
+  );
 
   return (
     <div
@@ -53,49 +60,59 @@ export default function SavingsByCarrierChart({ data, onClick }) {
         }}
       >
         Savings by Carrier
-        {onClick && <span style={{ fontSize: '11px', marginLeft: '8px', opacity: 0.6 }}>→ Click for details</span>}
+        {onClick && <span style={{ fontSize: '11px', marginLeft: '8px', opacity: 0.6 }}>- Click for details</span>}
       </h3>
 
       <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            layout="vertical"
-            margin={{ top: 5, right: 30, left: 100 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
-            <XAxis
-              type="number"
-              tick={{ fill: t.textSecondary, fontSize: 11 }}
-              tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
-            />
-            <YAxis
-              dataKey="carrier"
-              type="category"
-              tick={{ fill: t.textSecondary, fontSize: 11 }}
-              width={95}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: t.bgAlt,
-                border: `1px solid ${t.border}`,
-                borderRadius: '4px',
-                color: t.text,
-                fontSize: '12px',
-              }}
-              formatter={(value) => [
-                `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                'Savings',
-              ]}
-              labelFormatter={(label) => `${label}`}
-            />
-            <Bar dataKey="savings" fill={t.positive} radius={[0, 4, 4, 0]}>
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={t.positive} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {chartData.length ? (
+          <ResponsiveContainer width="100%" height="100%" debounce={60}>
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 100 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
+              <XAxis
+                type="number"
+                tick={{ fill: t.textSecondary, fontSize: 11 }}
+                tickFormatter={(value) => `$${(Number(value) / 1000).toFixed(1)}k`}
+              />
+              <YAxis
+                dataKey="carrier"
+                type="category"
+                tick={{ fill: t.textSecondary, fontSize: 11 }}
+                width={95}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: t.bgAlt,
+                  border: `1px solid ${t.border}`,
+                  borderRadius: '4px',
+                  color: t.text,
+                  fontSize: '12px',
+                }}
+                formatter={(value) => {
+                  const n = Number(value);
+                  if (!Number.isFinite(n)) return ['$0.00', 'Savings'];
+                  return [
+                    `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                    'Savings',
+                  ];
+                }}
+                labelFormatter={(label) => `${label}`}
+              />
+              <Bar dataKey="savings" fill={t.positive} radius={[0, 4, 4, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={t.positive} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ height: '100%', display: 'grid', placeItems: 'center', border: `1px dashed ${t.border}`, borderRadius: 4, color: t.textSecondary, fontSize: 12 }}>
+            No carrier savings data available
+          </div>
+        )}
       </div>
 
       {/* Summary stats below chart */}
