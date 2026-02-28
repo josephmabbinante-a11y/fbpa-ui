@@ -1,14 +1,24 @@
 
-import React, { useState } from 'react';
+
+import React from 'react';
 import CollapsibleSection from './CollapsibleSection';
 
-const LoadInputs = () => {
-  const [origin, setOrigin] = useState('Los Angeles, CA');
-  const [destination, setDestination] = useState('Dallas, TX');
-  const [rpm, setRpm] = useState(2.37);
-  const [volatility, setVolatility] = useState(18);
-  const [capacity, setCapacity] = useState(72);
-
+const LoadInputs = ({
+  shipmentOptions,
+  origin,
+  setOrigin,
+  destination,
+  setDestination,
+  rpm,
+  setRpm,
+  volatility,
+  setVolatility,
+  capacity,
+  setCapacity,
+  predictedSwing,
+  laneData,
+  bookedLoads,
+}) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <CollapsibleSection title="Market Intelligence" defaultOpen>
@@ -16,14 +26,10 @@ const LoadInputs = () => {
           <label>Shipment Details:</label>
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <select value={origin} onChange={e => setOrigin(e.target.value)}>
-              <option>Los Angeles, CA</option>
-              <option>Chicago, IL</option>
-              <option>Atlanta, GA</option>
+              {shipmentOptions.origins.map(opt => <option key={opt}>{opt}</option>)}
             </select>
             <select value={destination} onChange={e => setDestination(e.target.value)}>
-              <option>Dallas, TX</option>
-              <option>Houston, TX</option>
-              <option>Miami, FL</option>
+              {shipmentOptions.destinations.map(opt => <option key={opt}>{opt}</option>)}
             </select>
           </div>
         </div>
@@ -42,7 +48,7 @@ const LoadInputs = () => {
           <input type="range" min={0} max={100} value={capacity} onChange={e => setCapacity(Number(e.target.value))} />
           <span style={{ marginLeft: 8 }}>{capacity}/100</span>
         </div>
-        <div style={{ fontSize: 13, color: '#aaa' }}>Predicted 48hr swing: <b>+$185</b></div>
+        <div style={{ fontSize: 13, color: '#aaa' }}>Predicted 48hr swing: <b>+${predictedSwing}</b></div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Lane Data" defaultOpen={false}>
@@ -54,9 +60,9 @@ const LoadInputs = () => {
             </tr>
           </thead>
           <tbody>
-            <tr><td>Greenscreens.ai</td><td align="right">$2,966</td></tr>
-            <tr><td>DAT</td><td align="right">$2,968</td></tr>
-            <tr><td>Internal Historical</td><td align="right">$2,910</td></tr>
+            {laneData.map(row => (
+              <tr key={row.source}><td>{row.source}</td><td align="right">${row.rate.toLocaleString()}</td></tr>
+            ))}
           </tbody>
         </table>
         <div style={{ fontWeight: 600, marginBottom: 4 }}>Last 10 Booked Loads</div>
@@ -69,9 +75,9 @@ const LoadInputs = () => {
             </tr>
           </thead>
           <tbody>
-            <tr><td>SUPER TRUCKING INC</td><td align="right">$2,989</td><td align="right">$445</td></tr>
-            <tr><td>NEW WAVE CARRIER</td><td align="right">$2,958</td><td align="right">$254</td></tr>
-            <tr><td>FASTLANE LOGISTICS</td><td align="right">$5,940</td><td align="right">$974</td></tr>
+            {bookedLoads.map(row => (
+              <tr key={row.carrier}><td>{row.carrier}</td><td align="right">${row.avgRate.toLocaleString()}</td><td align="right">${row.riskScore.toLocaleString()}</td></tr>
+            ))}
           </tbody>
         </table>
       </CollapsibleSection>
