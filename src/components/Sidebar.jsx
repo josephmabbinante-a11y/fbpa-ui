@@ -7,9 +7,9 @@ import { clearAccessToken } from '../utils/authToken';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
-    // { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet-dashboard' },
-    // Orders and Order Management removed
-    // Customers and Carriers removed
+  { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet' },
+  // Orders and Order Management removed
+  // Customers and Carriers removed
   { id: 'invoices', label: 'Invoices', icon: 'IN', path: '/invoices' },
   { id: 'exceptions', label: 'Exceptions', icon: 'EX', path: '/exceptions' },
   { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic' },
