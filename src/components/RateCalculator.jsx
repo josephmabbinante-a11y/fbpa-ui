@@ -15,6 +15,9 @@ const RateCalculator = () => {
   const [volatility, setVolatility] = useState(mockRateData.marketIntelligence.volatility);
   const [capacity, setCapacity] = useState(mockRateData.marketIntelligence.capacity);
 
+  const [winProb, setWinProb] = useState(mockRateData.kpis.winProb);
+  const [forecast, setForecast] = useState({ ...mockRateData.forecast });
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -43,10 +46,18 @@ const RateCalculator = () => {
           />
         </section>
         <section className={styles.centerPanel}>
-          <RateBreakdown />
+          <RateBreakdown
+            kpis={mockRateData.kpis}
+            winProb={winProb}
+            setWinProb={setWinProb}
+          />
         </section>
         <section className={styles.rightPanel}>
-          <MarketTrends />
+          <MarketTrends
+            forecast={forecast}
+            setForecast={setForecast}
+            topCarriers={mockRateData.topCarriers}
+          />
         </section>
       </main>
       <footer className={styles.footer}>

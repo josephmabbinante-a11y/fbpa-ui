@@ -1,16 +1,9 @@
 
-import React, { useState } from 'react';
+
+import React from 'react';
 import CollapsibleSection from './CollapsibleSection';
 
-const MarketTrends = () => {
-  const [forecast, setForecast] = useState({
-    frontEvents: true,
-    fiveNDR: true,
-    marketSoftening: true,
-    rejectionSpikes: true,
-    addDetention: false,
-  });
-
+const MarketTrends = ({ forecast, setForecast, topCarriers }) => {
   const handleToggle = (key) => {
     setForecast((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -49,9 +42,15 @@ const MarketTrends = () => {
             </tr>
           </thead>
           <tbody>
-            <tr><td>SUPER TRUCKING INC</td><td align="right">$2,989</td><td align="right">96%</td><td align="right">0.76</td><td align="right">$435</td></tr>
-            <tr><td>NEW WAVE CARRIER</td><td align="right">$2,958</td><td align="right">91%</td><td align="right">0.68</td><td align="right">$454</td></tr>
-            <tr><td>FASTLANE LOGISTICS</td><td align="right">$5,940</td><td align="right">97%</td><td align="right">0.92</td><td align="right">$874</td></tr>
+            {topCarriers.map(row => (
+              <tr key={row.carrier}>
+                <td>{row.carrier}</td>
+                <td align="right">${row.avgRate.toLocaleString()}</td>
+                <td align="right">{row.onTime}%</td>
+                <td align="right">{row.riskScore}</td>
+                <td align="right">${row.margin.toLocaleString()}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </CollapsibleSection>
