@@ -1,4 +1,33 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+
+// Simple Error Boundary
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    // You can log errorInfo here if needed
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ color: '#fff', background: '#b91c1c', padding: 32, borderRadius: 12, margin: 32 }}>
+          <h2>Something went wrong in the Fleet Dashboard.</h2>
+          <pre style={{ color: '#fff', fontSize: 14 }}>{this.state.error?.toString()}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+ErrorBoundary.propTypes = { children: PropTypes.node };
+import { getDashboard } from '../api/client';
+import { useVehicleSocket } from '../services/vehicleSocket';
 // import DriverCommandCardModern from '../components/DriverCommandCardModern';
 // Placeholder icons (replace with your icon components or SVGs)
 const IconBus = () => <span role="img" aria-label="bus" style={{fontSize: 24}}>🚌</span>;
@@ -39,59 +68,42 @@ const LineChart = () => (
 );
 
 // Mock summary data
-const summary = {
-  totalVehicles: 350,
-  vehiclesActive: 284,
-  utilization: 78,
-  avgFuel: 8.9,
-};
 
-const mockDrivers = [
-  {
-    id: 1,
-    name: 'John Doe',
-    status: 'Active',
-    company: 'Company Driver',
-    phone: '555-1234',
-    compliance: 36,
-    docs: [
-      { name: 'Medical Card', status: 'Complete' },
-      { name: 'MVR', status: 'Pending' },
-      { name: 'PSP', status: 'Pending' },
-      { name: 'Other Required Documents', status: 'Expired' },
-    ],
-    telematics: {
-      location: '533 Elner E Sena',
-      eta: '6 hours 5 mins',
-      status: 'Driving',
-      times: ['04:09', '05:19', '07:17', '08:28'],
-      speed: '62 mph',
-      updatedMinutesAgo: 2,
-    },
-  },
-  {
-    id: 2,
-    name: 'Michael Smith',
-    status: 'Active',
-    company: 'Owner Operator',
-    phone: '555-5678',
-    compliance: 82,
-    docs: [
-      { name: 'Medical Card', status: 'Complete' },
-      { name: 'MVR', status: 'Complete' },
-      { name: 'PSP', status: 'Complete' },
-      { name: 'Other Required Documents', status: 'Pending' },
-    ],
-    telematics: {
-      location: 'Waukegan, IL',
-      eta: '2 hours 10 mins',
-      status: 'Sleeper',
-      times: ['06:42', '01:29', '01:29', '29:30'],
-      speed: '0 mph',
-      updatedMinutesAgo: 4,
-    },
-  },
-];
+// Dashboard state hooks
+function useFleetDashboardData() {
+  const [summary, setSummary] = useState({});
+  const [drivers, setDrivers] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setLoading(true);
+    getDashboard()
+      .then((data) => {
+        setSummary({
+          totalVehicles: data?.totalVehicles || 0,
+          vehiclesActive: data?.activeVehicles || 0,
+          utilization: Math.round((data?.utilizationRate || 0) * 100),
+          avgFuel: data?.avgMPG || 0,
+        });
+        setDrivers(data?.drivers || []);
+        setVehicles(data?.vehicles || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err);
+        setLoading(false);
+      });
+  }, []);
+
+  // WebSocket for live vehicle updates
+  useVehicleSocket((update) => {
+    setVehicles((prev) => prev.map(v => v.id === update.id ? { ...v, ...update } : v));
+  });
+
+  return { summary, drivers, vehicles, loading, error };
+}
 
 function getDutyBadgeClasses(dutyStatus) {
   if (dutyStatus === 'Driving') {
@@ -378,7 +390,6 @@ function ComplianceCard({ driver }) {
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200">
         <h2 className="text-lg font-semibold text-gray-800">Compliance Overview</h2>
         <p className="mt-1 text-sm text-gray-500">Document readiness and risk signals</p>
-
         <div className={`mt-4 rounded-lg p-3 ${complianceTone.barClass}`}>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium text-gray-700">Compliance Score</p>
@@ -390,7 +401,6 @@ function ComplianceCard({ driver }) {
             className={`h-2 w-full overflow-hidden rounded-full ${complianceTone.accentClass}`}
           />
         </div>
-
         <div className="mt-5 space-y-3">
           {driver.docs.map((doc) => (
             <div key={doc.name} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-3">
@@ -464,22 +474,55 @@ function ELDTableCard({ rows }) {
   );
 }
 
-function FleetDashboard() {
-  const [selectedDriver, setSelectedDriver] = useState(mockDrivers[0]);
-  const mockELD = useMemo(
-    () =>
-      mockDrivers.map((driver) => ({
-        driver: driver.name,
-        status: driver.telematics.status,
-        location: driver.telematics.location,
-        eta: driver.telematics.eta,
-        driveTime: driver.telematics.times[0] || '--:--',
-      })),
-    []
-  );
+  const { summary, drivers, vehicles, loading, error } = useFleetDashboardData();
+  const [selectedDriver, setSelectedDriver] = useState(null);
+  useEffect(() => {
+    if (drivers.length && !selectedDriver) setSelectedDriver(drivers[0]);
+  }, [drivers]);
+
+  if (error) {
+    return (
+      <div style={{ color: '#fff', background: '#b91c1c', padding: 32, borderRadius: 12, margin: 32 }}>
+        <h2>Failed to load fleet data.</h2>
+        <pre style={{ color: '#fff', fontSize: 14 }}>{error.toString()}</pre>
+      </div>
+    );
+  }
+  if (loading) return <div style={{ color: '#fff', padding: 40 }}>Loading fleet data...</div>;
+
+  // ELD rows from drivers
+  const eldRows = drivers.map((driver) => ({
+    driver: driver.name,
+    status: driver.telematics?.status || '',
+    location: driver.telematics?.location || '',
+    eta: driver.telematics?.eta || '',
+    driveTime: driver.telematics?.times?.[0] || '--:--',
+  }));
 
   return (
     <>
+      {/* Coming Soon Banner */}
+      <div style={{
+        background: 'linear-gradient(90deg, #1e2a4a 0%, #1ecbe1 100%)',
+        color: '#fff',
+        textAlign: 'center',
+        padding: '12px 24px',
+        fontWeight: 700,
+        fontSize: 16,
+        letterSpacing: 1,
+        borderRadius: 10,
+        marginBottom: 8,
+        boxShadow: '0 2px 12px #1ecbe133',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+      }}>
+        <span>🚧</span>
+        <span>Fleet Dashboard — Coming Soon! Full features are under active development.</span>
+        <span>🚧</span>
+      </div>
+
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '32px 0 16px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -629,6 +672,4 @@ function FleetDashboard() {
       </div>
     </>
   );
-}
 
-export default FleetDashboard;

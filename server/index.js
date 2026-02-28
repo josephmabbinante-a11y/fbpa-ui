@@ -9,6 +9,7 @@ import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { User } from './models.js';
+
 import customersRouter from './customers.js';
 import carriersRouter from './carriers.js';
 import invoicesRouter from './invoices.js';
@@ -20,6 +21,10 @@ import reportsRouter from './reports.js';
 import uploadsRouter from './uploads.js';
 import invoiceImagesRouter from './invoiceImages.js';
 import ediRouter from './edi.js';
+
+import vehiclesRouter from './vehicles.js';
+import driversRouter from './drivers.js';
+import tripsRouter from './trips.js';
 
 dotenv.config();
 
@@ -154,6 +159,7 @@ app.use(cors({
 
 app.use(express.json());
 
+
 app.use('/api/customers', customersRouter);
 app.use('/api/carriers', carriersRouter);
 app.use('/api/invoices', invoicesRouter);
@@ -165,6 +171,11 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/invoice-images', invoiceImagesRouter);
 app.use('/api/edi', ediRouter);
+
+// Fleet data routers
+app.use('/api/vehicles', vehiclesRouter);
+app.use('/api/drivers', driversRouter);
+app.use('/api/trips', tripsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
