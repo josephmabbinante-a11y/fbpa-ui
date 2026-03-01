@@ -7,6 +7,7 @@ import { clearAccessToken } from '../utils/authToken';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
+  { id: 'load-center', label: 'Load Center', icon: 'LC', path: '/loadcenter' },
   { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet' },
   // Orders and Order Management removed
   // Customers and Carriers removed

@@ -37,6 +37,18 @@ export default function FilterBar({ filters, onChange, onReset }) {
         <option value="reefer">Reefer</option>
         <option value="flatbed">Flatbed</option>
       </select>
+      <select
+        value={filters.sort || '-updatedAt'}
+        onChange={(e) => onChange?.({ sort: e.target.value })}
+        style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-alt)', color: 'var(--text)' }}
+      >
+        <option value="-updatedAt">Newest Updated</option>
+        <option value="updatedAt">Oldest Updated</option>
+        <option value="-pickupAt">Latest Pickup</option>
+        <option value="pickupAt">Earliest Pickup</option>
+        <option value="-marginPct">Highest Margin %</option>
+        <option value="marginPct">Lowest Margin %</option>
+      </select>
       <button
         type="button"
         onClick={onReset}

@@ -114,10 +114,27 @@ function getMockList(filters = {}) {
     items = items.filter((i) => [i.id, i.customer?.name, i.carrier?.name].filter(Boolean).some((v) => String(v).toLowerCase().includes(q)));
   }
 
+  const sort = String(filters.sort || '-updatedAt');
+  const descending = sort.startsWith('-');
+  const key = descending ? sort.slice(1) : sort;
+  items.sort((a, b) => {
+    const av = a[key] ?? '';
+    const bv = b[key] ?? '';
+    if (typeof av === 'number' && typeof bv === 'number') return descending ? bv - av : av - bv;
+    return descending
+      ? String(bv).localeCompare(String(av))
+      : String(av).localeCompare(String(bv));
+  });
+
+  const page = Math.max(1, Number.parseInt(String(filters.page || '1'), 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(String(filters.pageSize || '25'), 10) || 25));
+  const start = (page - 1) * pageSize;
+  const paged = items.slice(start, start + pageSize);
+
   return {
-    items,
-    page: 1,
-    pageSize: Number(filters.pageSize || 50),
+    items: paged,
+    page,
+    pageSize,
     total: items.length,
     facets: {
       status: {
