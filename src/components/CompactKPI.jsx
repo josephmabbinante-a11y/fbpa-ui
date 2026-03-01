@@ -12,9 +12,18 @@ export default function CompactKPI({ label, value, delta = null, format = 'numbe
   };
 
   const formatValue = (v) => {
-    if (format === 'currency') return `$${v.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-    if (format === 'percent') return `${v}%`;
-    return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    if (v === null || v === undefined || v === '') return '—';
+
+    const numeric = typeof v === 'number' ? v : Number(v);
+    if (!Number.isFinite(numeric)) return String(v);
+
+    if (format === 'currency') {
+      return `$${numeric.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    if (format === 'percent') return `${numeric}%`;
+
+    return numeric.toLocaleString(undefined, { maximumFractionDigits: 0 });
   };
 
   return (
