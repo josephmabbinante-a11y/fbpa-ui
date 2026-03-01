@@ -5,6 +5,12 @@
     "Overbilling",
     "Accessorial",
     "Accessorials",
-    "VITE"
+    "VITE",
+    "multitenant",
+    "opscale",
+    "Opscale",
+    "pgcrypto",
+    "TIMESTAMPTZ",
+    "loadboard"
   ]
 }
