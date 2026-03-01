@@ -23,16 +23,36 @@ export default function Customers() {
   }, []);
 
   useEffect(() => {
-    if (!selected) return setDetail(null);
-    setLoading(true);
+    let mounted = true;
+
+    if (!selected) {
+      Promise.resolve().then(() => {
+        if (!mounted) return;
+        setDetail(null);
+        setAging(null);
+        setLoading(false);
+      });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
     Promise.all([
       getCustomerDetail(selected),
       getCustomerAging(selected),
     ]).then(([d, a]) => {
+      if (!mounted) return;
       setDetail(d);
       setAging(a);
       setLoading(false);
     });
+
+    return () => {
+      mounted = false;
+    };
   }, [selected]);
 
   // Contact modal state

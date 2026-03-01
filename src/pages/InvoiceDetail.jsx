@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ContactCustomerModal from '../components/ContactCustomerModal';
-import { sendCustomerMessage } from '../api/client';
+import { getInvoiceImages, getInvoices, sendCustomerMessage } from '../api/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import mockInvoices from '../mock/invoices';
 import mockInvoiceImages from '../mock/invoiceImages';
 import invoiceDetails from '../mock/invoiceDetails';
@@ -14,8 +15,113 @@ import InvoiceAndRateUpload from '../components/InvoiceAndRateUpload';
 export default function InvoiceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { demoMode } = useDemo();
   const { theme } = useTheme();
   const t = themes[theme];
+
+  const [liveInvoice, setLiveInvoice] = useState(null);
+  const [liveImages, setLiveImages] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (demoMode) return () => {
+      mounted = false;
+    };
+
+    setLiveLoading(true);
+    Promise.all([getInvoices(), getInvoiceImages(id)])
+      .then(([invoiceRes, imageRes]) => {
+        if (!mounted) return;
+        const invoices = Array.isArray(invoiceRes?.invoices) ? invoiceRes.invoices : [];
+        const selected = invoices.find((inv) => String(inv.id) === String(id)) || null;
+        const images = Array.isArray(imageRes?.images) ? imageRes.images : [];
+        setLiveInvoice(selected);
+        setLiveImages(images);
+        if (invoiceRes?.error) setLiveError(invoiceRes.error);
+        else if (imageRes?.error) setLiveError(imageRes.error);
+        else setLiveError(null);
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setLiveError(err.message || String(err));
+        setLiveInvoice(null);
+        setLiveImages([]);
+      })
+      .finally(() => {
+        if (mounted) setLiveLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [demoMode, id]);
+
+  if (!demoMode) {
+    const cardStyle = {
+      backgroundColor: t.surface,
+      border: `1px solid ${t.border}`,
+      borderRadius: 6,
+      padding: 16,
+    };
+
+    return (
+      <div style={{ padding: 24, color: t.text }}>
+        <button
+          type="button"
+          onClick={() => navigate('/invoices')}
+          style={{
+            backgroundColor: t.bgAlt,
+            border: `1px solid ${t.border}`,
+            color: t.text,
+            borderRadius: 6,
+            padding: '8px 12px',
+            marginBottom: 16,
+            cursor: 'pointer',
+          }}
+        >
+          Back to Invoices
+        </button>
+        <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>Invoice Detail</div>
+        {liveError ? <div style={{ fontSize: 13, color: t.warning, marginBottom: 12 }}>{liveError}</div> : null}
+        {liveLoading ? (
+          <div style={{ fontSize: 13, color: t.textSecondary }}>Loading invoice...</div>
+        ) : !liveInvoice ? (
+          <div style={{ fontSize: 13, color: t.textSecondary }}>Invoice not found.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: 16 }}>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Invoice {liveInvoice.id}</div>
+              <div style={{ fontSize: 13, color: t.textSecondary }}>
+                Carrier: {liveInvoice.carrier || '—'} · Status: {liveInvoice.status || '—'} · Uploaded: {liveInvoice.uploadDate ? new Date(liveInvoice.uploadDate).toLocaleDateString() : '—'}
+              </div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Financials</div>
+              <div style={{ fontSize: 13 }}>Amount: ${Number(liveInvoice.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+              <div style={{ fontSize: 13 }}>Exceptions: {liveInvoice.exceptions ?? 0}</div>
+              <div style={{ fontSize: 13 }}>Description: {liveInvoice.description || '—'}</div>
+            </div>
+            <div style={cardStyle}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Invoice Images</div>
+              {liveImages.length === 0 ? (
+                <div style={{ fontSize: 13, color: t.textSecondary }}>No images uploaded for this invoice.</div>
+              ) : (
+                <ul style={{ margin: 0, paddingLeft: 18 }}>
+                  {liveImages.map((img) => (
+                    <li key={img.id} style={{ fontSize: 13, marginBottom: 4 }}>
+                      {img.fileName || img.id} — {img.status || 'Uploaded'}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const invoice = useMemo(() => mockInvoices.find((inv) => inv.id === id), [id]);
   const detail = invoiceDetails[id];

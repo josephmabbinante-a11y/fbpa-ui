@@ -23,7 +23,7 @@ export default function AP() {
   const t = themes[theme];
 
   const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(null);
   const [activeBucket, setActiveBucket] = useState(apBuckets[0].bucket);
   const [form, setForm] = useState({
@@ -41,7 +41,6 @@ export default function AP() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
     getInvoices('AP')
       .then((res) => {
         if (!mounted) return;

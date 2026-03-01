@@ -24,18 +24,14 @@ export default function CategoryDrilldown({ data }) {
   const { theme } = useTheme();
   const t = themes[theme];
   const [activeCategory, setActiveCategory] = useState(data && data.length ? data[0].category : '');
-  const [lastValidData, setLastValidData] = useState([]);
+  const dataToUse = data && data.length ? data : [];
 
-  const active = useMemo(() => {
-    const found = (data || []).find((item) => item.category === activeCategory);
-    if (data && data.length && found) setLastValidData(data);
-    return found;
-  }, [data, activeCategory]);
+  const active = useMemo(
+    () => dataToUse.find((item) => item.category === activeCategory) || dataToUse[0],
+    [dataToUse, activeCategory]
+  );
 
-  const dataToUse = data && data.length ? data : lastValidData;
-  const activeToUse = dataToUse.find((item) => item.category === activeCategory);
-
-  if (!dataToUse || dataToUse.length === 0 || !activeToUse) {
+  if (!dataToUse || dataToUse.length === 0 || !active) {
     return (
       <div style={{ width: '100%' }}>
         <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -88,7 +84,7 @@ export default function CategoryDrilldown({ data }) {
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        {data.map((item) => (
+        {dataToUse.map((item) => (
           <button
             key={item.category}
             type="button"

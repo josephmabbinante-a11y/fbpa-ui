@@ -4,19 +4,32 @@ import LoadInputs from './LoadInputs';
 import RateBreakdown from './RateBreakdown';
 import MarketTrends from './MarketTrends';
 import SummaryBar from './SummaryBar';
+import { useDemo } from '../demo/DemoContext';
 import styles from './RateCalculator.module.css';
 import { mockRateData } from '../mock/mockRateData';
 
-const RateCalculator = () => {
-  // Centralized state for mock data linkage
-  const [origin, setOrigin] = useState(mockRateData.shipmentOptions.origins[0]);
-  const [destination, setDestination] = useState(mockRateData.shipmentOptions.destinations[0]);
-  const [rpm, setRpm] = useState(mockRateData.marketIntelligence.rpm);
-  const [volatility, setVolatility] = useState(mockRateData.marketIntelligence.volatility);
-  const [capacity, setCapacity] = useState(mockRateData.marketIntelligence.capacity);
+const EMPTY_RATE_DATA = {
+  shipmentOptions: { origins: [''], destinations: [''] },
+  marketIntelligence: { rpm: 0, volatility: 0, capacity: 0, predictedSwing: 0 },
+  laneData: [],
+  bookedLoads: [],
+  kpis: { winProb: 0 },
+  forecast: {},
+  topCarriers: [],
+};
 
-  const [winProb, setWinProb] = useState(mockRateData.kpis.winProb);
-  const [forecast, setForecast] = useState({ ...mockRateData.forecast });
+const RateCalculator = () => {
+  const { demoMode } = useDemo();
+  const rateData = demoMode ? mockRateData : EMPTY_RATE_DATA;
+
+  const [origin, setOrigin] = useState(rateData.shipmentOptions.origins[0]);
+  const [destination, setDestination] = useState(rateData.shipmentOptions.destinations[0]);
+  const [rpm, setRpm] = useState(rateData.marketIntelligence.rpm);
+  const [volatility, setVolatility] = useState(rateData.marketIntelligence.volatility);
+  const [capacity, setCapacity] = useState(rateData.marketIntelligence.capacity);
+
+  const [winProb, setWinProb] = useState(rateData.kpis.winProb);
+  const [forecast, setForecast] = useState({ ...rateData.forecast });
 
   return (
     <div className={styles.container}>
@@ -29,7 +42,7 @@ const RateCalculator = () => {
       <main className={styles.main}>
         <section className={styles.leftPanel}>
           <LoadInputs
-            shipmentOptions={mockRateData.shipmentOptions}
+            shipmentOptions={rateData.shipmentOptions}
             origin={origin}
             setOrigin={setOrigin}
             destination={destination}
@@ -40,14 +53,14 @@ const RateCalculator = () => {
             setVolatility={setVolatility}
             capacity={capacity}
             setCapacity={setCapacity}
-            predictedSwing={mockRateData.marketIntelligence.predictedSwing}
-            laneData={mockRateData.laneData}
-            bookedLoads={mockRateData.bookedLoads}
+            predictedSwing={rateData.marketIntelligence.predictedSwing}
+            laneData={rateData.laneData}
+            bookedLoads={rateData.bookedLoads}
           />
         </section>
         <section className={styles.centerPanel}>
           <RateBreakdown
-            kpis={mockRateData.kpis}
+            kpis={rateData.kpis}
             winProb={winProb}
             setWinProb={setWinProb}
           />
@@ -56,7 +69,7 @@ const RateCalculator = () => {
           <MarketTrends
             forecast={forecast}
             setForecast={setForecast}
-            topCarriers={mockRateData.topCarriers}
+            topCarriers={rateData.topCarriers}
           />
         </section>
       </main>

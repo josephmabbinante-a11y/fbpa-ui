@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import ContactCustomerModal from '../components/ContactCustomerModal';
 import { getExceptions, sendCustomerMessage } from '../api/client';
+import { useDemo } from '../demo/DemoContext';
 import mockExceptions from '../mock/exceptions';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
@@ -9,12 +10,13 @@ const CATEGORIES = ['Rate Discrepancy', 'Missing Docs', 'Duplicate', 'Other'];
 const ACTIONS = ['Review', 'Approve', 'Reject', 'Escalate'];
 
 export default function Exceptions() {
+  const { demoMode } = useDemo();
   const { theme } = useTheme();
   const t = themes[theme];
 
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [data, setData] = useState(mockExceptions.exceptions || []);
+  const [data, setData] = useState([]);
   const [categories, setCategories] = useState({});
   const [actions, setActions] = useState({});
   const [loading, setLoading] = useState(true);
@@ -24,30 +26,46 @@ export default function Exceptions() {
 
   useEffect(() => {
     let mounted = true;
-    // Always use mock data as default
-    setData(mockExceptions.exceptions || []);
-    setLoading(false);
-    // Optionally, allow API override if needed
-    // getExceptions()
-    //   .then((res) => {
-    //     if (!mounted) return;
-    //     if (res && !res.error && Array.isArray(res.exceptions)) {
-    //       setData(res.exceptions);
-    //     } else if (res?.error) {
-    //       setError(res.error);
-    //     }
-    //   })
-    //   .catch((err) => {
-    //     if (!mounted) return;
-    //     setError(err.message || String(err));
-    //   })
-    //   .finally(() => {
-    //     if (mounted) setLoading(false);
-    //   });
+
+    if (demoMode) {
+      Promise.resolve().then(() => {
+        if (!mounted) return;
+        setData(mockExceptions.exceptions || []);
+        setError(null);
+        setLoading(false);
+      });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
+
+    getExceptions()
+      .then((res) => {
+        if (!mounted) return;
+        if (res && !res.error && Array.isArray(res.exceptions)) {
+          setData(res.exceptions);
+        } else if (res?.error) {
+          setError(res.error);
+          setData([]);
+        }
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setError(err.message || String(err));
+        setData([]);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [demoMode]);
 
   const statuses = useMemo(() => {
     const set = new Set(data.map((e) => e.status));
@@ -78,7 +96,7 @@ export default function Exceptions() {
     <div style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Exceptions</h1>
-        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>{error}</span> : null}
       </div>
 
       <div style={{ display: 'flex', gap: 12 }}>

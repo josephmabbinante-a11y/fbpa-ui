@@ -6,7 +6,7 @@ export default function Carriers() {
   const { theme } = useTheme();
   const t = themes[theme];
   const [carriers, setCarriers] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const containerStyle = {
@@ -33,7 +33,6 @@ export default function Carriers() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
     getCarriers()
       .then((data) => {
         if (!mounted) return;

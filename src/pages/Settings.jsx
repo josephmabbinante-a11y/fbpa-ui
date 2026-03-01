@@ -481,7 +481,9 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
   const [editForm, setEditForm] = useState({ name: '', role: 'user' });
 
   useEffect(() => {
-    setTab(tabFromAction(activeAction));
+    Promise.resolve().then(() => {
+      setTab(tabFromAction(activeAction));
+    });
   }, [activeAction]);
 
   useEffect(() => {

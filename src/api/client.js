@@ -28,15 +28,13 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
   }
 }
 
-// Unify mock mode: check both env and DemoContext (if available)
-let _demoMode = false;
-try {
-  // If running in browser, try to read localStorage
-  _demoMode = typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
-} catch {}
 function isMockMode() {
-  // Use environment variable or demoMode from localStorage
-  return import.meta.env.VITE_MOCK_MODE === 'true' || _demoMode;
+  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
+  try {
+    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
+  } catch {
+    return false;
+  }
 }
 
 // Removed JWT token retrieval
@@ -213,7 +211,6 @@ export async function uploadInvoiceFile(payload) {
       fd.append('file', payload);
       body = fd;
     } else if (payload && typeof payload === 'object') {
-      // send JSON metadata expected by mock uploads endpoint
       body = JSON.stringify({ fileName: payload.fileName, invoiceCount: payload.invoiceCount });
       headers['Content-Type'] = 'application/json';
     } else {

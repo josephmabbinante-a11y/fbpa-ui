@@ -1,18 +1,57 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
+import { getExceptions, getInvoices } from '../api/client';
 import mockExceptions from '../mock/exceptions';
 import mockInvoices from '../mock/invoices';
 
 export default function ExceptionDrilldown() {
   const { id } = useParams(); // id = exception id
   const navigate = useNavigate();
+  const { demoMode } = useDemo();
   const { theme } = useTheme();
   const t = themes[theme];
+  const [exceptions, setExceptions] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    if (demoMode) {
+      Promise.resolve().then(() => {
+        if (!mounted) return;
+        setExceptions(Array.isArray(mockExceptions) ? mockExceptions : []);
+        setInvoices(Array.isArray(mockInvoices) ? mockInvoices : []);
+      });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    Promise.all([getExceptions(), getInvoices()])
+      .then(([exceptionRes, invoiceRes]) => {
+        if (!mounted) return;
+        setExceptions(Array.isArray(exceptionRes?.exceptions) ? exceptionRes.exceptions : []);
+        setInvoices(Array.isArray(invoiceRes?.invoices) ? invoiceRes.invoices : []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setExceptions([]);
+        setInvoices([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [demoMode]);
 
   // Find exception and related invoice
-  const exception = mockExceptions.find(e => String(e.id) === String(id));
-  const invoice = exception ? mockInvoices.find(inv => inv.invoiceNumber === exception.invoiceNumber) : null;
+  const exception = useMemo(() => exceptions.find((e) => String(e.id) === String(id)), [exceptions, id]);
+  const invoice = useMemo(
+    () => (exception ? invoices.find((inv) => String(inv.invoiceNumber || inv.id) === String(exception.invoiceNumber || exception.invoiceId)) : null),
+    [invoices, exception],
+  );
 
   if (!exception) {
     return (

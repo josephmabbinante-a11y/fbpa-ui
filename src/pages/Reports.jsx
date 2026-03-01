@@ -1,11 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api/client';
+import { useDemo } from '../demo/DemoContext';
 import mockReports from '../mock/reports';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
+
+const EMPTY_REPORTS = {
+  monthlySummary: [],
+  exceptionBreakdown: [],
+  statusDistribution: [],
+  topSavingsCarriers: [],
+  savingsTrend: [],
+  exceptionTrend: [],
+  categoryDrilldown: [],
+  auditMetrics: {
+    freightBillAudit: [],
+    paymentRecovery: [],
+    auditFindings: [],
+    paymentProcessing: [],
+  },
+};
 
 const reportCards = [
   { id: 'monthly', title: 'Monthly Summary', description: 'Invoice and savings summary by month' },
@@ -59,43 +76,55 @@ function mergeReportsData(base, incoming) {
 }
 
 export default function Reports() {
+  const { demoMode } = useDemo();
   const { theme } = useTheme();
   const t = themes[theme];
   const navigate = useNavigate();
-  const [data, setData] = useState(mockReports);
-  const [loading, setLoading] = useState(false); // Always false to force UI
+  const [data, setData] = useState(EMPTY_REPORTS);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
 
   useEffect(() => {
     let mounted = true;
-    // Always use mock data as default
-    setData(mockReports);
-    setLoading(false);
-    // Debug log
-    if (typeof window !== 'undefined') {
-      window.__REPORTS_DEBUG__ = { data: mockReports };
-      console.log('[Reports Debug] mockReports:', mockReports);
+
+    if (demoMode) {
+      Promise.resolve().then(() => {
+        if (!mounted) return;
+        setData(mockReports);
+        setError(null);
+        setWarning(null);
+        setLoading(false);
+      });
+      return () => {
+        mounted = false;
+      };
     }
-    // Optionally, allow API override if needed
-    // getReports()
-    //   .then((res) => {
-    //     if (!mounted) return;
-    //     if (res?.error) setError(res.error);
-    //     if (res?.warning) setWarning(res.warning);
-    //     setData((prev) => mergeReportsData(prev || mockReports, res));
-    //   })
-    //   .catch((err) => {
-    //     if (!mounted) return;
-    //     setError(err.message || String(err));
-    //   })
-    //   .finally(() => {
-    //     if (mounted) setLoading(false);
-    //   });
+
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
+
+    getReports()
+      .then((res) => {
+        if (!mounted) return;
+        if (res?.error) setError(res.error);
+        if (res?.warning) setWarning(res.warning);
+        setData((prev) => mergeReportsData(prev || EMPTY_REPORTS, res));
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setError(err.message || String(err));
+        setData(EMPTY_REPORTS);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [demoMode]);
 
   const monthlyRows = useMemo(() => data?.monthlySummary || [], [data]);
 
@@ -103,7 +132,7 @@ export default function Reports() {
     <div style={{ display: 'grid', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Reports</h1>
-        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>{error}</span> : null}
       </div>
       {warning ? <div style={{ fontSize: 12, color: t.textSecondary }}>{warning}</div> : null}
       {loading ? (

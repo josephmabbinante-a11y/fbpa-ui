@@ -1,12 +1,13 @@
 
 import { useEffect, useState } from 'react';
-import { useDemo } from '../demo/DemoContext';
 import { useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+import { getDashboard } from '../api/client';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
 import mockShipments from '../mock/shipments';
 
@@ -20,6 +21,15 @@ const DEFAULT_DASHBOARD_PREFS = {
   showExceptionDistribution: true,
   showSavingsByCarrier: true,
   showRecentActivity: true,
+};
+
+const EMPTY_DASHBOARD_DATA = {
+  summary: {},
+  trends: {},
+  exceptionBreakdown: [],
+  savingsByCarrier: [],
+  recentActivity: [],
+  recentShipments: [],
 };
 
 function readDashboardPrefs() {
@@ -51,7 +61,7 @@ function readDashboardVariant() {
 }
 
 function mergeDashboardData(incoming) {
-  if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
+  if (!incoming || typeof incoming !== 'object') return EMPTY_DASHBOARD_DATA;
   const hasUsableSeries = (series) =>
     Array.isArray(series) &&
     series.length > 0 &&
@@ -69,7 +79,7 @@ function mergeDashboardData(incoming) {
     Array.isArray(items) &&
     items.length > 0 &&
     items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
-  const fallbackTrends = dashboardEnhanced.trends || {};
+  const fallbackTrends = EMPTY_DASHBOARD_DATA.trends || {};
   const incomingTrends = incoming.trends || {};
   const mergedTrends = {};
   Object.keys(fallbackTrends).forEach((key) => {
@@ -77,23 +87,24 @@ function mergeDashboardData(incoming) {
     mergedTrends[key] = hasUsableSeries(nextSeries) ? nextSeries : fallbackTrends[key];
   });
   return {
-    ...dashboardEnhanced,
+    ...EMPTY_DASHBOARD_DATA,
     ...incoming,
-    summary: { ...dashboardEnhanced.summary, ...(incoming.summary || {}) },
+    summary: { ...EMPTY_DASHBOARD_DATA.summary, ...(incoming.summary || {}) },
     trends: mergedTrends,
     exceptionBreakdown: hasUsableBreakdown(incoming.exceptionBreakdown)
       ? incoming.exceptionBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : EMPTY_DASHBOARD_DATA.exceptionBreakdown,
     claimsBreakdown: hasUsableBreakdown(incoming.claimsBreakdown)
       ? incoming.claimsBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : EMPTY_DASHBOARD_DATA.exceptionBreakdown,
     savingsByCarrier: hasUsableSavings(incoming.savingsByCarrier)
       ? incoming.savingsByCarrier
-      : dashboardEnhanced.savingsByCarrier,
+      : EMPTY_DASHBOARD_DATA.savingsByCarrier,
     volumeByLane: hasUsableSavings(incoming.volumeByLane)
       ? incoming.volumeByLane
-      : dashboardEnhanced.savingsByCarrier,
-    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : dashboardEnhanced.recentActivity,
+      : EMPTY_DASHBOARD_DATA.savingsByCarrier,
+    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : EMPTY_DASHBOARD_DATA.recentActivity,
+    recentShipments: incoming.recentShipments?.length ? incoming.recentShipments : EMPTY_DASHBOARD_DATA.recentShipments,
   };
 }
 
@@ -101,13 +112,56 @@ function mergeDashboardData(incoming) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
-  const [data, setData] = useState(() => dashboardEnhanced);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(() => EMPTY_DASHBOARD_DATA);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
-  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
+
+  useEffect(() => {
+    let mounted = true;
+
+    if (demoMode) {
+      Promise.resolve().then(() => {
+        if (!mounted) return;
+        setData(dashboardEnhanced);
+        setError(null);
+        setLoading(false);
+      });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
+
+    getDashboard()
+      .then((res) => {
+        if (!mounted) return;
+        if (res?.error) {
+          setError(res.error);
+          setData(EMPTY_DASHBOARD_DATA);
+          return;
+        }
+        setData(mergeDashboardData(res));
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setError(err.message || String(err));
+        setData(EMPTY_DASHBOARD_DATA);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [demoMode]);
 
   // --- Operational Command Center Layout ---
   return (
@@ -199,7 +253,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {(mockShipments || []).map((ship) => (
+              {(demoMode ? mockShipments : (data.recentShipments || [])).map((ship) => (
                 <tr key={ship.id} style={{ cursor: 'pointer' }} onClick={() => alert(`Navigate to shipment detail for ${ship.id}`)}>
                   <td style={{ padding: '8px 12px' }}><strong>{ship.id}</strong></td>
                   <td style={{ padding: '8px 12px' }}>{ship.customer}</td>

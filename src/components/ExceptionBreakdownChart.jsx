@@ -14,7 +14,6 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
   const fallbackPalette = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0099cc'];
 
 
-    const [lastValidData, setLastValidData] = useState([]);
     const normalizedData = useMemo(() => {
       const arr = (data || [])
         .map((entry, index) => {
@@ -26,11 +25,10 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
           };
         })
         .filter((entry) => entry.value > 0);
-      if (arr.length) setLastValidData(arr);
       return arr;
-    }, [data]);
+    }, [data, fallbackPalette]);
 
-    const chartDataToUse = normalizedData.length ? normalizedData : lastValidData;
+    const chartDataToUse = normalizedData;
 
     if (!chartDataToUse.length) {
       return (
@@ -82,11 +80,11 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
       </h3>
 
       <div style={{ flex: 1 }}>
-        {normalizedData.length ? (
+        {chartDataToUse.length ? (
           <ResponsiveContainer width="100%" height="100%" debounce={60}>
             <PieChart>
               <Pie
-                data={normalizedData}
+                data={chartDataToUse}
                 cx="50%"
                 cy="50%"
                 innerRadius={50}
@@ -95,7 +93,7 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
                 dataKey="value"
                 label={false}
               >
-                {normalizedData.map((entry, index) => (
+                {chartDataToUse.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
@@ -130,7 +128,7 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
           color: t.textSecondary,
         }}
       >
-        {normalizedData.map((entry) => (
+        {chartDataToUse.map((entry) => (
           <div key={entry.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span
               style={{

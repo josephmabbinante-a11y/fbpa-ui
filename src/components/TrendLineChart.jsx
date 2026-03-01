@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -10,7 +10,6 @@ import {
 } from 'recharts';
 
 export default function TrendLineChart({ data, dataKey, title, color = '#8884d8', yAxisLabel = 'Value' }) {
-  const [lastValidData, setLastValidData] = useState([]);
   const normalizedData = useMemo(() => {
     const arr = (data || [])
       .map((row, index) => {
@@ -27,11 +26,10 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
         };
       })
       .filter((row) => row.__x);
-    if (arr.length) setLastValidData(arr);
     return arr;
   }, [data, dataKey]);
 
-  const chartDataToUse = normalizedData.length ? normalizedData : lastValidData;
+  const chartDataToUse = normalizedData;
 
   if (!chartDataToUse.length) {
     return (
@@ -53,7 +51,7 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
       </h3>
       <div style={{ height: 280, width: '100%' }}>
         <ResponsiveContainer width="100%" height="100%" debounce={60}>
-          <LineChart data={normalizedData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+          <LineChart data={chartDataToUse} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" />
             <XAxis
               dataKey="__x"

@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import CollapsibleSection from './CollapsibleSection';
+import { useDemo } from '../demo/DemoContext';
 import { mockLocations } from '../mock/mockLocations';
 
 const LoadInputs = ({
@@ -21,6 +22,9 @@ const LoadInputs = ({
   laneData,
   bookedLoads,
 }) => {
+  const { demoMode } = useDemo();
+  const locations = demoMode ? mockLocations : [];
+
   // Autocomplete logic for location search
   const [originQuery, setOriginQuery] = useState('');
   const [destQuery, setDestQuery] = useState('');
@@ -35,9 +39,9 @@ const LoadInputs = ({
   const [errors, setErrors] = useState({});
 
   const filterLocations = (query) => {
-    if (!query) return mockLocations;
+    if (!query) return locations;
     const q = query.toLowerCase();
-    return mockLocations.filter(
+    return locations.filter(
       loc =>
         loc.city.toLowerCase().includes(q) ||
         loc.state.toLowerCase().includes(q) ||

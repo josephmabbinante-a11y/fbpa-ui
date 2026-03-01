@@ -2,10 +2,19 @@
 
 import React from 'react';
 import KPIWithTrend from './KPIWithTrend';
+import { useDemo } from '../demo/DemoContext';
 import { mockRateData } from '../mock/mockRateData';
 
+const EMPTY_SUMMARY = {
+  totalLoads: 0,
+  avgRate: 0,
+  onTime: 0,
+  riskScore: 0,
+};
+
 const SummaryBar = () => {
-  const summary = mockRateData.summary;
+  const { demoMode } = useDemo();
+  const summary = demoMode ? mockRateData.summary : EMPTY_SUMMARY;
   return (
     <div style={{ display: 'flex', gap: 32, alignItems: 'center', justifyContent: 'center' }}>
       <KPIWithTrend label="Total Loads" value={summary.totalLoads} format="number" trendData={[3000,3100,3150,summary.totalLoads]} trendColor="#4fc3f7" />

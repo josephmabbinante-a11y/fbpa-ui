@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   BarChart,
@@ -15,6 +15,8 @@ import {
   YAxis,
 } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
+import { getReports } from '../api/client';
 import mockReports from '../mock/reports';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
@@ -28,9 +30,46 @@ const palette = ['#10b981', '#f59e0b', '#ef4444', '#0066cc', '#6b7280'];
 export default function ReportDetail() {
   const { reportId } = useParams();
   const navigate = useNavigate();
+  const { demoMode } = useDemo();
   const { theme } = useTheme();
   const t = themes[theme];
-  const data = mockReports;
+  const [liveReports, setLiveReports] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (demoMode) return () => {
+      mounted = false;
+    };
+
+    getReports()
+      .then((res) => {
+        if (!mounted) return;
+        if (!res?.error && res) {
+          setLiveReports(res);
+        }
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setLiveReports(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [demoMode]);
+
+  const data = demoMode
+    ? mockReports
+    : {
+        monthlySummary: liveReports?.monthlySummary || [],
+        statusDistribution: liveReports?.statusDistribution || [],
+        exceptionBreakdown: liveReports?.exceptionBreakdown || [],
+        topSavingsCarriers: liveReports?.topSavingsCarriers || [],
+        savingsTrend: liveReports?.savingsTrend || [],
+        exceptionTrend: liveReports?.exceptionTrend || [],
+        auditMetrics: liveReports?.auditMetrics || null,
+        categoryDrilldown: liveReports?.categoryDrilldown || [],
+      };
 
   const reportMap = useMemo(
     () => ({

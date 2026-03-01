@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage } from "../api/client";
+import { useDemo } from '../demo/DemoContext';
 import mockInvoices from "../mock/invoices";
 import mockInvoiceImages from "../mock/invoiceImages";
 import KPIWithTrend from '../components/KPIWithTrend';
@@ -11,7 +12,8 @@ import { InlineAlert, PageHeader, PrimaryButton } from "../components/ui/Primiti
 
 export default function Invoices() {
   const navigate = useNavigate();
-  const [data, setData] = useState(mockInvoices);
+  const { demoMode } = useDemo();
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,50 +22,74 @@ export default function Invoices() {
   const [imageStatus, setImageStatus] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
-  const [imageHistory, setImageHistory] = useState(mockInvoiceImages);
+  const [imageHistory, setImageHistory] = useState([]);
   const [verificationResult, setVerificationResult] = useState(null);
 
   useEffect(() => {
     let mounted = true;
+
+    if (demoMode) {
+      Promise.resolve().then(() => {
+        if (!mounted) return;
+        setData(mockInvoices);
+        setLoading(false);
+        setError(null);
+      });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
     getInvoices()
       .then((res) => {
         if (!mounted) return;
         if (res && !res.error && res.invoices) {
           setData(res.invoices);
         } else {
-          setData(mockInvoices);
+          setData([]);
           if (res && res.error) setError(res.error);
         }
       })
       .catch((err) => {
         if (!mounted) return;
-        setData(mockInvoices);
+        setData([]);
         setError(err.message || String(err));
       })
       .finally(() => mounted && setLoading(false));
     return () => (mounted = false);
-  }, []);
+  }, [demoMode]);
 
   useEffect(() => {
     if (!imageFile) {
-      setImagePreview(null);
+      Promise.resolve().then(() => setImagePreview(null));
       return;
     }
     const url = URL.createObjectURL(imageFile);
-    setImagePreview(url);
+    Promise.resolve().then(() => setImagePreview(url));
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
   useEffect(() => {
     if (!selectedInvoiceId) return;
+
+    if (demoMode) {
+      Promise.resolve().then(() => {
+        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
+      });
+      return;
+    }
+
     getInvoiceImages(selectedInvoiceId).then((res) => {
       if (res && !res.error && res.images) {
         setImageHistory(res.images);
       } else {
-        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
+        setImageHistory([]);
       }
     });
-  }, [selectedInvoiceId]);
+  }, [selectedInvoiceId, demoMode]);
 
   const filtered = data.filter(
     (inv) =>
@@ -120,8 +146,8 @@ export default function Invoices() {
       );
       setImageStatus("Verification complete");
     } else {
-      const fallback = mockInvoiceImages.find((img) => img.id === imageId);
-      if (fallback) {
+      const fallback = demoMode ? mockInvoiceImages.find((img) => img.id === imageId) : null;
+      if (demoMode && fallback) {
         setVerificationResult(fallback.verification);
         setImageHistory((prev) =>
           prev.map((img) => (img.id === imageId ? { ...img, status: fallback.status, verification: fallback.verification } : img))

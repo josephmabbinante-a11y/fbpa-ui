@@ -23,7 +23,7 @@ export default function AR() {
   const t = themes[theme];
 
   const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(null);
   const [activeBucket, setActiveBucket] = useState(arBuckets[0].bucket);
   const [form, setForm] = useState({
@@ -38,7 +38,6 @@ export default function AR() {
 
   useEffect(() => {
     let mounted = true;
-    setLoading(true);
     getInvoices('AR')
       .then((res) => {
         if (!mounted) return;

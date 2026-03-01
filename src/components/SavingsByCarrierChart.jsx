@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
 /**
@@ -12,7 +12,6 @@ export default function SavingsByCarrierChart({ data, onClick }) {
   const t = themes[theme];
   const [isHovered, setIsHovered] = useState(false);
 
-  const [lastValidData, setLastValidData] = useState([]);
   const chartData = useMemo(() => {
     const arr = (data || [])
       .map((item, index) => {
@@ -25,10 +24,9 @@ export default function SavingsByCarrierChart({ data, onClick }) {
         };
       })
       .filter((item) => item.savings > 0);
-    if (arr.length) setLastValidData(arr);
     return arr;
   }, [data]);
-  const chartDataToUse = chartData.length ? chartData : lastValidData;
+  const chartDataToUse = chartData;
 
   return (
     <div
@@ -66,10 +64,10 @@ export default function SavingsByCarrierChart({ data, onClick }) {
       </h3>
 
       <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
-        {chartData.length ? (
+        {chartDataToUse.length ? (
           <ResponsiveContainer width="100%" height="100%" debounce={60}>
             <BarChart
-              data={chartData}
+              data={chartDataToUse}
               layout="vertical"
               margin={{ top: 5, right: 30, left: 100 }}
             >
@@ -125,7 +123,7 @@ export default function SavingsByCarrierChart({ data, onClick }) {
           gap: 12,
         }}
       >
-        {chartData.map((item) => (
+        {chartDataToUse.map((item) => (
           <div key={item.carrier}>
             <div style={{ color: t.text, fontWeight: '600' }}>{item.carrier}</div>
             <div>{item.invoiceCount} invoices</div>

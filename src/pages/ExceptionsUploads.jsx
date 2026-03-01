@@ -1,12 +1,13 @@
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
 import mockExceptions from '../mock/exceptions';
-import uploadHistory from '../mock/uploads';
 
 export default function ExceptionsUploads() {
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
 
   return (
@@ -17,7 +18,7 @@ export default function ExceptionsUploads() {
           <img src={logo} alt="Opscale Audit IQ" style={{ height: 32, width: 'auto', marginRight: 12, verticalAlign: 'middle' }} />
           Exceptions Overview
         </h2>
-        <ExceptionBreakdownChart data={mockExceptions.trend} />
+        <ExceptionBreakdownChart data={demoMode ? (mockExceptions.trend || []) : []} />
         <CollapsibleSection title="Exception Details">
           {/* Render exception details here */}
         </CollapsibleSection>
