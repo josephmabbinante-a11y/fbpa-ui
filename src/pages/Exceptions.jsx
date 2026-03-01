@@ -1,7 +1,16 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getExceptions } from '../api/client';
 import mockExceptions from '../mock/exceptions';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useApi } from '../hooks/useApi';
+
+function normalizeExceptionsResponse(response) {
+  // Safely extract exceptions array from response
+  if (Array.isArray(response)) return response;
+  if (response && Array.isArray(response.exceptions)) return response.exceptions;
+  return null; // Return null to trigger fallback to mockExceptions
+}
 
 export default function Exceptions() {
   const { theme } = useTheme();
@@ -9,7 +18,8 @@ export default function Exceptions() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const source = Array.isArray(mockExceptions?.exceptions) ? mockExceptions.exceptions : [];
+  const { data: rawData, loading, error } = useApi(() => getExceptions(), mockExceptions);
+  const source = useMemo(() => normalizeExceptionsResponse(rawData) || (Array.isArray(mockExceptions?.exceptions) ? mockExceptions.exceptions : []), [rawData]);
   const statuses = useMemo(() => ['All', ...new Set(source.map((e) => e.status).filter(Boolean))], [source]);
 
   const filtered = useMemo(() => {
@@ -29,7 +39,11 @@ export default function Exceptions() {
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ margin: 0, fontSize: 28 }}>Exceptions</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: 28 }}>Exceptions</h1>
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+      </div>
+      {loading ? <div style={{ fontSize: 13, color: t.textSecondary }}>Loading exceptions...</div> : null}
 
       <div style={{ display: 'flex', gap: 12 }}>
         <input

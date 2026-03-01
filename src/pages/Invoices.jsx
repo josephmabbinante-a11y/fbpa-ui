@@ -1,7 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getInvoices } from '../api/client';
 import mockInvoices from '../mock/invoices';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useApi } from '../hooks/useApi';
+
+function normalizeInvoicesResponse(response) {
+  // Safely extract invoices array from response
+  if (Array.isArray(response)) return response;
+  if (response && Array.isArray(response.invoices)) return response.invoices;
+  return null; // Return null to trigger fallback to mockInvoices
+}
 
 export default function Invoices() {
   const navigate = useNavigate();
@@ -9,21 +18,28 @@ export default function Invoices() {
   const t = themes[theme];
   const [query, setQuery] = useState('');
 
+  const { data: rawData, loading, error } = useApi(() => getInvoices(), mockInvoices);
+  const invoices = useMemo(() => normalizeInvoicesResponse(rawData) || mockInvoices, [rawData]);
+
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return mockInvoices;
+    if (!term) return invoices;
 
-    return mockInvoices.filter((invoice) => {
+    return invoices.filter((invoice) => {
       return (
         String(invoice.id || '').toLowerCase().includes(term) ||
         String(invoice.carrier || '').toLowerCase().includes(term)
       );
     });
-  }, [query]);
+  }, [query, invoices]);
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <h1 style={{ margin: 0, fontSize: 28 }}>Invoices</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: 28 }}>Invoices</h1>
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+      </div>
+      {loading ? <div style={{ fontSize: 13, color: t.textSecondary }}>Loading invoices...</div> : null}
       <input
         type="text"
         value={query}
