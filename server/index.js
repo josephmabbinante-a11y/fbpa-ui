@@ -1,30 +1,106 @@
+/* global process */
+import crypto from 'crypto';
 import express from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { User } from './models.js';
+
 import customersRouter from './customers.js';
+import carriersRouter from './carriers.js';
+import invoicesRouter from './invoices.js';
+import exceptionsRouter from './exceptions.js';
 import messagesRouter from './messages.js';
 import rateLogicRouter from './rateLogic.js';
-import healthRoutes from './routes.js';
-import nodemailer from 'nodemailer';
-import { User } from './models.js';
-import bcrypt from 'bcryptjs';
+import dashboardRouter from './dashboard.js';
+import reportsRouter from './reports.js';
+import uploadsRouter from './uploads.js';
+import invoiceImagesRouter from './invoiceImages.js';
+import ediRouter from './edi.js';
+import loadsRouter from './loads.js';
+
+import vehiclesRouter from './vehicles.js';
+import driversRouter from './drivers.js';
+import tripsRouter from './trips.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
-const MONGODB_URI = process.env.MONGODB_URI;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, '../dist');
 
-// Forgot password logic (must be after app is defined)
 const resetTokens = {};
+let mongoLastError = '';
+const PASSWORD_HASH_SALT = process.env.PASSWORD_HASH_SALT || 'fbpa-default-salt';
+const allowVercelOrigins = true;
+
+function hashPassword(password) {
+  return crypto
+    .createHash('sha256')
+    .update(`${PASSWORD_HASH_SALT}:${String(password || '')}`)
+    .digest('hex');
+}
+
+function buildMongoUri() {
+  const explicitUri = (process.env.MONGODB_URI || '').trim();
+  if (explicitUri) return explicitUri;
+
+  const user = process.env.MONGODB_USER;
+  const password = process.env.MONGODB_PASSWORD;
+  const host = process.env.MONGODB_HOST;
+  const db = process.env.MONGODB_DB || 'fbpa-db';
+
+  if (!user || !password || !host) return '';
+
+  const encodedUser = encodeURIComponent(String(user));
+  const encodedPassword = encodeURIComponent(String(password));
+  return `mongodb+srv://${encodedUser}:${encodedPassword}@${host}/${db}?retryWrites=true&w=majority`;
+}
+
+const MONGODB_URI = buildMongoUri();
+const hasUriPlaceholders = /<[^>]+>/.test(MONGODB_URI);
+
+mongoose.set('strictQuery', true);
+mongoose.set('bufferCommands', false);
+
+if (MONGODB_URI && !hasUriPlaceholders) {
+  mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+  })
+    .then(() => {
+      mongoLastError = '';
+      console.log('[mongodb] Connected');
+    })
+    .catch((err) => {
+      mongoLastError = err.message;
+      console.error('[mongodb] Connection error:', err.message);
+    });
+
+  mongoose.connection.on('disconnected', () => {
+    console.warn('[mongodb] Disconnected');
+  });
+
+  mongoose.connection.on('error', (err) => {
+    mongoLastError = err.message;
+    console.error('[mongodb] Error:', err.message);
+  });
+} else if (hasUriPlaceholders) {
+  mongoLastError = 'MONGODB_URI contains placeholder brackets';
+  console.warn('[mongodb] MONGODB_URI contains placeholder brackets. Update .env with real credentials.');
+} else {
+  mongoLastError = 'MONGODB_URI is not set';
+  console.warn('[mongodb] MONGODB_URI not set, running without database');
+}
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
   port: 587,
@@ -34,36 +110,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-app.post('/api/auth/forgot-password', async (req, res) => {
-  // Log the incoming request body for debugging
-  console.log('Forgot password request body:', req.body);
-  const { email } = req.body || {};
-  if (!email) {
-    console.log('Forgot password error: Email required');
-    return res.status(400).json({ error: 'Email required' });
-  }
-  // Demo: Accept any email, generate a token
-  const token = Math.random().toString(36).slice(2) + Date.now();
-  resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
-  const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-  try {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@audit-iq.com',
-      to: email,
-      subject: 'Password Reset',
-      text: `Reset your password: ${resetUrl}`,
-    });
-    console.log('Forgot password email sent to:', email);
-    res.json({ success: true });
-  } catch (e) {
-    console.error('Forgot password email error:', e);
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// Allowed origins for CORS
 const defaultAllowedOrigins = [
-  // Local development
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
@@ -71,40 +118,29 @@ const defaultAllowedOrigins = [
   'http://localhost:5177',
   'http://localhost:5178',
   'http://localhost:5179',
-  // Production web environment (Vercel)
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-e3wffttsx-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-ui-git-fbpa-josephmabbinante-a11ys-projects.vercel.app',
-  // Allow all Vercel preview/production URLs
   /^https:\/\/.*\.vercel\.app$/,
 ];
+
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
-const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
-const allowVercelOrigins = true;
 
-// JWT authentication middleware
-function authenticateJWT(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or invalid Authorization header' });
-  }
-  const token = authHeader.split(' ')[1];
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(401).json({ error: 'Invalid or expired token' });
-    req.user = user;
-    next();
-  });
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...envAllowedOrigins])];
+function isOriginAllowed(origin) {
+  return allowedOrigins.some((entry) => (entry instanceof RegExp ? entry.test(origin) : entry === origin));
 }
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || isOriginAllowed(origin)) {
       callback(null, true);
       return;
     }
+
     if (allowVercelOrigins) {
       try {
         const hostname = new URL(origin).hostname;
@@ -116,67 +152,187 @@ app.use(cors({
         // Ignore invalid origin format and fall through to denial.
       }
     }
+
     callback(new Error(`CORS origin not allowed: ${origin}`));
   },
   credentials: true,
 }));
+
 app.use(express.json());
+
+
 app.use('/api/customers', customersRouter);
+app.use('/api/carriers', carriersRouter);
+app.use('/api/invoices', invoicesRouter);
+app.use('/api/exceptions', exceptionsRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/rate-logic', rateLogicRouter);
-app.use('/api', healthRoutes);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/reports', reportsRouter);
+app.use('/api/uploads', uploadsRouter);
+app.use('/api/invoice-images', invoiceImagesRouter);
+app.use('/api/edi', ediRouter);
+app.use('/api/loads', loadsRouter);
 
-// Real user authentication using MongoDB
-app.post('/api/auth/login', async (req, res) => {
-  console.log('Login request body:', req.body);
+// Fleet data routers
+app.use('/api/vehicles', vehiclesRouter);
+app.use('/api/drivers', driversRouter);
+app.use('/api/trips', tripsRouter);
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+const users = [
+  { id: 'u-1', email: 'admin@opscale.ai', role: 'admin', password: 'password123' },
+];
+
+const handleLogin = (req, res) => {
   const { email, password } = req.body || {};
-  if (!email || !password) {
-    console.log('Login error: Email and password required');
-    return res.status(400).json({ error: 'Email and password required' });
+  const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
+  const user = users.find((u) => u.email === email && u.password === password);
+  const authedUser = user || (allowAny && email && password
+    ? { id: `u-${Date.now()}`, email, role: 'admin' }
+    : null);
+
+  if (!authedUser) return res.status(401).json({ error: 'Invalid credentials' });
+
+  const accessToken = jwt.sign(
+    { sub: authedUser.id, email: authedUser.email, role: authedUser.role },
+    JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  return res.json({
+    accessToken,
+    user: { id: authedUser.id, email: authedUser.email, role: authedUser.role },
+  });
+};
+
+app.post('/auth/login', handleLogin);
+app.post('/api/auth/login', handleLogin);
+
+const handleRegister = (req, res) => {
+  const { email, password, role, name } = req.body || {};
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const passwordText = String(password || '');
+
+  if (!normalizedEmail || !passwordText) {
+    return res.status(400).json({ error: 'Email and password are required' });
   }
+  if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
+    return res.status(409).json({ error: 'User already exists' });
+  }
+
+  const user = {
+    id: `u-${Date.now()}`,
+    email: normalizedEmail,
+    name: String(name || '').trim() || null,
+    role: role === 'admin' ? 'admin' : 'user',
+    password: passwordText,
+  };
+  users.push(user);
+
+  return res.status(201).json({
+    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+  });
+};
+
+const handleListUsers = (_req, res) => {
+  return res.json({
+    users: users.map(({ id, email, name, role }) => ({ id, email, name: name || '', role })),
+  });
+};
+
+const handleUpdateUser = (req, res) => {
+  const userId = String(req.params.id || '').trim();
+  const { name, role } = req.body || {};
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User id is required' });
+  }
+
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  if (typeof name === 'string') {
+    user.name = name.trim() || null;
+  }
+
+  if (typeof role === 'string') {
+    user.role = role === 'admin' ? 'admin' : 'user';
+  }
+
+  return res.json({
+    user: { id: user.id, email: user.email, name: user.name || '', role: user.role },
+  });
+};
+
+app.post('/api/auth/register', handleRegister);
+app.post('/auth/register', handleRegister);
+app.get('/api/auth/users', handleListUsers);
+app.get('/auth/users', handleListUsers);
+app.patch('/api/auth/users/:id', handleUpdateUser);
+app.patch('/auth/users/:id', handleUpdateUser);
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
+  const token = Math.random().toString(36).slice(2) + Date.now();
+  resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
+  const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+
   try {
-    const user = await User.findOne({ email });
-    if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
-      console.log('Login error: Invalid credentials for', email);
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    const accessToken = jwt.sign(
-      { sub: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-    console.log('Login success for', email);
-    return res.json({
-      accessToken,
-      user: { id: user._id, email: user.email, role: user.role },
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'noreply@audit-iq.com',
+      to: email,
+      subject: 'Password Reset',
+      text: `Reset your password: ${resetUrl}`,
     });
-  } catch (err) {
-    console.error('Login server error:', err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.json({ success: true });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
   }
 });
 
-// Registration endpoint for creating users (must be after app is defined)
-app.post('/api/auth/register', async (req, res) => {
-  console.log('Register request body:', req.body);
-  const { email, password, role } = req.body || {};
-  if (!email || typeof password !== 'string' || password.trim() === '') {
-    console.log('Register error: Email and password required (non-empty)');
-    return res.status(400).json({ error: 'Email and password required' });
-  }
+app.post('/auth/forgot-password', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'Email required' });
+
   try {
-    const existing = await User.findOne({ email });
-    if (existing) {
-      console.log('Register error: User already exists for', email);
-      return res.status(409).json({ error: 'User already exists' });
-    }
-    const passwordHash = bcrypt.hashSync(password, 10);
-    const user = await User.create({ email, passwordHash, role: role || 'user' });
-    console.log('Register success for', email);
-    res.json({ success: true, user: { id: user._id, email: user.email, role: user.role } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const token = crypto.randomBytes(24).toString('hex');
+    resetTokens[token] = { email: normalizedEmail, expires: Date.now() + 3600 * 1000 };
+    return res.json({ ok: true, token });
   } catch (err) {
-    console.error('Register server error:', err);
-    res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Forgot password failed', details: err.message });
+  }
+});
+
+app.post('/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body || {};
+  if (!token || !password) return res.status(400).json({ error: 'Token and password required' });
+  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
+
+  try {
+    const entry = resetTokens[token];
+    if (!entry || entry.expires < Date.now()) return res.status(400).json({ error: 'Invalid or expired token' });
+
+    const user = await User.findOne({ email: entry.email });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    user.password = hashPassword(password);
+    await user.save();
+    delete resetTokens[token];
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: 'Reset password failed', details: err.message });
   }
 });
 
@@ -192,19 +348,6 @@ if (process.env.SERVE_STATIC === 'true') {
   });
 }
 
-async function startServer() {
-  if (!MONGODB_URI) {
-    throw new Error('MONGODB_URI is required');
-  }
-  await mongoose.connect(MONGODB_URI);
-  console.log('MongoDB connected');
-  app.listen(PORT, () => {
-    // eslint-disable-next-line no-console
-    console.log(`Auth server running on http://localhost:${PORT}`);
-  });
-}
-
-startServer().catch((err) => {
-  console.error('Startup error:', err);
-  process.exit(1);
+app.listen(PORT, () => {
+  console.log(`Auth server running on http://localhost:${PORT}`);
 });

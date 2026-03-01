@@ -2,8 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/client";
 import logo from "../assets/opscale-logo.svg";
+import shieldLogo from "../assets/opscale-shield.svg";
 import RegisterForm from "../components/Register";
 import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
+import { setAccessToken } from "../utils/authToken";
 
 function ForgotPasswordModal({ onClose }) {
   const [email, setEmail] = useState("");
@@ -79,11 +81,7 @@ export default function Login() {
     const res = await login({ email, password });
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      try {
-        localStorage.setItem("accessToken", res.accessToken);
-      } catch {
-        // Ignore storage errors.
-      }
+      setAccessToken(res.accessToken);
       navigate("/dashboard");
     } else {
       setStatus(res && res.error ? res.error : "Invalid email or password");
@@ -101,21 +99,22 @@ export default function Login() {
     <div className="auth-shell">
       <div className="auth-wrap">
         <div className="auth-logo-panel">
-          <svg width="96" height="96" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 44 Q10 36 18 34 Q16 18 32 14 Q48 18 46 34 Q54 36 52 44 Q54 54 48 52 Q44 50 40 54 Q36 58 32 54 Q28 58 24 54 Q20 50 16 52 Q10 54 12 44 Z" fill="#fff" stroke="#222" strokeWidth="2"/>
-            <ellipse cx="25" cy="32" rx="2" ry="3" fill="#222"/>
-            <ellipse cx="39" cy="32" rx="2" ry="3" fill="#222"/>
-            <ellipse cx="25" cy="31" rx="0.7" ry="1.2" fill="#fff"/>
-            <ellipse cx="39" cy="31" rx="0.7" ry="1.2" fill="#fff"/>
-            <path d="M28 40 Q32 44 36 40" stroke="#222" strokeWidth="1.5" fill="none"/>
-            <path d="M18 38 Q14 34 20 32" stroke="#222" strokeWidth="2" fill="none"/>
-            <path d="M46 38 Q50 34 44 32" stroke="#222" strokeWidth="2" fill="none"/>
-          </svg>
+          <img
+            src={logo}
+            alt="Opscale Audit IQ"
+            style={{
+              width: 320,
+              maxWidth: "100%",
+              height: "auto",
+              display: "block",
+              filter: "drop-shadow(0 10px 22px rgba(24, 210, 255, 0.24))",
+            }}
+          />
         </div>
 
         <div className="ui-card auth-card">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-            <img src={logo} alt="Opscale" style={{ height: 40, width: "auto", display: "block" }} />
+            <img src={shieldLogo} alt="Opscale shield" style={{ height: 40, width: 40, display: "block", objectFit: "contain" }} />
             <div>
               <div style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
               <div className="ui-subtitle">Sign in to continue</div>

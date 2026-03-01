@@ -164,18 +164,18 @@
 }
 
 .auth-wrap {
-  width: min(980px, 100%);
+  width: min(1160px, 100%);
   display: grid;
-  grid-template-columns: 140px minmax(300px, 440px);
+  grid-template-columns: minmax(260px, 360px) minmax(300px, 440px);
   gap: 22px;
-  align-items: start;
+  align-items: center;
 }
 
 .auth-logo-panel {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 22px;
+  padding-top: 0;
 }
 
 .auth-card {

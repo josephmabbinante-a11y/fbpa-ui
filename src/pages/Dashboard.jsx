@@ -1,40 +1,240 @@
+
 import { useEffect, useState } from 'react';
+import { useDemo } from '../demo/DemoContext';
 import { useNavigate } from 'react-router-dom';
-import { InlineAlert } from '../components/ui/Primitives';
+import { useTheme, themes } from '../contexts/ThemeContext';
+import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
-import defaultDashboardPrefs from '../mock/dashboard';
+import mockShipments from '../mock/shipments';
+
+const DASH_PREFS_KEY = 'dashboardPrefs';
+const DASH_VARIANT_KEY = 'dashboardVariant';
+const DEFAULT_DASHBOARD_PREFS = {
+  showTotalInvoices: true,
+  showExceptions: true,
+  showTotalSavings: true,
+  showPending: true,
+  showExceptionDistribution: true,
+  showSavingsByCarrier: true,
+  showRecentActivity: true,
+};
+
+function readDashboardPrefs() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(DASH_PREFS_KEY) || 'null');
+    if (!parsed || typeof parsed !== 'object') return DEFAULT_DASHBOARD_PREFS;
+    const normalized = { ...DEFAULT_DASHBOARD_PREFS };
+    Object.keys(DEFAULT_DASHBOARD_PREFS).forEach((key) => {
+      if (typeof parsed[key] === 'boolean') {
+        normalized[key] = parsed[key];
+      }
+    });
+    return normalized;
+  } catch {
+    return DEFAULT_DASHBOARD_PREFS;
+  }
+}
+
+function readDashboardVariant() {
+  try {
+    const stored = localStorage.getItem(DASH_VARIANT_KEY);
+    if (stored === 'shipper' || stored === 'carrier' || stored === 'broker') {
+      return stored;
+    }
+    return 'shipper';
+  } catch {
+    return 'shipper';
+  }
+}
+
+function mergeDashboardData(incoming) {
+  if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
+  const hasUsableSeries = (series) =>
+    Array.isArray(series) &&
+    series.length > 0 &&
+    series.some((point) =>
+      Object.entries(point || {}).some(([key, value]) => {
+        if (key === 'day' || key === 'date' || key === 'month' || key === 'period' || key === 'label') return false;
+        return Number.isFinite(Number(value));
+      })
+    );
+  const hasUsableBreakdown = (items) =>
+    Array.isArray(items) &&
+    items.length > 0 &&
+    items.some((item) => Number(item?.value ?? item?.count ?? item?.total ?? 0) > 0);
+  const hasUsableSavings = (items) =>
+    Array.isArray(items) &&
+    items.length > 0 &&
+    items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
+  const fallbackTrends = dashboardEnhanced.trends || {};
+  const incomingTrends = incoming.trends || {};
+  const mergedTrends = {};
+  Object.keys(fallbackTrends).forEach((key) => {
+    const nextSeries = incomingTrends[key];
+    mergedTrends[key] = hasUsableSeries(nextSeries) ? nextSeries : fallbackTrends[key];
+  });
+  return {
+    ...dashboardEnhanced,
+    ...incoming,
+    summary: { ...dashboardEnhanced.summary, ...(incoming.summary || {}) },
+    trends: mergedTrends,
+    exceptionBreakdown: hasUsableBreakdown(incoming.exceptionBreakdown)
+      ? incoming.exceptionBreakdown
+      : dashboardEnhanced.exceptionBreakdown,
+    claimsBreakdown: hasUsableBreakdown(incoming.claimsBreakdown)
+      ? incoming.claimsBreakdown
+      : dashboardEnhanced.exceptionBreakdown,
+    savingsByCarrier: hasUsableSavings(incoming.savingsByCarrier)
+      ? incoming.savingsByCarrier
+      : dashboardEnhanced.savingsByCarrier,
+    volumeByLane: hasUsableSavings(incoming.volumeByLane)
+      ? incoming.volumeByLane
+      : dashboardEnhanced.savingsByCarrier,
+    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : dashboardEnhanced.recentActivity,
+  };
+}
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [data, setData] = useState(dashboardEnhanced);
-  const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
+  const t = themes[theme];
+  const [data, setData] = useState(() => dashboardEnhanced);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [dashboardPrefs, setDashboardPrefs] = useState(defaultDashboardPrefs);
-  const [variant, setVariant] = useState(() => {
-    try {
-      return localStorage.getItem(DASH_VARIANT_KEY) || 'shipper';
-    } catch {
-      return 'shipper';
-    }
-  });
+  const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
+  const [variant, setVariant] = useState(() => readDashboardVariant());
+  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
 
-  useEffect(() => {
-    try {
-      const prefs = JSON.parse(localStorage.getItem(DASH_PREFS_KEY));
-      // ...existing code...
-    } catch (e) {
-      // handle error
-    }
-    setLoading(false);
-  }, []);
-
-  // TODO: Implement Dashboard JSX here
+  // --- Operational Command Center Layout ---
   return (
-    <div>
-      {/* Dashboard content goes here */}
+    <div style={{ padding: 24, minHeight: '100vh', background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, justifyContent: 'space-between' }}>
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: '#fff', letterSpacing: 0.2 }}>Operational Command Center</h1>
+            <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text, marginTop: 12 }}>
+              <option value="shipper">Shipper</option>
+              <option value="carrier">Carrier</option>
+              <option value="broker">Broker</option>
+            </select>
+            <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 12, marginBottom: 2 }}>
+              Manage shipments, monitor daily operations, and analyze financial & KPI performance in real time.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Section */}
+      <CollapsibleSection title="Key Performance Indicators" defaultOpen>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+          {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
+            <KPIWithTrend label="Total Invoices" value={data.summary?.totalInvoices || 0} delta={5} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" onClick={() => navigate('/invoices')} />
+          )}
+          {variant === 'shipper' && dashboardPrefs.showExceptions && (
+            <KPIWithTrend label="Exceptions" value={data.summary?.totalExceptions || 0} delta={-2} trendData={data.trends?.exceptionTrend} trendColor="#ef4444" onClick={() => navigate('/exceptions')} />
+          )}
+          {variant === 'shipper' && dashboardPrefs.showTotalSavings && (
+            <KPIWithTrend label="Total Savings" value={data.summary?.totalSavings || 0} format="currency" delta={12} trendData={data.trends?.savingsTrend} trendColor="#10b981" onClick={() => navigate('/reports')} />
+          )}
+          {variant === 'shipper' && dashboardPrefs.showPending && (
+            <KPIWithTrend label="Pending" value={data.summary?.pendingReview || 0} delta={0} trendData={data.trends?.pendingTrend} trendColor="#f59e0b" />
+          )}
+          {variant === 'carrier' && (
+            <>
+              <KPIWithTrend label="On-Time %" value={data.summary?.onTime || 0} delta={2} trendData={data.trends?.onTimeTrend} trendColor="#10b981" />
+              <KPIWithTrend label="Claims %" value={data.summary?.claimsRate || 0} delta={-1} trendData={data.trends?.claimsTrend} trendColor="#ef4444" />
+              <KPIWithTrend label="Volume" value={data.summary?.totalInvoices || 0} delta={3} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" />
+            </>
+          )}
+          {variant === 'broker' && (
+            <>
+              <KPIWithTrend label="Margin %" value={data.summary?.margin || 0} delta={1} trendData={data.trends?.marginTrend} trendColor="#10b981" />
+              <KPIWithTrend label="Loads" value={data.summary?.loads || 0} delta={4} trendData={data.trends?.loadsTrend} trendColor="#0066cc" />
+              <KPIWithTrend label="Revenue" value={data.summary?.revenue || 0} format="currency" delta={7} trendData={data.trends?.revenueTrend} trendColor="#f59e0b" />
+            </>
+          )}
+        </div>
+      </CollapsibleSection>
+
+      {/* Analytics & Shipment Summary */}
+      <CollapsibleSection title="Shipment Analytics & Distribution" defaultOpen>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
+          {dashboardPrefs.showExceptionDistribution && data.exceptionBreakdown && (
+            <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
+          )}
+          {dashboardPrefs.showSavingsByCarrier && data.savingsByCarrier && (
+            <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
+          )}
+        </div>
+      </CollapsibleSection>
+
+      {/* Operational Table: Shipments */}
+      <CollapsibleSection title="Today's Shipments Overview" defaultOpen>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <button style={{ marginRight: 8, padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Export to Excel coming soon!')}>Export to Excel</button>
+            <button style={{ marginRight: 8, padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Filter fields coming soon!')}>Filter Fields</button>
+            <button style={{ padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Advanced search coming soon!')}>Show Advanced</button>
+          </div>
+          <button style={{ padding: '8px 18px', background: t.positive, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }} onClick={() => alert('New shipment creation coming soon!')}>Add New Shipment</button>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
+            <thead>
+              <tr>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Load #</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Customer</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Carrier</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Origin</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Destination</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Status</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Revenue</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Cost</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Margin</th>
+                <th style={{ padding: '8px 12px', textAlign: 'left', color: t.textSecondary, fontWeight: 600 }}>Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(mockShipments || []).map((ship) => (
+                <tr key={ship.id} style={{ cursor: 'pointer' }} onClick={() => alert(`Navigate to shipment detail for ${ship.id}`)}>
+                  <td style={{ padding: '8px 12px' }}><strong>{ship.id}</strong></td>
+                  <td style={{ padding: '8px 12px' }}>{ship.customer}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.carrier}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.origin}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.destination}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.status}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.revenue}</td>
+                  <td style={{ padding: '8px 12px' }}>{ship.cost}</td>
+                  <td style={{ padding: '8px 12px' }}><strong>{ship.margin}</strong></td>
+                  <td style={{ padding: '8px 12px' }}>{ship.dueDate}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CollapsibleSection>
+
+      {/* Financial & Statistical Reports */}
+      <CollapsibleSection title="Operational & Financial Reports" defaultOpen>
+        <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 12 }}>
+          Access detailed analytics and exportable reports for finance, KPIs, and operational metrics.
+        </div>
+        <button style={{ padding: '10px 18px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
+          View Full Reports
+        </button>
+      </CollapsibleSection>
+
+      {/* Debug State */}
+      <div style={{ marginTop: 32 }}>
+        <details style={{ fontSize: 12, color: t.textSecondary }}>
+          <summary>[DEBUG] Dashboard state (click to expand)</summary>
+          <pre>loading: {JSON.stringify(loading)}{"\n"}error: {JSON.stringify(error)}{"\n"}data: {JSON.stringify(data, null, 2)}</pre>
+        </details>
+      </div>
     </div>
   );
 }
