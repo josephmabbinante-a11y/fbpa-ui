@@ -21,6 +21,7 @@ import reportsRouter from './reports.js';
 import uploadsRouter from './uploads.js';
 import invoiceImagesRouter from './invoiceImages.js';
 import ediRouter from './edi.js';
+import loadsRouter from './loads.js';
 
 import vehiclesRouter from './vehicles.js';
 import driversRouter from './drivers.js';
@@ -171,6 +172,7 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/invoice-images', invoiceImagesRouter);
 app.use('/api/edi', ediRouter);
+app.use('/api/loads', loadsRouter);
 
 // Fleet data routers
 app.use('/api/vehicles', vehiclesRouter);
