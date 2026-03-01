@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
 // Simple Error Boundary
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -300,6 +302,8 @@ function FleetOverviewCard({ driver }) {
 }
 
 function LiveMapCard({ driver }) {
+  const hasMapsKey = typeof GOOGLE_MAPS_KEY === 'string' && GOOGLE_MAPS_KEY.trim().length > 0;
+
   return (
     <section className="col-span-12 lg:col-span-8">
       <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-200">
@@ -311,18 +315,23 @@ function LiveMapCard({ driver }) {
           <button className="rounded-lg bg-blue-600 text-white px-4 py-2 text-xs font-semibold shadow hover:bg-blue-700">View EDI Details</button>
         </div>
         <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-          {/* Google Maps Embed for EDI tracking */}
-          <iframe
-            title="Google Maps EDI Tracking"
-            width="100%"
-            height="300"
-            className="rounded-lg border border-gray-300"
-            style={{ border: 0 }}
-            loading="lazy"
-            allowFullScreen
-            referrerPolicy="no-referrer-when-downgrade"
-            src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=${encodeURIComponent(driver.telematics.location)}`}
-          />
+          {hasMapsKey ? (
+            <iframe
+              title="Google Maps EDI Tracking"
+              width="100%"
+              height="300"
+              className="rounded-lg border border-gray-300"
+              style={{ border: 0 }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              src={`https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}&q=${encodeURIComponent(driver.telematics.location)}`}
+            />
+          ) : (
+            <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-sm text-gray-500">
+              Live map unavailable. Set VITE_GOOGLE_MAPS_API_KEY to enable map embeds.
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -459,6 +468,7 @@ function ELDTableCard({ rows }) {
 export default function FleetDashboard() {
   const { summary, drivers, vehicles, loading, error } = useFleetDashboardData();
   const [selectedDriver, setSelectedDriver] = useState(drivers[0] ?? null);
+  const hasMapsKey = typeof GOOGLE_MAPS_KEY === 'string' && GOOGLE_MAPS_KEY.trim().length > 0;
 
   if (error) {
     return (
@@ -543,16 +553,22 @@ export default function FleetDashboard() {
 
       {/* Map */}
       <div style={{ margin: '32px 0 0 0', borderRadius: 18, overflow: 'hidden', background: '#232b3e', boxShadow: '0 2px 12px #0002', height: 320 }}>
-        <iframe
-          title="Fleet Map"
-          width="100%"
-          height="320"
-          style={{ border: 0, width: '100%', display: 'block' }}
-          loading="lazy"
-          allowFullScreen
-          referrerPolicy="no-referrer-when-downgrade"
-          src={`https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q=Los+Angeles,CA`}
-        />
+        {hasMapsKey ? (
+          <iframe
+            title="Fleet Map"
+            width="100%"
+            height="320"
+            style={{ border: 0, width: '100%', display: 'block' }}
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+            src={`https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}&q=Los+Angeles,CA`}
+          />
+        ) : (
+          <div style={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#cfd8ea', fontSize: 14 }}>
+            Fleet map unavailable. Configure VITE_GOOGLE_MAPS_API_KEY to enable map embeds.
+          </div>
+        )}
       </div>
 
       {/* Lower Cards */}

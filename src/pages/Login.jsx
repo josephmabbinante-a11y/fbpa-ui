@@ -52,18 +52,6 @@ function ForgotPasswordModal({ onClose }) {
   );
 }
 
-function TestModal({ onClose }) {
-  return (
-    <div className="modal-overlay" style={{ zIndex: 2000 }}>
-      <div className="ui-card modal-card" style={{ maxWidth: 320 }}>
-        <h2 style={{ marginTop: 0 }}>Test Modal</h2>
-        <p style={{ marginTop: 0, color: "var(--text-secondary)" }}>If you see this, modal logic works.</p>
-        <LinkButton type="button" onClick={onClose}>Close</LinkButton>
-      </div>
-    </div>
-  );
-}
-
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -72,7 +60,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [showTestModal, setShowTestModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -137,12 +124,10 @@ export default function Login() {
           <div className="auth-actions">
             <LinkButton type="button" onClick={() => setShowForgot(true)}>Forgot password?</LinkButton>
             <LinkButton type="button" onClick={() => setShowRegister(true)}>Need an account? Register</LinkButton>
-            <LinkButton type="button" onClick={() => setShowTestModal(true)}>Open Test Modal</LinkButton>
           </div>
 
           {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
           {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
-          {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
         </div>
       </div>
     </div>

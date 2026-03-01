@@ -19,7 +19,7 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const t = themes[theme];
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {
