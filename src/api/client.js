@@ -3,6 +3,7 @@ import mockExceptions from '../mock/exceptions';
 import mockDashboard from '../mock/dashboard';
 import mockReports from '../mock/reports';
 import { getAccessToken } from '../utils/authToken';
+import { isMockModeEnabled } from '../utils/mockMode';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
@@ -29,17 +30,6 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
   }
 }
 
-// Unify mock mode: check both env and DemoContext (if available)
-let _demoMode = false;
-try {
-  // If running in browser, try to read localStorage
-  _demoMode = typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
-} catch {}
-function isMockMode() {
-  // Use environment variable or demoMode from localStorage
-  return import.meta.env.VITE_MOCK_MODE === 'true' || _demoMode;
-}
-
 // Removed JWT token retrieval
 
 async function safeFetch(path, options) {
@@ -58,7 +48,7 @@ async function safeFetch(path, options) {
 
 
 export async function getInvoices(type) {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockInvoices;
   }
   const query = type ? `?type=${encodeURIComponent(type)}` : '';
@@ -66,7 +56,7 @@ export async function getInvoices(type) {
 }
 
 export async function getCustomers() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return [];
   }
   return safeFetch('/api/customers');
@@ -83,7 +73,7 @@ export async function getCustomerAging(id) {
 }
 
 export async function getCarriers() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return [];
   }
   return safeFetch('/api/carriers');
@@ -106,21 +96,21 @@ export async function createInvoice(payload) {
 }
 
 export async function getExceptions() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockExceptions;
   }
   return safeFetch('/api/exceptions');
 }
 
 export async function getDashboard() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockDashboard;
   }
   return safeFetch('/api/dashboard');
 }
 
 export async function getReports() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockReports;
   }
   return safeFetch('/api/reports');

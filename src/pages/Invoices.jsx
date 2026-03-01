@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getInvoices } from '../api/client';
 import mockInvoices from '../mock/invoices';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
 
 function normalizeInvoicesResponse(response) {
@@ -15,11 +16,12 @@ function normalizeInvoicesResponse(response) {
 export default function Invoices() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
   const [query, setQuery] = useState('');
 
-  const { data: rawData, loading, error } = useApi(() => getInvoices(), mockInvoices);
-  const invoices = useMemo(() => normalizeInvoicesResponse(rawData) || mockInvoices, [rawData]);
+  const { data: rawData, loading, error } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
+  const invoices = useMemo(() => normalizeInvoicesResponse(rawData) || (demoMode ? mockInvoices : []), [demoMode, rawData]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -37,7 +39,7 @@ export default function Invoices() {
     <div style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Invoices</h1>
-        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>{demoMode ? `Using fallback data: ${error}` : `Unable to load invoices: ${error}`}</span> : null}
       </div>
       {loading ? <div style={{ fontSize: 13, color: t.textSecondary }}>Loading invoices...</div> : null}
       <input

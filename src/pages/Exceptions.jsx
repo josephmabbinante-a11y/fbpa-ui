@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getExceptions } from '../api/client';
 import mockExceptions from '../mock/exceptions';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
 
 function normalizeExceptionsResponse(response) {
@@ -14,12 +15,17 @@ function normalizeExceptionsResponse(response) {
 
 export default function Exceptions() {
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  const { data: rawData, loading, error } = useApi(() => getExceptions(), mockExceptions);
-  const source = useMemo(() => normalizeExceptionsResponse(rawData) || (Array.isArray(mockExceptions?.exceptions) ? mockExceptions.exceptions : []), [rawData]);
+  const { data: rawData, loading, error } = useApi(() => getExceptions(), demoMode ? mockExceptions : null, [demoMode]);
+  const source = useMemo(() => {
+    const normalized = normalizeExceptionsResponse(rawData);
+    if (normalized) return normalized;
+    return demoMode && Array.isArray(mockExceptions?.exceptions) ? mockExceptions.exceptions : [];
+  }, [demoMode, rawData]);
   const statuses = useMemo(() => ['All', ...new Set(source.map((e) => e.status).filter(Boolean))], [source]);
 
   const filtered = useMemo(() => {
@@ -41,7 +47,7 @@ export default function Exceptions() {
     <div style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Exceptions</h1>
-        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>{demoMode ? `Using fallback data: ${error}` : `Unable to load exceptions: ${error}`}</span> : null}
       </div>
       {loading ? <div style={{ fontSize: 13, color: t.textSecondary }}>Loading exceptions...</div> : null}
 

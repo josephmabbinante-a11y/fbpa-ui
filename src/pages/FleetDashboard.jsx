@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useDemo } from '../demo/DemoContext';
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -80,10 +81,10 @@ const MOCK_FLEET_DATA = {
 };
 
 // Dashboard state hooks
-function useFleetDashboardData() {
-  const [summary] = useState(MOCK_FLEET_DATA.summary);
-  const [drivers] = useState(MOCK_FLEET_DATA.drivers);
-  const [vehicles] = useState(MOCK_FLEET_DATA.vehicles);
+function useFleetDashboardData(demoMode) {
+  const summary = demoMode ? MOCK_FLEET_DATA.summary : { totalVehicles: 0, vehiclesActive: 0, utilization: 0, avgFuel: 0 };
+  const drivers = demoMode ? MOCK_FLEET_DATA.drivers : [];
+  const vehicles = demoMode ? MOCK_FLEET_DATA.vehicles : [];
   const loading = false;
   const error = null;
   return { summary, drivers, vehicles, loading, error };
@@ -466,7 +467,8 @@ function ELDTableCard({ rows }) {
 }
 
 export default function FleetDashboard() {
-  const { summary, drivers, vehicles, loading, error } = useFleetDashboardData();
+  const { demoMode } = useDemo();
+  const { summary, drivers, vehicles, loading, error } = useFleetDashboardData(demoMode);
   const [selectedDriver, setSelectedDriver] = useState(drivers[0] ?? null);
   const hasMapsKey = typeof GOOGLE_MAPS_KEY === 'string' && GOOGLE_MAPS_KEY.trim().length > 0;
 
@@ -491,6 +493,11 @@ export default function FleetDashboard() {
 
   return (
     <>
+      {!demoMode ? (
+        <div style={{ background: '#1f2937', color: '#d1d5db', padding: '10px 16px', borderRadius: 8, marginBottom: 12, fontSize: 13 }}>
+          Fleet preview uses mock data and is available when Mock Data mode is ON.
+        </div>
+      ) : null}
       {/* Coming Soon Banner */}
       <div style={{
         background: 'linear-gradient(90deg, #1e2a4a 0%, #1ecbe1 100%)',

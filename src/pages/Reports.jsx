@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api/client';
 import mockReports from '../mock/reports';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
@@ -16,6 +17,22 @@ const reportCards = [
 ];
 
 const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
+
+const EMPTY_REPORTS = {
+  monthlySummary: [],
+  exceptionBreakdown: [],
+  statusDistribution: [],
+  topSavingsCarriers: [],
+  savingsTrend: [],
+  exceptionTrend: [],
+  categoryDrilldown: [],
+  auditMetrics: {
+    freightBillAudit: [],
+    paymentRecovery: [],
+    auditFindings: [],
+    paymentProcessing: [],
+  },
+};
 
 function mergeReportsData(base, incoming) {
   if (!incoming || typeof incoming !== 'object') return base;
@@ -59,18 +76,22 @@ function mergeReportsData(base, incoming) {
 
 export default function Reports() {
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
   const navigate = useNavigate();
-  const { data: rawData, loading, error } = useApi(getReports, mockReports);
+  const { data: rawData, loading, error } = useApi(getReports, demoMode ? mockReports : null, [demoMode]);
 
-  const data = useMemo(() => mergeReportsData(mockReports, rawData), [rawData]);
+  const data = useMemo(
+    () => mergeReportsData(demoMode ? mockReports : EMPTY_REPORTS, rawData),
+    [demoMode, rawData]
+  );
   const monthlyRows = useMemo(() => data?.monthlySummary || [], [data]);
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Reports</h1>
-        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>{demoMode ? `Using fallback data: ${error}` : `Unable to load reports: ${error}`}</span> : null}
       </div>
 
       {loading ? (

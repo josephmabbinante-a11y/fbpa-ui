@@ -1,18 +1,24 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { uploadInvoiceFile } from '../api/client';
 import uploadHistory from '../mock/uploads';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
 
 export default function Uploads() {
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [history, setHistory] = useState(uploadHistory);
+  const [history, setHistory] = useState(() => (demoMode ? uploadHistory : []));
+
+  useEffect(() => {
+    setHistory(demoMode ? uploadHistory : []);
+  }, [demoMode]);
 
   // State for Rate Confirmation Upload
   const [rcFile, setRcFile] = useState(null);

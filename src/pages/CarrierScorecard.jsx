@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import carrierPerformance from '../mock/carriersPerformance';
 
 function clamp(value, min, max) {
@@ -60,10 +61,12 @@ export default function CarrierScorecard() {
   const { carrier } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
 
   const decodedCarrier = decodeURIComponent(carrier);
-  const data = carrierPerformance.find((c) => c.carrier === decodedCarrier);
+  const carriers = demoMode ? carrierPerformance : [];
+  const data = carriers.find((c) => c.carrier === decodedCarrier);
 
   const [show, setShow] = useState({
     onTime: true,
@@ -82,21 +85,21 @@ export default function CarrierScorecard() {
 
   const poolAverages = useMemo(
     () => ({
-      onTime: averageMetric(carrierPerformance, 'onTime'),
-      billingErrors: averageMetric(carrierPerformance, 'billingErrors'),
-      invoiceDiscrepancy: averageMetric(carrierPerformance, 'invoiceDiscrepancy'),
-      avgTransitDays: averageMetric(carrierPerformance, 'avgTransitDays'),
-      claimsRate: averageMetric(carrierPerformance, 'claimsRate'),
-      totalInvoices: averageMetric(carrierPerformance, 'totalInvoices'),
+      onTime: averageMetric(carriers, 'onTime'),
+      billingErrors: averageMetric(carriers, 'billingErrors'),
+      invoiceDiscrepancy: averageMetric(carriers, 'invoiceDiscrepancy'),
+      avgTransitDays: averageMetric(carriers, 'avgTransitDays'),
+      claimsRate: averageMetric(carriers, 'claimsRate'),
+      totalInvoices: averageMetric(carriers, 'totalInvoices'),
     }),
-    []
+    [carriers]
   );
 
   if (!data) {
     return (
       <div style={{ padding: 32, color: t.text }}>
         <button onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>Back</button>
-        <div style={{ fontSize: 18, fontWeight: 700 }}>Carrier not found</div>
+        <div style={{ fontSize: 18, fontWeight: 700 }}>{demoMode ? 'Carrier not found' : 'Carrier preview available in Mock Data mode only'}</div>
       </div>
     );
   }
@@ -105,11 +108,11 @@ export default function CarrierScorecard() {
   const avgShipmentValue = Math.round((data.onTime * 18) + (shipmentVolume * 1.7) - (data.claimsRate * 120));
   const lateDeliveries = Math.round((1 - data.onTime / 100) * shipmentVolume);
 
-  const serviceRank = getRank(carrierPerformance, 'onTime', data.carrier, true);
-  const billingRank = getRank(carrierPerformance, 'billingErrors', data.carrier, false);
-  const claimsRank = getRank(carrierPerformance, 'claimsRate', data.carrier, false);
+  const serviceRank = getRank(carriers, 'onTime', data.carrier, true);
+  const billingRank = getRank(carriers, 'billingErrors', data.carrier, false);
+  const claimsRank = getRank(carriers, 'claimsRate', data.carrier, false);
 
-  const poolVolume = carrierPerformance.reduce((sum, item) => sum + item.totalInvoices, 0);
+  const poolVolume = carriers.reduce((sum, item) => sum + item.totalInvoices, 0);
 
   const monthlyOffsets = [-1.4, -0.9, -0.5, 0.2, 0.7, 1.1];
   const monthLabels = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
@@ -123,14 +126,14 @@ export default function CarrierScorecard() {
     };
   });
 
-  const riskRateData = carrierPerformance.map((item) => ({
+  const riskRateData = carriers.map((item) => ({
     carrier: item.carrier,
     billingErrors: item.billingErrors,
     invoiceDiscrepancy: item.invoiceDiscrepancy,
     claimsRate: item.claimsRate,
   }));
 
-  const serviceLevelData = carrierPerformance.map((item) => ({
+  const serviceLevelData = carriers.map((item) => ({
     carrier: item.carrier,
     onTime: item.onTime,
     totalInvoices: item.totalInvoices,
@@ -201,9 +204,9 @@ export default function CarrierScorecard() {
         <div style={{ background: t.surface, border: `1px solid ${t.borderLight}`, borderRadius: 8, padding: 24, fontSize: 15, marginBottom: 24 }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Performance Summary</h2>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
-            {show.onTime && <li>On-time rank in pool: <strong>#{serviceRank}</strong> of {carrierPerformance.length}</li>}
-            {show.billingErrors && <li>Billing quality rank: <strong>#{billingRank}</strong> of {carrierPerformance.length}</li>}
-            {show.claimsRate && <li>Claims safety rank: <strong>#{claimsRank}</strong> of {carrierPerformance.length}</li>}
+            {show.onTime && <li>On-time rank in pool: <strong>#{serviceRank}</strong> of {carriers.length}</li>}
+            {show.billingErrors && <li>Billing quality rank: <strong>#{billingRank}</strong> of {carriers.length}</li>}
+            {show.claimsRate && <li>Claims safety rank: <strong>#{claimsRank}</strong> of {carriers.length}</li>}
             {show.totalInvoices && <li>Invoice share: <strong>{((data.totalInvoices / poolVolume) * 100).toFixed(1)}%</strong> of carrier pool volume</li>}
           </ul>
 

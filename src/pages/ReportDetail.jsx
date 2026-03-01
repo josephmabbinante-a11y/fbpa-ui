@@ -14,23 +14,86 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { getReports } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import mockReports from '../mock/reports';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
+import { useApi } from '../hooks/useApi';
 
 const formatCurrency = (value) =>
   `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const palette = ['#10b981', '#f59e0b', '#ef4444', '#0066cc', '#6b7280'];
 
+const EMPTY_REPORTS = {
+  monthlySummary: [],
+  exceptionBreakdown: [],
+  statusDistribution: [],
+  topSavingsCarriers: [],
+  savingsTrend: [],
+  exceptionTrend: [],
+  categoryDrilldown: [],
+  auditMetrics: {
+    freightBillAudit: [],
+    paymentRecovery: [],
+    auditFindings: [],
+    paymentProcessing: [],
+  },
+};
+
+const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
+
+function mergeReportsData(base, incoming) {
+  if (!incoming || typeof incoming !== 'object') return base;
+
+  const next = {
+    ...base,
+    ...incoming,
+    monthlySummary: isNonEmptyArray(incoming.monthlySummary) ? incoming.monthlySummary : base.monthlySummary,
+    exceptionBreakdown: isNonEmptyArray(incoming.exceptionBreakdown) ? incoming.exceptionBreakdown : base.exceptionBreakdown,
+    statusDistribution: isNonEmptyArray(incoming.statusDistribution) ? incoming.statusDistribution : base.statusDistribution,
+    topSavingsCarriers: isNonEmptyArray(incoming.topSavingsCarriers) ? incoming.topSavingsCarriers : base.topSavingsCarriers,
+    savingsTrend: isNonEmptyArray(incoming.savingsTrend) ? incoming.savingsTrend : base.savingsTrend,
+    exceptionTrend: isNonEmptyArray(incoming.exceptionTrend) ? incoming.exceptionTrend : base.exceptionTrend,
+    categoryDrilldown: isNonEmptyArray(incoming.categoryDrilldown) ? incoming.categoryDrilldown : base.categoryDrilldown,
+  };
+
+  const incomingAudit = incoming.auditMetrics && typeof incoming.auditMetrics === 'object' ? incoming.auditMetrics : null;
+  const baseAudit = base.auditMetrics && typeof base.auditMetrics === 'object' ? base.auditMetrics : {};
+
+  next.auditMetrics = incomingAudit
+    ? {
+        ...baseAudit,
+        ...incomingAudit,
+        freightBillAudit: isNonEmptyArray(incomingAudit.freightBillAudit)
+          ? incomingAudit.freightBillAudit
+          : baseAudit.freightBillAudit,
+        paymentRecovery: isNonEmptyArray(incomingAudit.paymentRecovery)
+          ? incomingAudit.paymentRecovery
+          : baseAudit.paymentRecovery,
+        auditFindings: isNonEmptyArray(incomingAudit.auditFindings)
+          ? incomingAudit.auditFindings
+          : baseAudit.auditFindings,
+        paymentProcessing: isNonEmptyArray(incomingAudit.paymentProcessing)
+          ? incomingAudit.paymentProcessing
+          : baseAudit.paymentProcessing,
+      }
+    : baseAudit;
+
+  return next;
+}
+
 export default function ReportDetail() {
   const { reportId } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
-  const data = mockReports;
+  const { data: rawData } = useApi(getReports, demoMode ? mockReports : null, [demoMode]);
+  const data = useMemo(() => mergeReportsData(demoMode ? mockReports : EMPTY_REPORTS, rawData), [demoMode, rawData]);
 
   const reportMap = useMemo(
     () => ({

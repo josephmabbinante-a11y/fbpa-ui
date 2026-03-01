@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import ContactCustomerModal from '../components/ContactCustomerModal';
-import { sendCustomerMessage } from '../api/client';
+import { getInvoices, sendCustomerMessage } from '../api/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
+import { useApi } from '../hooks/useApi';
 import mockInvoices from '../mock/invoices';
 import mockInvoiceImages from '../mock/invoiceImages';
 import invoiceDetails from '../mock/invoiceDetails';
@@ -11,16 +13,50 @@ import GoogleMapEmbed from '../components/GoogleMapEmbed';
 import RateConfirmationImageUpload from '../components/RateConfirmationImageUpload';
 import InvoiceAndRateUpload from '../components/InvoiceAndRateUpload';
 
+function extractInvoices(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.invoices)) return payload.invoices;
+  return [];
+}
+
 export default function InvoiceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
+  const { data: rawInvoices, loading, error } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
 
-  const invoice = useMemo(() => mockInvoices.find((inv) => inv.id === id), [id]);
-  const detail = invoiceDetails[id];
-  const images = mockInvoiceImages.filter((img) => img.invoiceId === id);
-  const carrierSnap = carrierPerformance.find((c) => c.carrier === invoice?.carrier);
+  const invoices = useMemo(() => {
+    const source = extractInvoices(rawInvoices);
+    return source.length ? source : (demoMode ? mockInvoices : []);
+  }, [demoMode, rawInvoices]);
+
+  const invoice = useMemo(
+    () => invoices.find((inv) => String(inv.id) === String(id) || String(inv.invoiceNumber) === String(id)),
+    [id, invoices]
+  );
+  const detail = useMemo(() => {
+    if (demoMode) return invoiceDetails[id] || null;
+    return {
+      billedCost: Number(invoice?.amount || 0),
+      expectedCost: Number(invoice?.amount || 0),
+      benefitValue: Number(invoice?.savings || 0),
+      rateMatch: 0,
+      marginError: 0,
+      origin: { city: 'N/A' },
+      destination: { city: 'N/A' },
+      distanceMiles: 0,
+      avgTransitDays: 0,
+      linehaulCost: Number(invoice?.amount || 0),
+      fuelSurcharge: 0,
+      accessorials: 0,
+      expectedRatePerMile: 0,
+      billedRatePerMile: 0,
+    };
+  }, [demoMode, id, invoice]);
+  const images = demoMode ? mockInvoiceImages.filter((img) => img.invoiceId === id) : [];
+  const carrierSnap = demoMode ? carrierPerformance.find((c) => c.carrier === invoice?.carrier) : null;
 
   // Contact modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -83,19 +119,25 @@ export default function InvoiceDetail() {
   return (
     <div style={containerStyle}>
       {/* Warning banner for mock data */}
-      <div
-        style={{
-          backgroundColor: '#ffb300',
-          color: '#222',
-          padding: '10px 16px',
-          borderRadius: 6,
-          marginBottom: 16,
-          fontWeight: 600,
-          border: '1px solid #ff9800',
-        }}
-      >
-        Backend error, using mock data: Failed to fetch
-      </div>
+      {demoMode && error ? (
+        <div
+          style={{
+            backgroundColor: '#ffb300',
+            color: '#222',
+            padding: '10px 16px',
+            borderRadius: 6,
+            marginBottom: 16,
+            fontWeight: 600,
+            border: '1px solid #ff9800',
+          }}
+        >
+          Backend error, using mock data: {error}
+        </div>
+      ) : null}
+      {!demoMode && error ? (
+        <div style={{ marginBottom: 12, fontSize: 13, color: t.warning }}>Unable to load invoice details: {error}</div>
+      ) : null}
+      {loading ? <div style={{ marginBottom: 12, fontSize: 13, color: t.textSecondary }}>Loading invoice...</div> : null}
       <button
         type="button"
         onClick={() => navigate('/invoices')}
@@ -116,7 +158,7 @@ export default function InvoiceDetail() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Invoice {invoice.id}</h1>
           <div style={{ fontSize: 12, color: t.textSecondary }}>
-            {invoice.carrier} · {invoice.status} · Uploaded {new Date(invoice.uploadDate).toLocaleDateString()}
+            {invoice.carrier || 'N/A'} · {invoice.status || 'N/A'} · Uploaded {invoice.uploadDate ? new Date(invoice.uploadDate).toLocaleDateString() : 'N/A'}
           </div>
         </div>
         <button

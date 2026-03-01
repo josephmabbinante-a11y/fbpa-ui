@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getDashboard } from '../api/client';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
@@ -20,6 +21,14 @@ const DEFAULT_DASHBOARD_PREFS = {
   showExceptionDistribution: true,
   showSavingsByCarrier: true,
   showRecentActivity: true,
+};
+
+const EMPTY_DASHBOARD_DATA = {
+  summary: {},
+  trends: {},
+  exceptionBreakdown: [],
+  savingsByCarrier: [],
+  recentActivity: [],
 };
 
 function readDashboardPrefs() {
@@ -74,10 +83,10 @@ function hasUsableSavings(items) {
   return Array.isArray(items) && items.length > 0 && items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
 }
 
-function mergeDashboardData(incoming) {
-  if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
+function mergeDashboardData(incoming, baseData = dashboardEnhanced) {
+  if (!incoming || typeof incoming !== 'object') return baseData;
 
-  const fallbackTrends = dashboardEnhanced.trends || {};
+  const fallbackTrends = baseData.trends || {};
   const incomingTrends = incoming.trends || {};
   const mergedTrends = {};
 
@@ -87,29 +96,33 @@ function mergeDashboardData(incoming) {
   });
 
   return {
-    ...dashboardEnhanced,
+    ...baseData,
     ...incoming,
-    summary: { ...dashboardEnhanced.summary, ...(incoming.summary || {}) },
+    summary: { ...(baseData.summary || {}), ...(incoming.summary || {}) },
     trends: mergedTrends,
     exceptionBreakdown: hasUsableBreakdown(incoming.exceptionBreakdown)
       ? incoming.exceptionBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : (baseData.exceptionBreakdown || []),
     savingsByCarrier: hasUsableSavings(incoming.savingsByCarrier)
       ? incoming.savingsByCarrier
-      : dashboardEnhanced.savingsByCarrier,
+      : (baseData.savingsByCarrier || []),
     recentActivity: Array.isArray(incoming.recentActivity) && incoming.recentActivity.length > 0
       ? incoming.recentActivity
-      : dashboardEnhanced.recentActivity,
+      : (baseData.recentActivity || []),
   };
 }
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
 
-  const { data: rawData, loading, error } = useApi(getDashboard, dashboardEnhanced);
-  const data = useMemo(() => mergeDashboardData(rawData), [rawData]);
+  const { data: rawData, loading, error } = useApi(getDashboard, demoMode ? dashboardEnhanced : null, [demoMode]);
+  const data = useMemo(
+    () => mergeDashboardData(rawData, demoMode ? dashboardEnhanced : EMPTY_DASHBOARD_DATA),
+    [demoMode, rawData]
+  );
 
   const [dashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
@@ -145,7 +158,9 @@ export default function Dashboard() {
       </div>
 
       {error ? (
-        <div style={{ marginBottom: 12, fontSize: 12, color: t.warning }}>Using fallback dashboard data: {error}</div>
+        <div style={{ marginBottom: 12, fontSize: 12, color: t.warning }}>
+          {demoMode ? `Using fallback dashboard data: ${error}` : `Unable to load dashboard: ${error}`}
+        </div>
       ) : null}
 
       <CollapsibleSection title="Key Performance Indicators" defaultOpen>
