@@ -1,3 +1,8 @@
+import mockInvoices from '../mock/invoices';
+import mockExceptions from '../mock/exceptions';
+import mockDashboard from '../mock/dashboard';
+import mockReports from '../mock/reports';
+
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
   ? ''
@@ -50,12 +55,6 @@ async function safeFetch(path, options) {
   }
 }
 
-
-// Mock data imports
-import mockInvoices from '../mock/invoices';
-import mockExceptions from '../mock/exceptions';
-import mockDashboard from '../mock/dashboard';
-import mockReports from '../mock/reports';
 
 export async function getInvoices(type) {
   if (isMockMode()) {
@@ -251,10 +250,45 @@ export async function register(payload) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Register failed ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Register failed ${res.status}`);
+    }
     return await res.json();
   } catch (err) {
     console.error('register error:', err);
+    return { error: err.message };
+  }
+}
+
+export async function getUsers() {
+  try {
+    const res = await fetch(apiUrl('/api/auth/users'));
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Get users failed ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('getUsers error:', err);
+    return { error: err.message };
+  }
+}
+
+export async function updateUser(userId, payload) {
+  try {
+    const res = await fetch(apiUrl(`/api/auth/users/${encodeURIComponent(userId)}`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Update user failed ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('updateUser error:', err);
     return { error: err.message };
   }
 }

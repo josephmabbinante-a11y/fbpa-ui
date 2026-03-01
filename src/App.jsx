@@ -1,5 +1,4 @@
 import { lazy, Suspense } from 'react';
-const OrderManagementPage = lazy(() => import('./pages/OrderManagement'));
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DemoProvider } from './demo/DemoContext';
@@ -24,7 +23,6 @@ const Customers = lazy(() => import('./pages/Customers'));
 const Settings = lazy(() => import('./pages/Settings'));
 const RateLogicTool = lazy(() => import('./pages/RateLogicTool'));
 const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
-const MyAuditIQProfile = lazy(() => import('./pages/MyAuditIQProfile'));
 const SystemStatus = lazy(() => import('./pages/SystemStatus'));
 const Login = lazy(() => import('./pages/Login'));
 const LoadBoard = lazy(() => import('./pages/LoadBoard'));
@@ -34,7 +32,6 @@ const AP = lazy(() => import('./pages/AP'));
 const Aging = lazy(() => import('./pages/Aging'));
 const LaneIntelligence = lazy(() => import('./pages/LaneIntelligence'));
 const Carriers = lazy(() => import('./pages/Carriers'));
-const Account = lazy(() => import('./pages/Account'));
 
 function LoadingFallback() {
   return (
@@ -101,7 +98,8 @@ function AppRoutes() {
             <Route path="/finance/aging" element={<Aging />} />
             <Route path="/lane-intelligence" element={<LaneIntelligence />} />
             <Route path="/carriers-list" element={<Carriers />} />
-            <Route path="/account" element={<Account />} />
+            <Route path="/account" element={<Navigate to="/settings" replace />} />
+            <Route path="/profile" element={<Navigate to="/settings" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
               {/* Removed Fleet dashboard, orders, customers, and carriers pages */}
           </Routes>
