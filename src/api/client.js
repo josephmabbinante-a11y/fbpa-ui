@@ -55,6 +55,25 @@ async function safeFetch(path, options) {
   }
 }
 
+async function fetchJsonWithFallback(paths, options, failurePrefix) {
+  let lastError = null;
+
+  for (const path of paths) {
+    try {
+      const res = await fetch(apiUrl(path), options);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || `${failurePrefix} ${res.status}`);
+      }
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error(failurePrefix);
+}
+
 
 export async function getInvoices(type) {
   if (isMockMode()) {
@@ -263,12 +282,11 @@ export async function register(payload) {
 
 export async function getUsers() {
   try {
-    const res = await fetch(apiUrl('/api/auth/users'));
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      throw new Error(errorData?.error || `Get users failed ${res.status}`);
-    }
-    return await res.json();
+    return await fetchJsonWithFallback(
+      ['/api/auth/users', '/auth/users'],
+      undefined,
+      'Get users failed'
+    );
   } catch (err) {
     console.error('getUsers error:', err);
     return { error: err.message };
@@ -277,16 +295,16 @@ export async function getUsers() {
 
 export async function updateUser(userId, payload) {
   try {
-    const res = await fetch(apiUrl(`/api/auth/users/${encodeURIComponent(userId)}`), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      throw new Error(errorData?.error || `Update user failed ${res.status}`);
-    }
-    return await res.json();
+    const userPath = encodeURIComponent(userId);
+    return await fetchJsonWithFallback(
+      [`/api/auth/users/${userPath}`, `/auth/users/${userPath}`],
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+      'Update user failed'
+    );
   } catch (err) {
     console.error('updateUser error:', err);
     return { error: err.message };
