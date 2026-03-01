@@ -1,5 +1,12 @@
+import mockInvoices from '../mock/invoices';
+import mockExceptions from '../mock/exceptions';
+import mockDashboard from '../mock/dashboard';
+import mockReports from '../mock/reports';
+
 const RAW_API_URL = import.meta.env.VITE_API_URL;
-const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '';
+const API_URL = import.meta.env.PROD
+  ? ''
+  : (RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '');
 
 function apiUrl(path) {
   return `${API_URL}${path}`;
@@ -21,28 +28,23 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
   }
 }
 
+// Unify mock mode: check both env and DemoContext (if available)
+let _demoMode = false;
+try {
+  // If running in browser, try to read localStorage
+  _demoMode = typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
+} catch {}
 function isMockMode() {
-  try {
-    return localStorage.getItem('mockMode') === 'true';
-  } catch {
-    return false;
-  }
+  // Use environment variable or demoMode from localStorage
+  return import.meta.env.VITE_MOCK_MODE === 'true' || _demoMode;
 }
 
-function getAccessToken() {
-  try {
-    return localStorage.getItem('accessToken');
-  } catch {
-    return null;
-  }
-}
+// Removed JWT token retrieval
 
 async function safeFetch(path, options) {
   try {
-    const token = getAccessToken();
     const headers = {
       ...(options && options.headers ? options.headers : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(apiUrl(path), { ...options, headers });
     if (!res.ok) throw new Error(`Request failed with ${res.status}`);
@@ -54,52 +56,87 @@ async function safeFetch(path, options) {
 }
 
 
-// Mock data imports (only loaded if needed)
-let mockInvoices, mockExceptions, mockDashboard, mockReports;
-
-export async function getInvoices() {
+export async function getInvoices(type) {
   if (isMockMode()) {
-    if (!mockInvoices) mockInvoices = (await import('../mock/invoices')).default;
     return mockInvoices;
   }
-  return safeFetch('/api/invoices');
+  const query = type ? `?type=${encodeURIComponent(type)}` : '';
+  return safeFetch(`/api/invoices${query}`);
 }
 
+export async function getCustomers() {
+  if (isMockMode()) {
+    return [];
+  }
+  return safeFetch('/api/customers');
+}
+
+export async function getCustomerDetail(id) {
+  if (!id) return { error: 'Customer id is required' };
+  return safeFetch(`/api/customers/${encodeURIComponent(id)}`);
+}
+
+export async function getCustomerAging(id) {
+  if (!id) return { error: 'Customer id is required' };
+  return safeFetch(`/api/customers/${encodeURIComponent(id)}/aging`);
+}
+
+export async function getCarriers() {
+  if (isMockMode()) {
+    return [];
+  }
+  return safeFetch('/api/carriers');
+}
+
+export async function createInvoice(payload) {
+  try {
+    const token = getAccessToken();
+    const res = await fetch(apiUrl('/api/invoices'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Create invoice failed ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('createInvoice error:', err);
+    return { error: err.message };
+  }
+}
 
 export async function getExceptions() {
   if (isMockMode()) {
-    if (!mockExceptions) mockExceptions = (await import('../mock/exceptions')).default;
     return mockExceptions;
   }
   return safeFetch('/api/exceptions');
 }
 
-
 export async function getDashboard() {
   if (isMockMode()) {
-    if (!mockDashboard) mockDashboard = (await import('../mock/dashboard')).default;
     return mockDashboard;
   }
   return safeFetch('/api/dashboard');
 }
 
-
 export async function getReports() {
   if (isMockMode()) {
-    if (!mockReports) mockReports = (await import('../mock/reports')).default;
     return mockReports;
   }
   return safeFetch('/api/reports');
 }
 
 export async function login(payload) {
+  console.log('Frontend login payload:', payload);
   try {
-    const res = await fetch(apiUrl('/auth/login'), {
+    const res = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(`Login failed ${res.status}`);
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Login failed ${res.status}`);
+    }
     return await res.json();
   } catch (err) {
     console.error('login error:', err);
@@ -109,13 +146,11 @@ export async function login(payload) {
 
 export async function connectEdiIntegration(payload) {
   try {
-    const token = getAccessToken();
     const res = await fetch(apiUrl('/api/edi/connect'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-
     if (!res.ok) throw new Error(`Connect failed ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -136,13 +171,10 @@ export async function uploadInvoiceImage(payload) {
     fd.append('invoiceId', payload.invoiceId);
     if (payload.notes) fd.append('notes', payload.notes);
 
-    const token = getAccessToken();
     const res = await fetch(apiUrl('/api/invoice-images'), {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: fd,
     });
-
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -153,16 +185,14 @@ export async function uploadInvoiceImage(payload) {
 
 export async function verifyInvoiceImage(payload) {
   try {
-    const token = getAccessToken();
     const res = await fetch(apiUrl('/api/invoice-images/verify'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         imageId: payload.imageId,
         invoiceId: payload.invoiceId,
       }),
     });
-
     if (!res.ok) throw new Error(`Verify failed ${res.status}`);
     return await res.json();
   } catch (err) {
@@ -176,7 +206,6 @@ export async function uploadInvoiceFile(payload) {
   try {
     let body;
     let headers = {};
-    const token = getAccessToken();
 
     if (payload instanceof File) {
       // legacy: send as FormData
@@ -193,8 +222,8 @@ export async function uploadInvoiceFile(payload) {
 
     const res = await fetch(apiUrl('/api/uploads'), {
       method: 'POST',
-      headers: { ...headers, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body,
+      headers: { ...headers },
+      body
     });
 
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
@@ -212,3 +241,55 @@ export async function calculateRateLogic(payload) {
     body: JSON.stringify(payload),
   });
 }
+
+export async function register(payload) {
+  console.log('Frontend register payload:', payload);
+  try {
+    const res = await fetch(apiUrl('/api/auth/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Register failed ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('register error:', err);
+    return { error: err.message };
+  }
+}
+
+export async function getUsers() {
+  try {
+    const res = await fetch(apiUrl('/api/auth/users'));
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Get users failed ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('getUsers error:', err);
+    return { error: err.message };
+  }
+}
+
+export async function updateUser(userId, payload) {
+  try {
+    const res = await fetch(apiUrl(`/api/auth/users/${encodeURIComponent(userId)}`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Update user failed ${res.status}`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error('updateUser error:', err);
+    return { error: err.message };
+  }
+}
+

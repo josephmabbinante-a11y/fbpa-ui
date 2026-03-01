@@ -1,16 +1,41 @@
+<<<<<<< HEAD
 import { memo } from 'react';
+=======
+import { useId, useMemo } from 'react';
+>>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
-import { useTheme, themes } from '../contexts/ThemeContext';
 
 /**
  * Lightweight sparkline chart for KPI trend visualization
  * Displays a simple area chart below KPI cards
  */
+<<<<<<< HEAD
 const SparklineChart = memo(({ data, color = '#0066cc', height = 40 }) => {
   const { theme } = useTheme();
   const t = themes[theme];
+=======
+export default function SparklineChart({ data, color = '#0066cc', height = 40 }) {
+  const gradientId = useId();
+  const normalizedData = useMemo(
+    () =>
+      (Array.isArray(data) ? data : [])
+        .map((point) => {
+          const direct = Number(point?.value);
+          if (Number.isFinite(direct)) return { value: direct };
+>>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 
-  if (!data || data.length === 0) return null;
+          const fallback = Object.entries(point || {}).find(([key, value]) => {
+            if (key === 'day' || key === 'date' || key === 'month' || key === 'period' || key === 'label') return false;
+            return Number.isFinite(Number(value));
+          });
+
+          return { value: fallback ? Number(fallback[1]) : 0 };
+        })
+        .filter((point) => Number.isFinite(point.value)),
+    [data]
+  );
+
+  if (!normalizedData.length) return null;
 
   return (
     <div
@@ -20,10 +45,10 @@ const SparklineChart = memo(({ data, color = '#0066cc', height = 40 }) => {
         marginTop: 8,
       }}
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+      <ResponsiveContainer width="100%" height="100%" debounce={60}>
+        <AreaChart data={normalizedData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <defs>
-            <linearGradient id={`grad-${color}`} x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={color} stopOpacity={0.4} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
@@ -33,7 +58,7 @@ const SparklineChart = memo(({ data, color = '#0066cc', height = 40 }) => {
             dataKey="value"
             stroke={color}
             strokeWidth={1.5}
-            fill={`url(#grad-${color})`}
+            fill={`url(#${gradientId})`}
             dot={false}
             isAnimationActive={false}
           />

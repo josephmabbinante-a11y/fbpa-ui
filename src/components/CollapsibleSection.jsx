@@ -23,7 +23,7 @@ export default function CollapsibleSection({ title, children, defaultOpen = true
           fontSize: '14px',
           fontWeight: '600',
           color: t.text,
-          transition: 'all 0.2s ease',
+          transition: 'background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease',
         }}
         onMouseEnter={(e) => (e.target.style.backgroundColor = t.bgAlt)}
         onMouseLeave={(e) => (e.target.style.backgroundColor = t.surface)}

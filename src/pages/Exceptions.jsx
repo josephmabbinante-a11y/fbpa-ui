@@ -1,17 +1,19 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import ContactCustomerModal from '../components/ContactCustomerModal';
-import { sendCustomerMessage } from '../api/client';
-import mockExceptions from '../mock/exceptions';
-import { getExceptions } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import CollapsibleSection from '../components/CollapsibleSection';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+<<<<<<< HEAD
 import { useApi } from '../hooks/useApi';
+=======
+import ContactCustomerModal from '../components/ContactCustomerModal';
+import { getExceptions, sendCustomerMessage } from '../api/client';
+import mockExceptions from '../mock/exceptions';
+import { useTheme, themes } from '../contexts/ThemeContext';
+>>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 
 const CATEGORIES = ['Rate Discrepancy', 'Missing Docs', 'Duplicate', 'Other'];
 const ACTIONS = ['Review', 'Approve', 'Reject', 'Escalate'];
 
 export default function Exceptions() {
+<<<<<<< HEAD
 	const { theme } = useTheme();
 	const t = themes[theme];
 	const [query, setQuery] = useState('');
@@ -27,251 +29,180 @@ export default function Exceptions() {
 	const { data, loading, error, setData } = useApi(fetchExceptions, mockExceptions);
 	const [categories, setCategories] = useState({}); // { [exceptionId]: category }
 	const [actions, setActions] = useState({}); // { [exceptionId]: action }
+=======
+  const { theme } = useTheme();
+  const t = themes[theme];
+>>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 
-	// Modal state
-	const [modalOpen, setModalOpen] = useState(false);
-	const [modalException, setModalException] = useState(null);
-	// Handler for opening modal
-	const handleContactClick = (exception) => {
-		setModalException(exception);
-		setModalOpen(true);
-	};
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [data, setData] = useState(mockExceptions.exceptions || []);
+  const [categories, setCategories] = useState({});
+  const [actions, setActions] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalException, setModalException] = useState(null);
 
-	// Handler for sending message
-	const handleSendMessage = async ({ message, customer, invoice, exception }) => {
-		return await sendCustomerMessage({ message, customer, invoice, exception });
-	};
+  useEffect(() => {
+    let mounted = true;
+    // Always use mock data as default
+    setData(mockExceptions.exceptions || []);
+    setLoading(false);
+    // Optionally, allow API override if needed
+    // getExceptions()
+    //   .then((res) => {
+    //     if (!mounted) return;
+    //     if (res && !res.error && Array.isArray(res.exceptions)) {
+    //       setData(res.exceptions);
+    //     } else if (res?.error) {
+    //       setError(res.error);
+    //     }
+    //   })
+    //   .catch((err) => {
+    //     if (!mounted) return;
+    //     setError(err.message || String(err));
+    //   })
+    //   .finally(() => {
+    //     if (mounted) setLoading(false);
+    //   });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
+<<<<<<< HEAD
 	const statuses = useMemo(() => {
 		const set = new Set(data.map((e) => e.status));
 		return ['All', ...Array.from(set)];
 	}, [data]);
+=======
+  const statuses = useMemo(() => {
+    const set = new Set(data.map((e) => e.status));
+    return ['All', ...Array.from(set)];
+  }, [data]);
 
-	const filtered = useMemo(() => {
-		return data.filter((e) => {
-			const matchesQuery =
-				query.trim() === '' ||
-				e.invoiceNumber.toLowerCase().includes(query.toLowerCase()) ||
-				e.carrier.toLowerCase().includes(query.toLowerCase()) ||
-				e.reason.toLowerCase().includes(query.toLowerCase());
+  const filtered = useMemo(() => {
+    return data.filter((e) => {
+      const invoice = (e.invoiceNumber || '').toLowerCase();
+      const carrier = (e.carrier || '').toLowerCase();
+      const reason = (e.reason || '').toLowerCase();
+      const term = query.trim().toLowerCase();
+      const matchesQuery = !term || invoice.includes(term) || carrier.includes(term) || reason.includes(term);
+      const matchesStatus = statusFilter === 'All' || e.status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [data, query, statusFilter]);
+>>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 
-			const matchesStatus = statusFilter === 'All' || e.status === statusFilter;
+  const handleSendMessage = async ({ message, customer, invoice, exception }) => {
+    return sendCustomerMessage({ message, customer, invoice, exception });
+  };
 
-			return matchesQuery && matchesStatus;
-		});
-	}, [data, query, statusFilter]);
+  if (loading) {
+    return <div style={{ padding: 24, color: t.textSecondary }}>Loading exceptions...</div>;
+  }
 
-	const containerStyle = {
-		padding: '24px 32px',
-		backgroundColor: t.bg,
-		color: t.text,
-		minHeight: '100vh',
-	};
+  return (
+    <div style={{ display: 'grid', gap: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: 28 }}>Exceptions</h1>
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+      </div>
 
-	const headerStyle = {
-		marginBottom: 24,
-		display: 'flex',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-	};
+      <div style={{ display: 'flex', gap: 12 }}>
+        <input
+          type="text"
+          placeholder="Search by invoice, carrier, or reason"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ flex: 1, padding: '8px 10px', border: `1px solid ${t.border}`, borderRadius: 6, background: t.surface, color: t.text }}
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{ padding: '8px 10px', border: `1px solid ${t.border}`, borderRadius: 6, background: t.surface, color: t.text }}
+        >
+          {statuses.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
 
-	const titleStyle = {
-		fontSize: '24px',
-		fontWeight: '700',
-		letterSpacing: '-0.5px',
-	};
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
+        <thead>
+          <tr>
+            <th style={{ textAlign: 'left' }}>Invoice</th>
+            <th style={{ textAlign: 'left' }}>Carrier</th>
+            <th style={{ textAlign: 'left' }}>Amount</th>
+            <th style={{ textAlign: 'left' }}>Status</th>
+            <th style={{ textAlign: 'left' }}>Category</th>
+            <th style={{ textAlign: 'left' }}>Action</th>
+            <th style={{ textAlign: 'left' }}>Created</th>
+            <th style={{ textAlign: 'left' }}>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((ex) => (
+            <tr key={ex.id}>
+              <td>{ex.invoiceNumber}</td>
+              <td>{ex.carrier}</td>
+              <td>${Number(ex.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td>{ex.status}</td>
+              <td>
+                <select
+                  value={categories[ex.id] || ''}
+                  onChange={(e) => setCategories((prev) => ({ ...prev, [ex.id]: e.target.value }))}
+                >
+                  <option value="">Uncategorized</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td>
+                <select
+                  value={actions[ex.id] || ''}
+                  onChange={(e) => setActions((prev) => ({ ...prev, [ex.id]: e.target.value }))}
+                >
+                  <option value="">No Action</option>
+                  {ACTIONS.map((act) => (
+                    <option key={act} value={act}>
+                      {act}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td>{new Date(ex.createdAt).toLocaleDateString()}</td>
+              <td style={{ display: 'flex', gap: 8 }}>
+                <Link to={`/exceptions/${ex.id}`}>Drilldown</Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalException(ex);
+                    setModalOpen(true);
+                  }}
+                >
+                  Contact
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-	const filterBarStyle = {
-		display: 'flex',
-		gap: 12,
-		marginBottom: 24,
-		alignItems: 'center',
-	};
-
-	const inputStyle = {
-		flex: 1,
-		padding: '8px 12px',
-		backgroundColor: t.surface,
-		border: `1px solid ${t.border}`,
-		borderRadius: 4,
-		color: t.text,
-		fontSize: '13px',
-		minWidth: 200,
-	};
-
-	const selectStyle = {
-		padding: '8px 12px',
-		backgroundColor: t.surface,
-		border: `1px solid ${t.border}`,
-		borderRadius: 4,
-		color: t.text,
-		fontSize: '13px',
-		minWidth: 140,
-	};
-
-	const tableStyle = {
-		width: '100%',
-		borderCollapse: 'collapse',
-		fontSize: '13px',
-	};
-
-	const thStyle = {
-		padding: '8px 12px',
-		textAlign: 'left',
-		fontWeight: '600',
-		backgroundColor: t.surface,
-		borderBottom: `1px solid ${t.border}`,
-		color: t.textSecondary,
-		fontSize: '11px',
-		textTransform: 'uppercase',
-		letterSpacing: '0.3px',
-	};
-
-	const tdStyle = {
-		padding: '8px 12px',
-		borderBottom: `1px solid ${t.borderLight}`,
-		color: t.text,
-	};
-
-	const currencyStyle = {
-		...tdStyle,
-		color: t.positive,
-		fontWeight: '500',
-	};
-
-	return (
-		<div style={containerStyle}>
-			<div style={headerStyle}>
-				<h1 style={titleStyle}>Exceptions</h1>
-				{loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
-			</div>
-
-			{error && (
-				<div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-					Backend error, using mock data: {error}
-				</div>
-			)}
-
-			<div style={filterBarStyle}>
-				<input
-					type="text"
-					placeholder="Search by invoice, carrier, or reason"
-					value={query}
-					onChange={(e) => setQuery(e.target.value)}
-					style={{ ...inputStyle, flex: 1 }}
-				/>
-				<select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={selectStyle}>
-					{statuses.map((s) => (
-						<option key={s} value={s}>
-							{s}
-						</option>
-					))}
-				</select>
-			</div>
-
-			{filtered.length === 0 ? (
-				<div style={{ padding: '32px', textAlign: 'center', color: t.textSecondary }}>
-					No exceptions found.
-				</div>
-			) : (
-				<table style={tableStyle}>
-					<thead>
-						<tr>
-							<th style={thStyle}>Invoice</th>
-							<th style={thStyle}>Carrier</th>
-							<th style={thStyle}>Amount</th>
-							<th style={thStyle}>Savings</th>
-							<th style={thStyle}>Status</th>
-							<th style={thStyle}>Reason</th>
-							<th style={thStyle}>Category</th>
-							<th style={thStyle}>Action</th>
-							<th style={thStyle}>Created</th>
-							<th style={thStyle}></th>
-						</tr>
-					</thead>
-					<tbody>
-						{filtered.map((ex) => (
-							<tr key={ex.id}>
-								<td style={tdStyle}>{ex.invoiceNumber}</td>
-								<td style={tdStyle}>{ex.carrier}</td>
-								<td style={currencyStyle}>
-									${ex.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-								</td>
-								<td style={currencyStyle}>
-									{ex.savings ? `$${ex.savings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-								</td>
-								<td style={tdStyle}>{ex.status}</td>
-								<td style={{ ...tdStyle, fontSize: '12px' }}>{ex.reason}</td>
-								<td style={tdStyle}>
-									<select
-										value={categories[ex.id] || ''}
-										onChange={e => setCategories(c => ({ ...c, [ex.id]: e.target.value }))}
-										style={{ ...selectStyle, minWidth: 120 }}
-									>
-										<option value="">Uncategorized</option>
-										{CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-									</select>
-								</td>
-								<td style={tdStyle}>
-									<select
-										value={actions[ex.id] || ''}
-										onChange={e => setActions(a => ({ ...a, [ex.id]: e.target.value }))}
-										style={{ ...selectStyle, minWidth: 100 }}
-									>
-										<option value="">No Action</option>
-										{ACTIONS.map(act => <option key={act} value={act}>{act}</option>)}
-									</select>
-								</td>
-								<td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
-									{new Date(ex.createdAt).toLocaleDateString()}
-								</td>
-								<td style={tdStyle}>
-									<Link
-										to={`/exceptions/${ex.id}`}
-										style={{
-											background: '#fff',
-											color: '#1976d2',
-											border: '1px solid #1976d2',
-											borderRadius: 4,
-											padding: '6px 14px',
-											fontWeight: 600,
-											fontSize: 13,
-											cursor: 'pointer',
-											textDecoration: 'none',
-									}}
-									>
-										Drilldown
-									</Link>
-									<button
-										style={{
-											background: '#1976d2',
-											color: '#fff',
-											border: 'none',
-											borderRadius: 4,
-											padding: '6px 14px',
-											fontWeight: 600,
-											fontSize: 13,
-											cursor: 'pointer',
-									}}
-									onClick={() => handleContactClick(ex)}
-									>
-									Contact
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			)}
-
-			<ContactCustomerModal
-				open={modalOpen}
-				onClose={() => setModalOpen(false)}
-				onSend={handleSendMessage}
-				exception={modalException}
-				customer={null}
-				invoice={null}
-			/>
-		</div>
-	);
+      <ContactCustomerModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSend={handleSendMessage}
+        exception={modalException}
+        customer={null}
+        invoice={null}
+      />
+    </div>
+  );
 }
