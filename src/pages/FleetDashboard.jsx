@@ -1,5 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useMemo, useState } from 'react';
 
 // Simple Error Boundary
 class ErrorBoundary extends React.Component {
@@ -25,9 +24,7 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-ErrorBoundary.propTypes = { children: PropTypes.node };
-import { getDashboard } from '../api/client';
-import { useVehicleSocket } from '../services/vehicleSocket';
+ErrorBoundary.defaultProps = { children: null };
 // import DriverCommandCardModern from '../components/DriverCommandCardModern';
 // Placeholder icons (replace with your icon components or SVGs)
 const IconBus = () => <span role="img" aria-label="bus" style={{fontSize: 24}}>🚌</span>;
@@ -69,39 +66,24 @@ const LineChart = () => (
 
 // Mock summary data
 
+// Fleet-specific mock data (no fleet API exists yet)
+const MOCK_FLEET_DATA = {
+  summary: { totalVehicles: 42, vehiclesActive: 31, utilization: 74, avgFuel: 7.2 },
+  drivers: [
+    { id: 1, name: 'Alex Miller', company: 'Opscale Freight', compliance: 92, telematics: { status: 'Driving', location: 'Dallas, TX', eta: '14:30', times: ['6:45', '5:15', '2:30'], updatedMinutesAgo: 3, speed: '62 mph' }, docs: [{ name: 'CDL License', status: 'Complete' }, { name: 'Medical Certificate', status: 'Complete' }, { name: 'MVR', status: 'Pending' }, { name: 'Drug Test', status: 'Complete' }] },
+    { id: 2, name: 'Sarah Lee', company: 'Opscale Freight', compliance: 78, telematics: { status: 'Sleeper', location: 'Chicago, IL', eta: '09:00', times: ['11:00', '0:45', '0:00'], updatedMinutesAgo: 12, speed: '0 mph' }, docs: [{ name: 'CDL License', status: 'Complete' }, { name: 'Medical Certificate', status: 'Expired' }, { name: 'MVR', status: 'Complete' }, { name: 'Drug Test', status: 'Pending' }] },
+    { id: 3, name: 'John Smith', company: 'Opscale Freight', compliance: 65, telematics: { status: 'Off Duty', location: 'Miami, FL', eta: 'N/A', times: ['0:00', '10:00', '0:00'], updatedMinutesAgo: 47, speed: '0 mph' }, docs: [{ name: 'CDL License', status: 'Expired' }, { name: 'Medical Certificate', status: 'Pending' }, { name: 'MVR', status: 'Pending' }, { name: 'Drug Test', status: 'Complete' }] },
+  ],
+  vehicles: [],
+};
+
 // Dashboard state hooks
 function useFleetDashboardData() {
-  const [summary, setSummary] = useState({});
-  const [drivers, setDrivers] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    setLoading(true);
-    getDashboard()
-      .then((data) => {
-        setSummary({
-          totalVehicles: data?.totalVehicles || 0,
-          vehiclesActive: data?.activeVehicles || 0,
-          utilization: Math.round((data?.utilizationRate || 0) * 100),
-          avgFuel: data?.avgMPG || 0,
-        });
-        setDrivers(data?.drivers || []);
-        setVehicles(data?.vehicles || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err);
-        setLoading(false);
-      });
-  }, []);
-
-  // WebSocket for live vehicle updates
-  useVehicleSocket((update) => {
-    setVehicles((prev) => prev.map(v => v.id === update.id ? { ...v, ...update } : v));
-  });
-
+  const [summary] = useState(MOCK_FLEET_DATA.summary);
+  const [drivers] = useState(MOCK_FLEET_DATA.drivers);
+  const [vehicles] = useState(MOCK_FLEET_DATA.vehicles);
+  const loading = false;
+  const error = null;
   return { summary, drivers, vehicles, loading, error };
 }
 
@@ -474,11 +456,9 @@ function ELDTableCard({ rows }) {
   );
 }
 
+export default function FleetDashboard() {
   const { summary, drivers, vehicles, loading, error } = useFleetDashboardData();
-  const [selectedDriver, setSelectedDriver] = useState(null);
-  useEffect(() => {
-    if (drivers.length && !selectedDriver) setSelectedDriver(drivers[0]);
-  }, [drivers]);
+  const [selectedDriver, setSelectedDriver] = useState(drivers[0] ?? null);
 
   if (error) {
     return (
@@ -672,4 +652,5 @@ function ELDTableCard({ rows }) {
       </div>
     </>
   );
+}
 

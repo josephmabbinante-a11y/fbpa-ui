@@ -144,98 +144,6 @@ export default function Invoices() {
         <KPIWithTrend label="Total Savings" value={12450.75} format="currency" delta={12} trendData={[]} trendColor="#10b981" />
         <KPIWithTrend label="Pending" value={23} delta={0} trendData={[]} trendColor="#f59e0b" />
       </div>
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
-        <ExceptionBreakdownChart data={[{ name: 'Rate Mismatch', value: 34, fill: '#8884d8' }, { name: 'Duplicate', value: 28, fill: '#82ca9d' }, { name: 'Accessorial', value: 15, fill: '#ffc658' }, { name: 'Other', value: 12, fill: '#ff8042' }]} />
-        <SavingsByCarrierChart data={[{ carrier: 'FastShip', savings: 2450.75, invoiceCount: 345 }, { carrier: 'Oceanic', savings: 1980.50, invoiceCount: 312 }, { carrier: 'RailMax', savings: 1750.25, invoiceCount: 289 }, { carrier: 'AirLogistics', savings: 1520.10, invoiceCount: 201 }, { carrier: 'Express Co', savings: 1248.15, invoiceCount: 156 }]} />
-      </div>
-
-      <CollapsibleSection title="Recent Activity" defaultOpen={true}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
-              <th style={{ textAlign: 'left', padding: 8 }}>Invoice/File</th>
-              <th style={{ textAlign: 'left', padding: 8 }}>Amount</th>
-              <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-              <th style={{ textAlign: 'left', padding: 8 }}>Timestamp</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ padding: 8 }}>exception</td>
-              <td style={{ padding: 8 }}>INV-1001</td>
-              <td style={{ padding: 8 }}>$1,245.67</td>
-              <td style={{ padding: 8 }}>Review</td>
-              <td style={{ padding: 8 }}>2/9/2026</td>
-            </tr>
-            <tr>
-              <td style={{ padding: 8 }}>upload</td>
-              <td style={{ padding: 8 }}>feb-9-invoices.csv</td>
-              <td style={{ padding: 8 }}>42</td>
-              <td style={{ padding: 8 }}>Processed</td>
-              <td style={{ padding: 8 }}>2/9/2026</td>
-            </tr>
-            <tr>
-              <td style={{ padding: 8 }}>exception</td>
-              <td style={{ padding: 8 }}>INV-1002</td>
-              <td style={{ padding: 8 }}>$980.5</td>
-              <td style={{ padding: 8 }}>Fail</td>
-              <td style={{ padding: 8 }}>2/9/2026</td>
-            </tr>
-          </tbody>
-        </table>
-      </CollapsibleSection>
-
-      <div className="ui-row">
-        <input
-          type="text"
-          placeholder="Search invoices..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="ui-input"
-          style={{ width: 240 }}
-        />
-        <span className="ui-subtitle">
-          Showing {filtered.length} of {data.length}
-        </span>
-      </div>
-
-      {filtered.length > 0 ? (
-        <div className="ui-table-wrap">
-          <table className="ui-table">
-            <thead>
-              <tr>
-                <th>Invoice ID</th>
-                <th>Carrier</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Exceptions</th>
-                <th>Upload Date</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate(`/invoices/${invoice.id}`)}>
-                    {invoice.id}
-                  </td>
-                  <td>{invoice.carrier}</td>
-                  <td style={{ color: "var(--success)", fontWeight: 600 }}>
-                    ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td>{invoice.status}</td>
-                  <td>{invoice.exceptions}</td>
-                  <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{new Date(invoice.uploadDate).toLocaleDateString()}</td>
-                  <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{invoice.description || "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <InlineAlert tone="warn">No invoices found.</InlineAlert>
-      )}
 
       <CollapsibleSection title="Invoice Imaging" defaultOpen={true}>
         <div className="ui-grid-wide" style={{ alignItems: "start" }}>
@@ -351,6 +259,102 @@ export default function Invoices() {
           </div>
         </div>
       </CollapsibleSection>
+
+      <CollapsibleSection title="Recent Activity" defaultOpen={true}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Invoice/File</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Amount</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ padding: 8 }}>exception</td>
+              <td style={{ padding: 8 }}>INV-1001</td>
+              <td style={{ padding: 8 }}>$1,245.67</td>
+              <td style={{ padding: 8 }}>Review</td>
+              <td style={{ padding: 8 }}>2/9/2026</td>
+            </tr>
+            <tr>
+              <td style={{ padding: 8 }}>upload</td>
+              <td style={{ padding: 8 }}>feb-9-invoices.csv</td>
+              <td style={{ padding: 8 }}>42</td>
+              <td style={{ padding: 8 }}>Processed</td>
+              <td style={{ padding: 8 }}>2/9/2026</td>
+            </tr>
+            <tr>
+              <td style={{ padding: 8 }}>exception</td>
+              <td style={{ padding: 8 }}>INV-1002</td>
+              <td style={{ padding: 8 }}>$980.5</td>
+              <td style={{ padding: 8 }}>Fail</td>
+              <td style={{ padding: 8 }}>2/9/2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </CollapsibleSection>
+
+      <div className="ui-row">
+        <input
+          type="text"
+          placeholder="Search invoices..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="ui-input"
+          style={{ width: 240 }}
+        />
+        <span className="ui-subtitle">
+          Showing {filtered.length} of {data.length}
+        </span>
+      </div>
+
+      {filtered.length > 0 ? (
+        <div className="ui-table-wrap">
+          <table className="ui-table">
+            <thead>
+              <tr>
+                <th>Invoice ID</th>
+                <th>Carrier</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Exceptions</th>
+                <th>Upload Date</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate(`/invoices/${invoice.id}`)}>
+                    {invoice.id}
+                  </td>
+                  <td>{invoice.carrier}</td>
+                  <td style={{ color: "var(--success)", fontWeight: 600 }}>
+                    ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td>{invoice.status}</td>
+                  <td>{invoice.exceptions}</td>
+                  <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{new Date(invoice.uploadDate).toLocaleDateString()}</td>
+                  <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{invoice.description || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <InlineAlert tone="warn">No invoices found.</InlineAlert>
+      )}
+
+      <CollapsibleSection title="Analytics" defaultOpen={true}>
+        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
+          <ExceptionBreakdownChart data={[{ name: 'Rate Mismatch', value: 34, fill: '#8884d8' }, { name: 'Duplicate', value: 28, fill: '#82ca9d' }, { name: 'Accessorial', value: 15, fill: '#ffc658' }, { name: 'Other', value: 12, fill: '#ff8042' }]} />
+          <SavingsByCarrierChart data={[{ carrier: 'FastShip', savings: 2450.75, invoiceCount: 345 }, { carrier: 'Oceanic', savings: 1980.50, invoiceCount: 312 }, { carrier: 'RailMax', savings: 1750.25, invoiceCount: 289 }, { carrier: 'AirLogistics', savings: 1520.10, invoiceCount: 201 }, { carrier: 'Express Co', savings: 1248.15, invoiceCount: 156 }]} />
+        </div>
+      </CollapsibleSection>
+
     </div>
   );
 }

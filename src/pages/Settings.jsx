@@ -1,6 +1,5 @@
 import RoleManagement from '../components/admin/RoleManagement';
-
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminControlCard from '../components/admin/AdminControlCard';
 import CompanyInfoForm from '../components/admin/CompanyInfoForm';
 import LogoUpload from '../components/admin/LogoUpload';
@@ -9,94 +8,895 @@ import UserManagement from '../components/admin/UserManagement';
 import DefaultMarginTargets from '../components/admin/DefaultMarginTargets';
 import RoutingDefaults from '../components/admin/RoutingDefaults';
 import NotificationSettings from '../components/admin/NotificationSettings';
+import { getUsers, register, updateUser } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
+import { clearAccessToken } from '../utils/authToken';
 
 const adminSections = [
+  {
+    icon: 'account',
+    title: 'Account & Profile',
+    description: 'Manage your personal profile, team, billing, integrations, API keys, and preferences.',
+    actions: ['Profile', 'Team Management', 'Billing & Plan', 'Integrations', 'API Keys', 'Preferences'],
+  },
   {
     icon: 'company',
     title: 'Company & Organization',
     description: 'Manage company profile, branding, and operational defaults.',
-    actions: [
-      'Edit Company Info',
-      'Upload Logo',
-      'Currency & Units Settings',
-      'Default Margin Targets',
-      'Routing Defaults',
-      'Notification Settings',
-    ],
+    actions: ['Edit Company Info', 'Upload Logo', 'Currency & Units Settings', 'Default Margin Targets', 'Routing Defaults', 'Notification Settings'],
   },
   {
     icon: 'users',
     title: 'User & Permissions',
     description: 'Manage users, roles, and department access control.',
-    actions: [
-      'Add/Edit Users',
-      'Manage Roles',
-      'Permission Groups',
-      'Commission Overrides',
-      'Branch Management',
-    ],
+    actions: ['Add/Edit Users', 'Manage Roles', 'Permission Groups', 'Commission Overrides', 'Branch Management'],
   },
   {
     icon: 'freight',
     title: 'Load & Freight Configuration',
     description: 'Control load workflows and operational behaviors.',
-    actions: [
-      'Load Numbering Rules',
-      'Manifest Settings',
-      'Default Equipment Types',
-      'Workflow Automation Rules',
-      'Rate Logic Configuration',
-    ],
+    actions: ['Load Numbering Rules', 'Manifest Settings', 'Default Equipment Types', 'Workflow Automation Rules', 'Rate Logic Configuration'],
   },
   {
     icon: 'audit',
     title: 'Audit & Financial Controls',
     description: 'Configure audit rules and financial safeguards.',
-    actions: [
-      'Accessorial Validation Rules',
-      'Carrier Overcharge Thresholds',
-      'Invoice Audit Settings',
-      'Profit Margin Alerts',
-      'Payment Terms Settings',
-    ],
+    actions: ['Accessorial Validation Rules', 'Carrier Overcharge Thresholds', 'Invoice Audit Settings', 'Profit Margin Alerts', 'Payment Terms Settings'],
   },
   {
     icon: 'documents',
     title: 'Documents & Reporting',
     description: 'Customize document templates and reporting output.',
-    actions: [
-      'Carrier Confirmations',
-      'Invoice Templates',
-      'Bill of Lading Defaults',
-      'Font & Branding Settings',
-      'Reporting Configuration',
-    ],
+    actions: ['Carrier Confirmations', 'Invoice Templates', 'Bill of Lading Defaults', 'Font & Branding Settings', 'Reporting Configuration'],
   },
   {
     icon: 'billing',
     title: 'Billing & Subscription',
     description: 'Manage subscription plan and feature access.',
-    actions: [
-      'View Current Plan',
-      'Upgrade Plan',
-      'Payment Methods',
-      'Usage Limits',
-      'Feature Access Controls',
-    ],
+    actions: ['View Current Plan', 'Upgrade Plan', 'Payment Methods', 'Usage Limits', 'Feature Access Controls'],
   },
 ];
 
+// ── Inline form components for each action ──────────────────────────────────
+
+function SimpleForm({ fields, onSave, t }) {
+  const [vals, setVals] = useState(() => Object.fromEntries(fields.map(f => [f.key, f.default || ''])));
+  const s = {
+    label: { fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' },
+    input: { padding: '8px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' },
+    row: { marginBottom: 14 },
+    btn: { marginTop: 8, padding: '9px 20px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
+  };
+  return (
+    <form onSubmit={e => { e.preventDefault(); onSave(vals); }}>
+      {fields.map(f => (
+        <div key={f.key} style={s.row}>
+          <label style={s.label}>{f.label}</label>
+          {f.type === 'select' ? (
+            <select value={vals[f.key]} onChange={e => setVals(v => ({ ...v, [f.key]: e.target.value }))} style={s.input}>
+              {f.options.map(o => <option key={o}>{o}</option>)}
+            </select>
+          ) : f.type === 'textarea' ? (
+            <textarea rows={3} value={vals[f.key]} onChange={e => setVals(v => ({ ...v, [f.key]: e.target.value }))} style={{ ...s.input, resize: 'vertical' }} />
+          ) : (
+            <input type={f.type || 'text'} value={vals[f.key]} onChange={e => setVals(v => ({ ...v, [f.key]: e.target.value }))} placeholder={f.placeholder || ''} style={s.input} />
+          )}
+        </div>
+      ))}
+      <button type="submit" style={s.btn}>Save Changes</button>
+    </form>
+  );
+}
+
+function ToggleList({ items, t }) {
+  const [enabled, setEnabled] = useState(() => Object.fromEntries(items.map(i => [i.key, i.default !== false])));
+  const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}`, fontSize: 13 };
+  const toggle = (active) => ({
+    width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+    background: active ? t.accent : t.border, position: 'relative', transition: 'background 0.2s',
+  });
+  return (
+    <div>
+      {items.map(item => (
+        <div key={item.key} style={row}>
+          <div>
+            <div style={{ fontWeight: 600 }}>{item.label}</div>
+            {item.desc && <div style={{ fontSize: 12, color: t.textSecondary }}>{item.desc}</div>}
+          </div>
+          <button type="button" style={toggle(enabled[item.key])} onClick={() => setEnabled(v => ({ ...v, [item.key]: !v[item.key] }))}>
+            <span style={{ position: 'absolute', top: 3, left: enabled[item.key] ? 18 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ActionPanel({ action, t, theme, setTheme }) {
+  const save = (data) => alert('Saved: ' + JSON.stringify(data, null, 2));
+  const sectionStyle = { background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 20, marginBottom: 18 };
+  const title = (txt) => <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: t.text }}>{txt}</div>;
+  const listRow = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}`, fontSize: 13 };
+  const btn = (label, color = t.accent, onClick) => (
+    <button type="button" onClick={onClick} style={{ padding: '8px 16px', background: color, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{label}</button>
+  );
+  const secBtn = (label, onClick) => (
+    <button type="button" onClick={onClick} style={{ padding: '8px 16px', background: 'transparent', color: t.accent, border: `1px solid ${t.accent}`, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{label}</button>
+  );
+
+  switch (action) {
+    // ── Company & Org ─────────────────────────────────────────────────────────
+    case 'Edit Company Info':
+      return <CompanyInfoForm onSave={save} />;
+    case 'Upload Logo':
+      return <LogoUpload onUpload={f => alert('Logo: ' + f.name)} />;
+    case 'Currency & Units Settings':
+      return <CurrencyUnitsForm onSave={save} />;
+    case 'Default Margin Targets':
+      return <DefaultMarginTargets onSave={save} />;
+    case 'Routing Defaults':
+      return <RoutingDefaults onSave={save} />;
+    case 'Notification Settings':
+      return <NotificationSettings onSave={save} />;
+
+    // ── Users & Permissions ───────────────────────────────────────────────────
+    case 'Add/Edit Users':
+      return <UserManagement />;
+    case 'Manage Roles':
+      return <RoleManagement />;
+    case 'Permission Groups':
+      return (
+        <div style={sectionStyle}>
+          {title('Permission Groups')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'name', label: 'Group Name', placeholder: 'e.g. Finance Team' },
+            { key: 'description', label: 'Description', type: 'textarea' },
+            { key: 'access', label: 'Access Level', type: 'select', options: ['Read Only', 'Standard', 'Admin', 'Full Access'], default: 'Standard' },
+          ]} />
+        </div>
+      );
+    case 'Commission Overrides':
+      return (
+        <div style={sectionStyle}>
+          {title('Commission Overrides')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'agent', label: 'Agent Name', placeholder: 'e.g. Sarah Martinez' },
+            { key: 'baseRate', label: 'Base Commission Rate (%)', type: 'number', placeholder: '10' },
+            { key: 'overrideRate', label: 'Override Rate (%)', type: 'number', placeholder: '12' },
+            { key: 'effectiveDate', label: 'Effective Date', type: 'date' },
+          ]} />
+        </div>
+      );
+    case 'Branch Management':
+      return (
+        <div style={sectionStyle}>
+          {title('Branch Management')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'name', label: 'Branch Name', placeholder: 'e.g. Chicago Office' },
+            { key: 'code', label: 'Branch Code', placeholder: 'e.g. CHI-01' },
+            { key: 'address', label: 'Address', placeholder: '123 Main St' },
+            { key: 'manager', label: 'Branch Manager', placeholder: 'Full name' },
+            { key: 'phone', label: 'Phone', type: 'tel', placeholder: '+1 (555) 000-0000' },
+          ]} />
+        </div>
+      );
+
+    // ── Load & Freight ────────────────────────────────────────────────────────
+    case 'Load Numbering Rules':
+      return (
+        <div style={sectionStyle}>
+          {title('Load Numbering Rules')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'prefix', label: 'Prefix', placeholder: 'e.g. LD-' },
+            { key: 'startNum', label: 'Starting Number', type: 'number', placeholder: '1000' },
+            { key: 'padding', label: 'Zero Padding (digits)', type: 'number', placeholder: '6' },
+            { key: 'resetFrequency', label: 'Reset Frequency', type: 'select', options: ['Never', 'Annually', 'Monthly'], default: 'Never' },
+          ]} />
+        </div>
+      );
+    case 'Manifest Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Manifest Settings')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'autoGenerate', label: 'Auto-Generate Manifests', type: 'select', options: ['On Load Create', 'On Dispatch', 'Manual Only'], default: 'On Dispatch' },
+            { key: 'includeDriver', label: 'Include Driver Signature Line', type: 'select', options: ['Yes', 'No'], default: 'Yes' },
+            { key: 'copies', label: 'Default Print Copies', type: 'number', placeholder: '2' },
+            { key: 'footer', label: 'Footer Text', type: 'textarea' },
+          ]} />
+        </div>
+      );
+    case 'Default Equipment Types':
+      return (
+        <div style={sectionStyle}>
+          {title('Default Equipment Types')}
+          <ToggleList t={t} items={[
+            { key: 'van', label: 'Dry Van', desc: 'Standard enclosed trailer' },
+            { key: 'reefer', label: 'Refrigerated (Reefer)', desc: 'Temperature-controlled' },
+            { key: 'flatbed', label: 'Flatbed', desc: 'Open-deck trailer' },
+            { key: 'stepDeck', label: 'Step Deck', desc: 'Low-clearance freight' },
+            { key: 'ltl', label: 'LTL', desc: 'Less-than-truckload' },
+            { key: 'tanker', label: 'Tanker', desc: 'Liquid freight' },
+          ]} />
+        </div>
+      );
+    case 'Workflow Automation Rules':
+      return (
+        <div style={sectionStyle}>
+          {title('Workflow Automation Rules')}
+          <ToggleList t={t} items={[
+            { key: 'autoDispatch', label: 'Auto-Dispatch on Carrier Accept', desc: 'Automatically dispatch load when carrier confirms' },
+            { key: 'autoInvoice', label: 'Auto-Generate Invoice on Delivery', desc: 'Create invoice when POD is uploaded' },
+            { key: 'escalateException', label: 'Escalate Overdue Exceptions', desc: 'Alert manager if exception not resolved in 48h' },
+            { key: 'rateAlert', label: 'Rate Variance Alert', desc: 'Notify if carrier rate differs from contract by > 5%' },
+          ]} />
+        </div>
+      );
+    case 'Rate Logic Configuration':
+      return (
+        <div style={sectionStyle}>
+          {title('Rate Logic Configuration')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'baseMethod', label: 'Base Rate Method', type: 'select', options: ['Per Mile', 'Flat Rate', 'Percentage of Linehaul'], default: 'Per Mile' },
+            { key: 'fuelSurcharge', label: 'Fuel Surcharge (%)', type: 'number', placeholder: '8.5' },
+            { key: 'detentionRate', label: 'Detention Rate ($/hr)', type: 'number', placeholder: '75' },
+            { key: 'layoverRate', label: 'Layover Rate ($/day)', type: 'number', placeholder: '250' },
+            { key: 'tolerancePct', label: 'Overcharge Tolerance (%)', type: 'number', placeholder: '3' },
+          ]} />
+        </div>
+      );
+
+    // ── Audit & Financial ─────────────────────────────────────────────────────
+    case 'Accessorial Validation Rules':
+      return (
+        <div style={sectionStyle}>
+          {title('Accessorial Validation Rules')}
+          <ToggleList t={t} items={[
+            { key: 'liftgate', label: 'Validate Liftgate Charges', desc: 'Flag if liftgate billed without appointment note' },
+            { key: 'detention', label: 'Validate Detention Charges', desc: 'Cross-check against ELD data' },
+            { key: 'fuel', label: 'Validate Fuel Surcharge', desc: 'Compare against weekly DOE index' },
+            { key: 'residential', label: 'Validate Residential Delivery', desc: 'Confirm delivery address type' },
+            { key: 'hazmat', label: 'Validate Hazmat Fees', desc: 'Require manifest documentation' },
+          ]} />
+        </div>
+      );
+    case 'Carrier Overcharge Thresholds':
+      return (
+        <div style={sectionStyle}>
+          {title('Carrier Overcharge Thresholds')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'warnPct', label: 'Warning Threshold (%)', type: 'number', placeholder: '5', default: '5' },
+            { key: 'flagPct', label: 'Flag for Review (%)', type: 'number', placeholder: '10', default: '10' },
+            { key: 'blockPct', label: 'Block Payment (%)', type: 'number', placeholder: '20', default: '20' },
+            { key: 'notifyEmail', label: 'Notify Email on Flag', type: 'email', placeholder: 'billing@company.com' },
+          ]} />
+        </div>
+      );
+    case 'Invoice Audit Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Invoice Audit Settings')}
+          <ToggleList t={t} items={[
+            { key: 'dupeCheck', label: 'Duplicate Invoice Detection', desc: 'Flag invoices with same carrier + amount within 30 days', default: true },
+            { key: 'rateConf', label: 'Rate Confirmation Matching', desc: 'Require matching rate confirmation on file', default: true },
+            { key: 'podRequired', label: 'POD Required for Payment', desc: 'Block payment until POD uploaded', default: true },
+            { key: 'autoApprove', label: 'Auto-Approve Clean Invoices', desc: 'Auto-approve if no exceptions detected', default: false },
+          ]} />
+        </div>
+      );
+    case 'Profit Margin Alerts':
+      return (
+        <div style={sectionStyle}>
+          {title('Profit Margin Alerts')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'targetMargin', label: 'Target Margin (%)', type: 'number', placeholder: '18', default: '18' },
+            { key: 'warnBelow', label: 'Warn Below (%)', type: 'number', placeholder: '12', default: '12' },
+            { key: 'alertBelow', label: 'Alert Below (%)', type: 'number', placeholder: '8', default: '8' },
+            { key: 'notifyManager', label: 'Notify Manager', type: 'select', options: ['Always', 'On Alert Only', 'Never'], default: 'On Alert Only' },
+          ]} />
+        </div>
+      );
+    case 'Payment Terms Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Payment Terms Settings')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'carrierTerms', label: 'Default Carrier Payment Terms', type: 'select', options: ['Net 15', 'Net 30', 'Net 45', 'QuickPay 2%/10'], default: 'Net 30' },
+            { key: 'customerTerms', label: 'Default Customer Invoice Terms', type: 'select', options: ['Net 15', 'Net 30', 'Net 45', 'Net 60'], default: 'Net 30' },
+            { key: 'lateFee', label: 'Late Fee (%)', type: 'number', placeholder: '1.5' },
+            { key: 'graceDays', label: 'Grace Period (days)', type: 'number', placeholder: '5' },
+          ]} />
+        </div>
+      );
+
+    // ── Documents & Reporting ─────────────────────────────────────────────────
+    case 'Carrier Confirmations':
+      return (
+        <div style={sectionStyle}>
+          {title('Carrier Confirmation Template')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'header', label: 'Confirmation Header', placeholder: 'Rate Confirmation' },
+            { key: 'terms', label: 'Terms & Conditions', type: 'textarea' },
+            { key: 'signatureLine', label: 'Signature Line Label', placeholder: 'Authorized Carrier Signature' },
+            { key: 'sendMethod', label: 'Send Method', type: 'select', options: ['Email', 'Fax', 'Portal', 'All'], default: 'Email' },
+          ]} />
+        </div>
+      );
+    case 'Invoice Templates':
+      return (
+        <div style={sectionStyle}>
+          {title('Invoice Templates')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'template', label: 'Default Template', type: 'select', options: ['Standard', 'Detailed', 'Summary', 'Custom'], default: 'Standard' },
+            { key: 'showLogo', label: 'Show Company Logo', type: 'select', options: ['Yes', 'No'], default: 'Yes' },
+            { key: 'paymentInstructions', label: 'Payment Instructions', type: 'textarea' },
+            { key: 'footerNote', label: 'Footer Note', type: 'textarea' },
+          ]} />
+        </div>
+      );
+    case 'Bill of Lading Defaults':
+      return (
+        <div style={sectionStyle}>
+          {title('Bill of Lading Defaults')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'bolPrefix', label: 'BOL Number Prefix', placeholder: 'BOL-' },
+            { key: 'shipper', label: 'Default Shipper Name', placeholder: 'Company name' },
+            { key: 'shipperAddr', label: 'Default Shipper Address', placeholder: '123 Main St' },
+            { key: 'terms', label: 'Default Freight Terms', type: 'select', options: ['Prepaid', 'Collect', '3rd Party'], default: 'Prepaid' },
+            { key: 'specialInstructions', label: 'Special Instructions', type: 'textarea' },
+          ]} />
+        </div>
+      );
+    case 'Font & Branding Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Font & Branding Settings')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'primaryFont', label: 'Primary Font', type: 'select', options: ['Inter', 'Roboto', 'Open Sans', 'Exo 2', 'Helvetica'], default: 'Inter' },
+            { key: 'primaryColor', label: 'Primary Brand Color (hex)', placeholder: '#0a7cff' },
+            { key: 'accentColor', label: 'Accent Color (hex)', placeholder: '#18d2ff' },
+            { key: 'logoPosition', label: 'Logo Position on Documents', type: 'select', options: ['Top Left', 'Top Center', 'Top Right'], default: 'Top Left' },
+          ]} />
+        </div>
+      );
+    case 'Reporting Configuration':
+      return (
+        <div style={sectionStyle}>
+          {title('Reporting Configuration')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'defaultPeriod', label: 'Default Report Period', type: 'select', options: ['Last 7 Days', 'Last 30 Days', 'Last Quarter', 'YTD'], default: 'Last 30 Days' },
+            { key: 'exportFormat', label: 'Default Export Format', type: 'select', options: ['CSV', 'XLSX', 'PDF'], default: 'XLSX' },
+            { key: 'scheduledEmail', label: 'Scheduled Report Email', type: 'email', placeholder: 'reports@company.com' },
+            { key: 'frequency', label: 'Delivery Frequency', type: 'select', options: ['Daily', 'Weekly', 'Monthly', 'Off'], default: 'Weekly' },
+          ]} />
+        </div>
+      );
+
+    // ── Billing & Subscription ─────────────────────────────────────────────────
+    case 'View Current Plan':
+      return (
+        <div>
+          <div style={sectionStyle}>
+            {title('Current Subscription Plan')}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 20, fontWeight: 700 }}>Professional Plan</div>
+                <div style={{ fontSize: 13, color: t.textSecondary }}>$499/month • Unlimited users • Advanced analytics • Priority support</div>
+              </div>
+              <span style={{ background: '#10b981', color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700 }}>Active</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {[['Next Billing Date', 'Mar 1, 2026'], ['Seats Used', '8 / Unlimited'], ['Storage', '42 GB / 500 GB'], ['API Calls', '12,400 / month']].map(([k, v]) => (
+                <div key={k} style={{ background: t.bgAlt, borderRadius: 6, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 11, color: t.textSecondary, fontWeight: 600 }}>{k}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    case 'Upgrade Plan':
+      return (
+        <div style={{ display: 'grid', gap: 12 }}>
+          {[
+            { name: 'Starter', price: '$99/mo', features: ['5 Users', 'Basic Analytics', 'Email Support'], current: false },
+            { name: 'Professional', price: '$499/mo', features: ['Unlimited Users', 'Advanced Analytics', 'Priority Support', 'API Access'], current: true },
+            { name: 'Enterprise', price: 'Custom', features: ['Custom Integrations', 'Dedicated Success Manager', 'SLA Guarantee', 'White Labeling'], current: false },
+          ].map(plan => (
+            <div key={plan.name} style={{ ...sectionStyle, border: plan.current ? `2px solid ${t.accent}` : `1px solid ${t.border}`, position: 'relative' }}>
+              {plan.current && <span style={{ position: 'absolute', top: 12, right: 12, background: t.accent, color: '#fff', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>Current</span>}
+              <div style={{ fontSize: 16, fontWeight: 700 }}>{plan.name} — {plan.price}</div>
+              <ul style={{ margin: '10px 0 12px 0', paddingLeft: 18, color: t.textSecondary, fontSize: 13 }}>
+                {plan.features.map(f => <li key={f}>{f}</li>)}
+              </ul>
+              {!plan.current && <button style={{ padding: '8px 18px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Select Plan</button>}
+            </div>
+          ))}
+        </div>
+      );
+    case 'Payment Methods':
+      return (
+        <div style={sectionStyle}>
+          {title('Payment Methods')}
+          <div style={{ ...listRow, marginBottom: 4 }}>
+            <div><div style={{ fontWeight: 600 }}>Visa ending in 4242</div><div style={{ fontSize: 12, color: t.textSecondary }}>Expires 12/27 • Default</div></div>
+            {secBtn('Remove')}
+          </div>
+          <div style={{ marginTop: 16 }}>{btn('+ Add Payment Method', t.accent)}</div>
+        </div>
+      );
+    case 'Usage Limits':
+      return (
+        <div style={sectionStyle}>
+          {title('Usage Limits')}
+          {[['API Calls', 12400, 50000], ['Storage', 42, 500], ['Users', 8, 9999], ['Uploads', 340, 1000]].map(([label, used, max]) => (
+            <div key={label} style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                <span style={{ fontWeight: 600 }}>{label}</span>
+                <span style={{ color: t.textSecondary }}>{used.toLocaleString()} / {max === 9999 ? 'Unlimited' : max.toLocaleString()}</span>
+              </div>
+              <div style={{ height: 8, background: t.border, borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(100, (used / max) * 100)}%`, background: used / max > 0.8 ? '#ef4444' : t.accent, borderRadius: 4 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    case 'Feature Access Controls':
+      return (
+        <div style={sectionStyle}>
+          {title('Feature Access Controls')}
+          <ToggleList t={t} items={[
+            { key: 'rateLogic', label: 'Rate Logic Tool', desc: 'Access to rate calculation engine' },
+            { key: 'laneIntel', label: 'Lane Intelligence', desc: 'Market data and lane analytics' },
+            { key: 'fleetDash', label: 'Fleet Dashboard', desc: 'Driver and vehicle management' },
+            { key: 'apiAccess', label: 'API Access', desc: 'External API key generation' },
+            { key: 'bulkExport', label: 'Bulk Export', desc: 'Export large datasets as CSV/XLSX' },
+            { key: 'aiBot', label: 'AI Assistant', desc: 'Copilot chat assistant' },
+          ]} />
+        </div>
+      );
+
+    default:
+      return <div style={{ color: t.textSecondary, fontSize: 13 }}>Select an action to begin configuration.</div>;
+  }
+}
+
+// ── Account & Profile Panel ──────────────────────────────────────────────────
+
+function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
+  const tabFromAction = (a) => {
+    if (['Team Management', 'Billing & Plan', 'Integrations', 'API Keys', 'Preferences'].includes(a)) return a;
+    return 'Profile';
+  };
+  const [tab, setTab] = useState(tabFromAction(activeAction));
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [teamLoading, setTeamLoading] = useState(false);
+  const [teamMessage, setTeamMessage] = useState('');
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteForm, setInviteForm] = useState({ name: '', email: '', password: '', role: 'user' });
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', role: 'user' });
+
+  useEffect(() => {
+    setTab(tabFromAction(activeAction));
+  }, [activeAction]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadTeamMembers = async () => {
+      if (tab !== 'Team Management') return;
+      setTeamLoading(true);
+      const res = await getUsers();
+      if (!mounted) return;
+
+      if (res?.error) {
+        setTeamMessage(res.error);
+      } else {
+        setTeamMembers(Array.isArray(res?.users) ? res.users : []);
+        setTeamMessage('');
+      }
+      setTeamLoading(false);
+    };
+
+    loadTeamMembers();
+    return () => {
+      mounted = false;
+    };
+  }, [tab]);
+
+  const handleInviteChange = (event) => {
+    const { name, value } = event.target;
+    setInviteForm((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleInviteSubmit = async (event) => {
+    event.preventDefault();
+    setTeamMessage('');
+    setTeamLoading(true);
+
+    const res = await register({
+      name: inviteForm.name.trim(),
+      email: inviteForm.email.trim(),
+      password: inviteForm.password,
+      role: inviteForm.role,
+    });
+
+    if (res?.error) {
+      setTeamMessage(res.error);
+      setTeamLoading(false);
+      return;
+    }
+
+    const created = res?.user;
+    if (created) {
+      setTeamMembers((previous) => [...previous, created]);
+    }
+    setTeamMessage('Team member invited successfully.');
+    setInviteForm({ name: '', email: '', password: '', role: 'user' });
+    setShowInviteForm(false);
+    setTeamLoading(false);
+  };
+
+  const beginEditMember = (user) => {
+    setEditingUserId(user.id);
+    setEditForm({
+      name: String(user.name || ''),
+      role: user.role === 'admin' ? 'admin' : 'user',
+    });
+    setTeamMessage('');
+  };
+
+  const cancelEditMember = () => {
+    setEditingUserId(null);
+    setEditForm({ name: '', role: 'user' });
+  };
+
+  const saveEditMember = async (userId) => {
+    setTeamMessage('');
+    setTeamLoading(true);
+
+    const res = await updateUser(userId, {
+      name: editForm.name.trim(),
+      role: editForm.role,
+    });
+
+    if (res?.error) {
+      setTeamMessage(res.error);
+      setTeamLoading(false);
+      return;
+    }
+
+    const updated = res?.user;
+    if (updated) {
+      setTeamMembers((previous) => previous.map((user) => (user.id === updated.id ? updated : user)));
+    }
+    setTeamMessage('Team member updated successfully.');
+    cancelEditMember();
+    setTeamLoading(false);
+  };
+
+  const tabs = ['Profile', 'Team Management', 'Billing & Plan', 'Integrations', 'API Keys', 'Preferences'];
+  const tabStyle = (active) => ({
+    padding: '10px 16px', fontSize: 13, fontWeight: active ? 600 : 500,
+    color: active ? t.accent : t.textSecondary,
+    borderBottom: `2px solid ${active ? t.accent : 'transparent'}`,
+    border: 'none', background: 'transparent', cursor: 'pointer', transition: 'all 0.2s',
+    whiteSpace: 'nowrap',
+  });
+  const sec = { background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 20, marginBottom: 16 };
+  const secTitle = (txt) => <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>{txt}</div>;
+  const fg2 = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 };
+  const lbl = { fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' };
+  const inp = { padding: '8px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' };
+  const primaryBtn = { padding: '9px 20px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' };
+  const secBtn = { ...primaryBtn, background: 'transparent', color: t.accent, border: `1px solid ${t.accent}` };
+  const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}`, fontSize: 13 };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 0, borderBottom: `1px solid ${t.border}`, marginBottom: 20, overflowX: 'auto' }}>
+        {tabs.map(tb => <button key={tb} style={tabStyle(tab === tb)} onClick={() => setTab(tb)}>{tb}</button>)}
+      </div>
+
+      {tab === 'Profile' && (
+        <>
+          <div style={sec}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: t.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 700, color: '#fff', flexShrink: 0 }}>JA</div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>Joseph Abbinante</div>
+                <div style={{ fontSize: 13, color: t.textSecondary }}>Admin • joseph@opscale.ai</div>
+                <button style={{ ...secBtn, padding: '5px 12px', fontSize: 12, marginTop: 6 }}>Change Avatar</button>
+              </div>
+            </div>
+            {secTitle('Personal Information')}
+            <div style={fg2}>
+              <div><label style={lbl}>First Name</label><input type="text" style={inp} defaultValue="Joseph" /></div>
+              <div><label style={lbl}>Last Name</label><input type="text" style={inp} defaultValue="Abbinante" /></div>
+            </div>
+            <div style={fg2}>
+              <div><label style={lbl}>Email</label><input type="email" style={inp} defaultValue="joseph@opscale.ai" /></div>
+              <div><label style={lbl}>Phone</label><input type="tel" style={inp} placeholder="+1 (555) 000-0000" /></div>
+            </div>
+            <button style={primaryBtn}>Save Changes</button>
+          </div>
+          <div style={sec}>
+            {secTitle('Company Information')}
+            <div style={fg2}>
+              <div><label style={lbl}>Company Name</label><input type="text" style={inp} defaultValue="Opscale Supply Chain" /></div>
+              <div><label style={lbl}>Website</label><input type="url" style={inp} defaultValue="https://opscale.ai" /></div>
+            </div>
+            <div style={fg2}>
+              <div><label style={lbl}>EIN</label><input type="text" style={inp} placeholder="XX-XXXXXXX" /></div>
+              <div><label style={lbl}>Address</label><input type="text" style={inp} placeholder="123 Business St" /></div>
+            </div>
+            <button style={primaryBtn}>Save Changes</button>
+          </div>
+          <div style={sec}>
+            {secTitle('Security')}
+            <div style={fg2}>
+              <div><label style={lbl}>Current Password</label><input type="password" style={inp} placeholder="••••••••" /></div>
+              <div><label style={lbl}>New Password</label><input type="password" style={inp} placeholder="••••••••" /></div>
+            </div>
+            <button style={primaryBtn}>Update Password</button>
+          </div>
+        </>
+      )}
+
+      {tab === 'Team Management' && (
+        <>
+          <div style={sec}>
+            {secTitle('Team Members')}
+            <div style={{ marginBottom: 14 }}>
+              <button style={primaryBtn} onClick={() => setShowInviteForm((value) => !value)}>
+                {showInviteForm ? 'Cancel Invite' : '+ Invite Team Member'}
+              </button>
+            </div>
+            {showInviteForm && (
+              <form onSubmit={handleInviteSubmit} style={{ marginBottom: 16, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12, background: t.bgAlt }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <input
+                    name="name"
+                    type="text"
+                    value={inviteForm.name}
+                    onChange={handleInviteChange}
+                    placeholder="Full name"
+                    style={inp}
+                    required
+                  />
+                  <input
+                    name="email"
+                    type="email"
+                    value={inviteForm.email}
+                    onChange={handleInviteChange}
+                    placeholder="Email"
+                    style={inp}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <input
+                    name="password"
+                    type="password"
+                    value={inviteForm.password}
+                    onChange={handleInviteChange}
+                    placeholder="Temporary password"
+                    minLength={8}
+                    style={inp}
+                    required
+                  />
+                  <select
+                    name="role"
+                    value={inviteForm.role}
+                    onChange={handleInviteChange}
+                    style={inp}
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <button type="submit" style={primaryBtn} disabled={teamLoading}>
+                  {teamLoading ? 'Inviting...' : 'Invite Team Member'}
+                </button>
+              </form>
+            )}
+
+            {teamMessage && (
+              <div style={{ marginBottom: 10, fontSize: 12, color: teamMessage.toLowerCase().includes('success') ? 'var(--success)' : 'var(--error)' }}>
+                {teamMessage}
+              </div>
+            )}
+
+            {teamMembers.map((u) => (
+              <div key={u.id || u.email} style={row}>
+                <div>
+                  {editingUserId === u.id ? (
+                    <input
+                      type="text"
+                      value={editForm.name}
+                      onChange={(event) => setEditForm((previous) => ({ ...previous, name: event.target.value }))}
+                      style={{ ...inp, minWidth: 200, marginBottom: 6 }}
+                    />
+                  ) : (
+                    <div style={{ fontWeight: 600 }}>{u.name || '—'}</div>
+                  )}
+                  <div style={{ fontSize: 12, color: t.textSecondary }}>{u.email}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  {editingUserId === u.id ? (
+                    <select
+                      value={editForm.role}
+                      onChange={(event) => setEditForm((previous) => ({ ...previous, role: event.target.value }))}
+                      style={{ ...inp, width: 110 }}
+                    >
+                      <option value="user">User</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  ) : (
+                    <span style={{ fontSize: 12, color: t.textSecondary, textTransform: 'capitalize' }}>{u.role || 'user'}</span>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#10b981' }}>Active</span>
+                  {editingUserId === u.id ? (
+                    <>
+                      <button
+                        type="button"
+                        style={{ ...primaryBtn, padding: '4px 10px', fontSize: 11 }}
+                        onClick={() => saveEditMember(u.id)}
+                        disabled={teamLoading}
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        style={{ ...secBtn, padding: '4px 10px', fontSize: 11 }}
+                        onClick={cancelEditMember}
+                        disabled={teamLoading}
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      style={{ ...secBtn, padding: '4px 10px', fontSize: 11 }}
+                      onClick={() => beginEditMember(u)}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {!teamLoading && teamMembers.length === 0 && !teamMessage && (
+              <div style={{ fontSize: 12, color: t.textSecondary }}>No team members found yet.</div>
+            )}
+          </div>
+        </>
+      )}
+
+      {tab === 'Billing & Plan' && (
+        <>
+          <div style={sec}>
+            {secTitle('Current Plan')}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>Professional Plan</div>
+                <div style={{ fontSize: 13, color: t.textSecondary }}>$499/month • Unlimited users • Advanced analytics</div>
+              </div>
+              <span style={{ background: '#10b981', color: '#fff', borderRadius: 20, padding: '4px 14px', fontSize: 12, fontWeight: 700 }}>Active</span>
+            </div>
+            <button style={secBtn}>Change Plan</button>
+          </div>
+          <div style={sec}>
+            {secTitle('Billing History')}
+            {[['Feb 1, 2026', 'Monthly subscription', '$499.00'], ['Jan 1, 2026', 'Monthly subscription', '$499.00'], ['Dec 1, 2025', 'Monthly subscription', '$499.00']].map(([date, desc, amount]) => (
+              <div key={date} style={row}>
+                <div><div style={{ fontWeight: 600 }}>{date}</div><div style={{ fontSize: 12, color: t.textSecondary }}>{desc}</div></div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600 }}>{amount}</span>
+                  <button style={{ ...secBtn, padding: '4px 10px', fontSize: 11 }}>Receipt</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {tab === 'Integrations' && (
+        <div style={sec}>
+          {secTitle('Connected Integrations')}
+          {[
+            { name: 'Stripe', desc: 'Payment processing', status: 'Connected' },
+            { name: 'Slack', desc: 'Notifications & alerts', status: 'Connected' },
+            { name: 'Google Sheets', desc: 'Data export', status: 'Not Connected' },
+            { name: 'QuickBooks', desc: 'Accounting sync', status: 'Not Connected' },
+            { name: 'Twilio', desc: 'SMS alerts', status: 'Not Connected' },
+          ].map(int => (
+            <div key={int.name} style={row}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{int.name}</div>
+                <div style={{ fontSize: 12, color: t.textSecondary }}>{int.desc}</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: int.status === 'Connected' ? '#10b981' : t.textSecondary }}>{int.status}</span>
+                <button style={{ ...secBtn, padding: '4px 10px', fontSize: 11 }}>{int.status === 'Connected' ? 'Configure' : 'Connect'}</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'API Keys' && (
+        <div style={sec}>
+          {secTitle('API Keys')}
+          <div style={{ background: t.bgAlt, borderRadius: 6, padding: 14, fontSize: 12, marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong>sk_live_4eC39Hq••••••••••••j81e</strong>
+                <div style={{ color: t.textSecondary, marginTop: 4 }}>Created Jan 15, 2026 • Last used 2 days ago</div>
+              </div>
+              <button style={{ ...secBtn, padding: '4px 10px', fontSize: 11 }}>Revoke</button>
+            </div>
+          </div>
+          <button style={primaryBtn}>+ Generate New Key</button>
+        </div>
+      )}
+
+      {tab === 'Preferences' && (
+        <>
+          <div style={sec}>
+            {secTitle('Appearance')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>Theme</span>
+              <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                {['light', 'dark'].map(th => (
+                  <button key={th} onClick={() => setTheme(th)} style={{
+                    padding: '6px 16px', borderRadius: 6, border: `1px solid ${theme === th ? t.accent : t.border}`,
+                    background: theme === th ? t.accent : 'transparent', color: theme === th ? '#fff' : t.textSecondary,
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                  }}>{th === 'light' ? '☀️ Light' : '🌙 Dark'}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div style={sec}>
+            {secTitle('Notifications')}
+            <ToggleList t={t} items={[
+              { key: 'emailExceptions', label: 'Email Alerts on Exceptions', desc: 'Get notified when rate issues are detected' },
+              { key: 'weeklyReports', label: 'Weekly Summary Reports', desc: 'Summary of loads, revenue, and margins' },
+              { key: 'invoiceReady', label: 'Invoice Ready Notifications', desc: 'Alert when new invoices are awaiting review' },
+              { key: 'smsAlerts', label: 'SMS Critical Alerts', desc: 'Text alerts for urgent exceptions', default: false },
+            ]} />
+          </div>
+          <div style={{ ...sec, border: '1px solid #ef4444' }}>
+            {secTitle('Danger Zone')}
+            <button
+              style={{ padding: '9px 20px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => { if (window.confirm('Are you sure you want to log out?')) { clearAccessToken(); window.location.href = '/login'; } }}
+            >
+              Log Out
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Main Settings Component ──────────────────────────────────────────────────
+
 export default function Settings() {
-  const { theme, toggleTheme } = useTheme();
-  // Always use the real hook, not a fallback
+  const { theme, toggleTheme, setTheme } = useTheme();
   const { demoMode, enableDemo, disableDemo } = useDemo();
   const t = themes[theme];
 
   const [activeSectionTitle, setActiveSectionTitle] = useState(adminSections[0].title);
   const activeSection = useMemo(
-    () => adminSections.find((section) => section.title === activeSectionTitle) ?? adminSections[0],
+    () => adminSections.find((s) => s.title === activeSectionTitle) ?? adminSections[0],
     [activeSectionTitle],
   );
   const [activeAction, setActiveAction] = useState(adminSections[0].actions[0]);
@@ -105,148 +905,73 @@ export default function Settings() {
     setActiveAction(activeSection.actions[0]);
   }, [activeSection]);
 
+  const isAccountSection = activeSection.title === 'Account & Profile';
+
   return (
-    <div style={{ width: '100%', minHeight: '100%', padding: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginBottom: 8 }}>
-        {/* Theme toggle button */}
-        <button
-          onClick={toggleTheme}
-          style={{
-            borderRadius: 8,
-            border: `1.5px solid ${theme === 'dark' ? t.accent : t.border}`,
-            background: theme === 'dark' ? t.bgAlt : t.surface,
-            color: theme === 'dark' ? t.text : t.text,
-            fontSize: 14,
-            fontWeight: 700,
-            padding: '7px 18px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            transition: 'background 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-          aria-label="Toggle light/dark theme"
-        >
-          {theme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode'}
-        </button>
-        {/* Mock data mode toggle button */}
-        <button
-          onClick={demoMode ? disableDemo : enableDemo}
-          style={{
-            borderRadius: 8,
-            border: `1.5px solid ${demoMode ? t.accent : t.border}`,
-            background: demoMode ? t.accent : t.surface,
-            color: demoMode ? t.text : t.textSecondary,
-            fontSize: 14,
-            fontWeight: 700,
-            padding: '7px 18px',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            transition: 'background 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-          aria-label="Toggle mock data mode"
-        >
-          {demoMode ? '🟢 Mock Data Mode: ON' : '⚪ Mock Data Mode: OFF'}
-        </button>
-      </div>
-      <div
-        style={{
-          background:
-            theme === 'light'
-              ? 'linear-gradient(145deg, rgba(239, 247, 255, 0.96), rgba(227, 239, 255, 0.95))'
-              : 'linear-gradient(155deg, rgba(16, 30, 58, 0.94), rgba(9, 19, 38, 0.94))',
-          padding: '18px 20px',
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: 28, lineHeight: 1.15, letterSpacing: 0.2 }}>Admin Control Center</h1>
-        <p style={{ margin: '8px 0 0', fontSize: 13, color: t.textSecondary }}>
-          Select a control area, then choose an action to configure settings with a clear active context.
-        </p>
+    <div style={{ width: '100%', minHeight: '100%', background: t.bg, color: t.text }}>
+      {/* Top bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: `1px solid ${t.border}`, background: t.surface }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700 }}>⚙️ Settings</div>
+          <div style={{ fontSize: 12, color: t.textSecondary }}>Configure your workspace, profile, and system preferences</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={toggleTheme} style={{ borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 13, fontWeight: 600, padding: '7px 14px', cursor: 'pointer' }}>
+            {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+          </button>
+          <button onClick={demoMode ? disableDemo : enableDemo} style={{ borderRadius: 8, border: `1px solid ${demoMode ? t.accent : t.border}`, background: demoMode ? t.accent : t.bgAlt, color: demoMode ? '#fff' : t.textSecondary, fontSize: 13, fontWeight: 600, padding: '7px 14px', cursor: 'pointer' }}>
+            {demoMode ? '🟢 Mock Data: ON' : '⚪ Mock Data: OFF'}
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-        <section
-          style={{
-            flex: '2 1 720px',
-            display: 'grid',
-            gap: 14,
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          }}
-        >
-          {adminSections.map((section) => (
-            <AdminControlCard
-              key={section.title}
-              icon={section.icon}
-              title={section.title}
-              description={section.description}
-              actions={section.actions}
-              isActive={section.title === activeSection.title}
-              onSelect={() => setActiveSectionTitle(section.title)}
-            />
-          ))}
-        </section>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)' }}>
+        {/* Left nav */}
+        <nav style={{ width: 220, flexShrink: 0, borderRight: `1px solid ${t.border}`, background: t.surface, padding: '16px 10px' }}>
+          {adminSections.map((section) => {
+            const isActive = section.title === activeSection.title;
+            const iconMap = { account: '👤', company: '🏢', users: '👥', freight: '🚛', audit: '📋', documents: '📄', billing: '💳' };
+            return (
+              <button
+                key={section.title}
+                type="button"
+                onClick={() => setActiveSectionTitle(section.title)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+                  padding: '10px 12px', borderRadius: 8, marginBottom: 4, border: 'none', cursor: 'pointer',
+                  background: isActive ? (theme === 'dark' ? 'rgba(24,210,255,0.15)' : 'rgba(10,124,255,0.1)') : 'transparent',
+                  color: isActive ? t.text : t.textSecondary,
+                  fontWeight: isActive ? 700 : 500, fontSize: 13,
+                  borderLeft: `3px solid ${isActive ? t.accent : 'transparent'}`,
+                  transition: 'all 0.15s',
+                }}
+              >
+                <span>{iconMap[section.icon] || '⚙️'}</span>
+                <span>{section.title}</span>
+              </button>
+            );
+          })}
+        </nav>
 
-        <aside
-          style={{
-            flex: '1 1 320px',
-            minWidth: 300,
-            borderRadius: 14,
-            border: `1px solid ${t.border}`,
-            background:
-              theme === 'light'
-                ? 'linear-gradient(170deg, rgba(247, 251, 255, 0.95), rgba(236, 245, 255, 0.95))'
-                : 'linear-gradient(170deg, rgba(19, 35, 71, 0.88), rgba(13, 25, 51, 0.9))',
-            padding: 16,
-            boxShadow: '0 10px 24px rgba(0, 0, 0, 0.2)',
-          }}
-        >
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              borderRadius: 999,
-              border: `1px solid ${t.border}`,
-              color: t.textSecondary,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 0.4,
-              padding: '3px 9px',
-            }}
-          >
-            ACTIVE SECTION
-          </div>
-
-          <h2 style={{ margin: '10px 0 6px', fontSize: 19, lineHeight: 1.25 }}>{activeSection.title}</h2>
-          <p style={{ margin: 0, color: t.textSecondary, fontSize: 13, lineHeight: 1.45 }}>{activeSection.description}</p>
-
-          <div style={{ marginTop: 14, borderTop: `1px solid ${t.border}`, paddingTop: 12 }}>
-            <div style={{ marginBottom: 8, color: t.textSecondary, fontSize: 12, fontWeight: 700 }}>ACTIONS</div>
-            <div style={{ display: 'grid', gap: 8 }}>
+        {/* Content area */}
+        <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
+          {/* Actions list */}
+          {!isAccountSection && (
+            <div style={{ width: 200, flexShrink: 0, borderRight: `1px solid ${t.border}`, padding: '16px 10px', background: theme === 'dark' ? 'rgba(10,19,38,0.6)' : 'rgba(245,249,255,0.8)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary, letterSpacing: 0.5, marginBottom: 10 }}>ACTIONS</div>
               {activeSection.actions.map((action) => {
-                const isActionActive = action === activeAction;
+                const isActive = action === activeAction;
                 return (
                   <button
                     key={action}
                     type="button"
                     onClick={() => setActiveAction(action)}
                     style={{
-                      borderRadius: 10,
-                      border: `1px solid ${isActionActive ? t.accent : t.border}`,
-                      background: isActionActive
-                        ? theme === 'light'
-                          ? 'rgba(10, 124, 255, 0.12)'
-                          : 'rgba(24, 210, 255, 0.15)'
-                        : 'transparent',
-                      color: isActionActive ? t.text : t.textSecondary,
-                      textAlign: 'left',
-                      padding: '9px 10px',
-                      fontSize: 13,
-                      fontWeight: isActionActive ? 700 : 600,
-                      cursor: 'pointer',
+                      display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px',
+                      borderRadius: 6, marginBottom: 3, border: 'none', cursor: 'pointer',
+                      background: isActive ? (theme === 'dark' ? 'rgba(24,210,255,0.15)' : 'rgba(10,124,255,0.1)') : 'transparent',
+                      color: isActive ? t.text : t.textSecondary, fontWeight: isActive ? 700 : 500, fontSize: 13,
+                      borderLeft: `2px solid ${isActive ? t.accent : 'transparent'}`,
                     }}
                   >
                     {action}
@@ -254,95 +979,26 @@ export default function Settings() {
                 );
               })}
             </div>
-          </div>
+          )}
 
-          {/* Implementation area for selected action */}
-          <div
-            style={{
-              marginTop: 14,
-              borderRadius: 10,
-              border: `1.5px dashed ${t.accent}`,
-              background: theme === 'light' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(6, 14, 28, 0.55)',
-              padding: 16,
-              minHeight: 80,
-            }}
-          >
-            <div style={{ fontSize: 12, color: t.textSecondary, fontWeight: 700, marginBottom: 4 }}>SELECTED ACTION</div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 6 }}>{activeAction}</div>
-            {/* Placeholder for future implementation: route to correct admin form/component here */}
-            <div style={{ fontSize: 13, color: t.textSecondary }}>
-              {(() => {
-                switch (activeAction) {
-                  case 'Edit Company Info':
-                    return <CompanyInfoForm onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
-                  case 'Upload Logo':
-                    return <LogoUpload onUpload={file => alert('Logo uploaded: ' + file.name)} />;
-                  case 'Currency & Units Settings':
-                    return <CurrencyUnitsForm onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
-                  case 'Add/Edit Users':
-                    return <UserManagement />;
-                  // Placeholders for other actions:
-                  case 'Default Margin Targets':
-                    return <DefaultMarginTargets onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
-                  case 'Routing Defaults':
-                    return <RoutingDefaults onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
-                  case 'Notification Settings':
-                    return <NotificationSettings onSave={data => alert('Saved: ' + JSON.stringify(data))} />;
-                  case 'Manage Roles':
-                    return <RoleManagement />;
-                  case 'Permission Groups':
-                    return 'Permission groups configuration goes here.';
-                  case 'Commission Overrides':
-                    return 'Commission overrides configuration goes here.';
-                  case 'Branch Management':
-                    return 'Branch management form goes here.';
-                  case 'Load Numbering Rules':
-                    return 'Load numbering rules configuration goes here.';
-                  case 'Manifest Settings':
-                    return 'Manifest settings configuration goes here.';
-                  case 'Default Equipment Types':
-                    return 'Default equipment types configuration goes here.';
-                  case 'Workflow Automation Rules':
-                    return 'Workflow automation rules configuration goes here.';
-                  case 'Rate Logic Configuration':
-                    return 'Rate logic configuration form goes here.';
-                  case 'Accessorial Validation Rules':
-                    return 'Accessorial validation rules configuration goes here.';
-                  case 'Carrier Overcharge Thresholds':
-                    return 'Carrier overcharge thresholds configuration goes here.';
-                  case 'Invoice Audit Settings':
-                    return 'Invoice audit settings form goes here.';
-                  case 'Profit Margin Alerts':
-                    return 'Profit margin alerts configuration goes here.';
-                  case 'Payment Terms Settings':
-                    return 'Payment terms settings configuration goes here.';
-                  case 'Carrier Confirmations':
-                    return 'Carrier confirmations template configuration goes here.';
-                  case 'Invoice Templates':
-                    return 'Invoice templates configuration goes here.';
-                  case 'Bill of Lading Defaults':
-                    return 'Bill of Lading defaults configuration goes here.';
-                  case 'Font & Branding Settings':
-                    return 'Font and branding settings configuration goes here.';
-                  case 'Reporting Configuration':
-                    return 'Reporting configuration form goes here.';
-                  case 'View Current Plan':
-                    return 'Current subscription plan details go here.';
-                  case 'Upgrade Plan':
-                    return 'Upgrade plan options go here.';
-                  case 'Payment Methods':
-                    return 'Payment methods management goes here.';
-                  case 'Usage Limits':
-                    return 'Usage limits configuration goes here.';
-                  case 'Feature Access Controls':
-                    return 'Feature access controls configuration goes here.';
-                  default:
-                    return 'Select an action to begin configuration.';
-                }
-              })()}
-            </div>
+          {/* Detail panel */}
+          <div style={{ flex: 1, padding: 24, overflowY: 'auto', minWidth: 0 }}>
+            {!isAccountSection && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary, letterSpacing: 0.5 }}>{activeSection.title.toUpperCase()}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{activeAction}</div>
+                <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 4 }}>{activeSection.description}</div>
+                <div style={{ height: 1, background: t.border, marginTop: 16 }} />
+              </div>
+            )}
+
+            {isAccountSection ? (
+              <AccountProfilePanel activeAction={activeAction} t={t} theme={theme} setTheme={setTheme} />
+            ) : (
+              <ActionPanel action={activeAction} t={t} theme={theme} setTheme={setTheme} />
+            )}
           </div>
-        </aside>
+        </div>
       </div>
     </div>
   );

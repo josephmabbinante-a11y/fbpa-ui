@@ -210,8 +210,8 @@ const handleLogin = (req, res) => {
 app.post('/auth/login', handleLogin);
 app.post('/api/auth/login', handleLogin);
 
-app.post('/api/auth/register', (req, res) => {
-  const { email, password, role } = req.body || {};
+const handleRegister = (req, res) => {
+  const { email, password, role, name } = req.body || {};
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
 
@@ -225,15 +225,55 @@ app.post('/api/auth/register', (req, res) => {
   const user = {
     id: `u-${Date.now()}`,
     email: normalizedEmail,
+    name: String(name || '').trim() || null,
     role: role === 'admin' ? 'admin' : 'user',
     password: passwordText,
   };
   users.push(user);
 
   return res.status(201).json({
-    user: { id: user.id, email: user.email, role: user.role },
+    user: { id: user.id, email: user.email, name: user.name, role: user.role },
   });
-});
+};
+
+const handleListUsers = (_req, res) => {
+  return res.json({
+    users: users.map(({ id, email, name, role }) => ({ id, email, name: name || '', role })),
+  });
+};
+
+const handleUpdateUser = (req, res) => {
+  const userId = String(req.params.id || '').trim();
+  const { name, role } = req.body || {};
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User id is required' });
+  }
+
+  const user = users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  if (typeof name === 'string') {
+    user.name = name.trim() || null;
+  }
+
+  if (typeof role === 'string') {
+    user.role = role === 'admin' ? 'admin' : 'user';
+  }
+
+  return res.json({
+    user: { id: user.id, email: user.email, name: user.name || '', role: user.role },
+  });
+};
+
+app.post('/api/auth/register', handleRegister);
+app.post('/auth/register', handleRegister);
+app.get('/api/auth/users', handleListUsers);
+app.get('/auth/users', handleListUsers);
+app.patch('/api/auth/users/:id', handleUpdateUser);
+app.patch('/auth/users/:id', handleUpdateUser);
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body || {};
