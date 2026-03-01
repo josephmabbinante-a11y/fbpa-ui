@@ -5,6 +5,11 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
 import { clearAccessToken } from '../utils/authToken';
 
+const DESKTOP_EXPANDED_WIDTH = 264;
+const DESKTOP_COLLAPSED_WIDTH = 74;
+const MOBILE_CLOSED_WIDTH = 60;
+const MOBILE_OPEN_WIDTH = 240;
+
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
   { id: 'load-center', label: 'Load Center', icon: 'LC', path: '/loadcenter' },
@@ -27,6 +32,13 @@ export default function Sidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
+  useEffect(() => {
+    const storedCollapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
+    const storedMobileOpen = localStorage.getItem('opscale_mobile_sidebar_open') === 'true';
+    setCollapsed(storedCollapsed);
+    setShowMobileSidebar(storedMobileOpen);
+  }, []);
+
   // Responsive: detect mobile
   useEffect(() => {
     const checkMobile = () => {
@@ -37,39 +49,34 @@ export default function Sidebar() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem('opscale_sidebar_collapsed', String(collapsed));
+    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
+  }, [collapsed]);
+
+  useEffect(() => {
+    localStorage.setItem('opscale_mobile_sidebar_open', String(showMobileSidebar));
+    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
+  }, [showMobileSidebar]);
+
   // Dropdown state for groups
   const [openDropdowns, setOpenDropdowns] = useState({});
   const handleDropdownToggle = (groupId) => {
     setOpenDropdowns((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
   };
 
-  // Sidebar width (example, adjust as needed)
-  const sidebarWidth = collapsed ? 60 : 240;
+  const sidebarWidth = isMobile
+    ? (showMobileSidebar ? MOBILE_OPEN_WIDTH : MOBILE_CLOSED_WIDTH)
+    : (collapsed ? DESKTOP_COLLAPSED_WIDTH : DESKTOP_EXPANDED_WIDTH);
+  const showLabels = !collapsed && (!isMobile || showMobileSidebar);
   const navGap = collapsed ? 4 : 10;
-
-  // Show sidebar on mobile only when showMobileSidebar is true
-  // On desktop, always show (collapsed or not)
-  const sidebarVisible = isMobile ? showMobileSidebar : true;
 
   return (
     <>
-      {/* Overlay for mobile menu */}
-      {isMobile && showMobileSidebar && (
-        <div
-          onClick={() => setShowMobileSidebar(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            zIndex: 99,
-            transition: 'opacity 0.2s',
-          }}
-        />
-      )}
       <aside
         style={{
           width: sidebarWidth,
-          display: sidebarVisible ? 'flex' : 'none',
+          display: 'flex',
           flexDirection: 'column',
           position: 'fixed',
           inset: '0 auto 0 0',
@@ -85,13 +92,13 @@ export default function Sidebar() {
           minHeight: 70,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          padding: collapsed ? '12px 8px' : '12px 14px',
+          justifyContent: showLabels ? 'space-between' : 'center',
+          padding: showLabels ? '12px 14px' : '12px 8px',
           borderBottom: `1px solid ${t.border}`,
           gap: 8,
         }}
       >
-        {!collapsed && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
+        {showLabels && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
         <button
           type="button"
           onClick={() => {
@@ -111,7 +118,7 @@ export default function Sidebar() {
             color: t.textSecondary,
             cursor: 'pointer',
           }}
-          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          title={isMobile ? (showMobileSidebar ? 'Close Menu' : 'Open Menu') : (collapsed ? 'Expand Sidebar' : 'Collapse Sidebar')}
         >
           {isMobile ? (showMobileSidebar ? '×' : '≡') : collapsed ? '>' : '<'}
         </button>
@@ -169,8 +176,8 @@ export default function Sidebar() {
                 >
                   {item.icon}
                 </span>
-                {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
-                {!collapsed && <span style={{ marginLeft: 'auto', fontSize: 16 }}>{openDropdowns[item.id] ? '▾' : '▸'}</span>}
+                {showLabels && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+                {showLabels && <span style={{ marginLeft: 'auto', fontSize: 16 }}>{openDropdowns[item.id] ? '▾' : '▸'}</span>}
               </button>
               {openDropdowns[item.id] && (
                 <div id={`dropdown-${item.id}`} style={{ marginLeft: collapsed ? 0 : 36, marginTop: 2 }}>
@@ -212,7 +219,7 @@ export default function Sidebar() {
                       >
                         {sub.icon}
                       </span>
-                      {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{sub.label}</span>}
+                      {showLabels && <span style={{ whiteSpace: 'nowrap' }}>{sub.label}</span>}
                     </NavLink>
                   ))}
                 </div>
@@ -257,7 +264,7 @@ export default function Sidebar() {
               >
                 {item.icon}
               </span>
-              {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+              {showLabels && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
             </NavLink>
           )
         )}

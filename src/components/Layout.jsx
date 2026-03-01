@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
+const DESKTOP_EXPANDED_WIDTH = 264;
+const DESKTOP_COLLAPSED_WIDTH = 74;
+const MOBILE_CLOSED_WIDTH = 60;
+const MOBILE_OPEN_WIDTH = 240;
+
 function getSidebarWidth() {
-  if (window.innerWidth < 900) return 74;
+  if (window.innerWidth < 900) {
+    const mobileOpen = localStorage.getItem('opscale_mobile_sidebar_open') === 'true';
+    return mobileOpen ? MOBILE_OPEN_WIDTH : MOBILE_CLOSED_WIDTH;
+  }
   const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-  return collapsed ? 74 : 264;
+  return collapsed ? DESKTOP_COLLAPSED_WIDTH : DESKTOP_EXPANDED_WIDTH;
 }
 
 function Layout({ children }) {
@@ -15,11 +23,12 @@ function Layout({ children }) {
   useEffect(() => {
     const syncWidth = () => {
       if (window.innerWidth < 900) {
-        setSidebarWidth(74);
+        const mobileOpen = localStorage.getItem('opscale_mobile_sidebar_open') === 'true';
+        setSidebarWidth(mobileOpen ? MOBILE_OPEN_WIDTH : MOBILE_CLOSED_WIDTH);
         return;
       }
       const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-      setSidebarWidth(collapsed ? 74 : 264);
+      setSidebarWidth(collapsed ? DESKTOP_COLLAPSED_WIDTH : DESKTOP_EXPANDED_WIDTH);
     };
 
     syncWidth();
