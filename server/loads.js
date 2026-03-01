@@ -158,6 +158,7 @@ router.get('/', (req, res) => {
     status,
     equipment,
     dispatcherId,
+    sort = '-updatedAt',
     page = '1',
     pageSize = '50',
   } = req.query;
@@ -178,6 +179,21 @@ router.get('/', (req, res) => {
   }
 
   items = items.filter((item) => matchesText(item, q));
+
+  const sortKeyRaw = String(sort || '-updatedAt');
+  const descending = sortKeyRaw.startsWith('-');
+  const sortKey = descending ? sortKeyRaw.slice(1) : sortKeyRaw;
+
+  items.sort((a, b) => {
+    const av = a[sortKey] ?? '';
+    const bv = b[sortKey] ?? '';
+    if (typeof av === 'number' && typeof bv === 'number') {
+      return descending ? bv - av : av - bv;
+    }
+    return descending
+      ? String(bv).localeCompare(String(av))
+      : String(av).localeCompare(String(bv));
+  });
 
   const parsedPage = Math.max(1, Number.parseInt(String(page), 10) || 1);
   const parsedPageSize = Math.min(100, Math.max(1, Number.parseInt(String(pageSize), 10) || 50));

@@ -19,6 +19,7 @@ const ReportDetail = lazy(() => import('./pages/ReportDetail'));
 const CarriersPerformance = lazy(() => import('./pages/CarriersPerformance'));
 const CarrierScorecard = lazy(() => import('./pages/CarrierScorecard'));
 const Loads = lazy(() => import('./pages/Loads'));
+const LoadCenter = lazy(() => import('./pages/LoadCenter'));
 const Customers = lazy(() => import('./pages/Customers'));
 const Settings = lazy(() => import('./pages/Settings'));
 const RateLogicTool = lazy(() => import('./pages/RateLogicTool'));
@@ -80,6 +81,7 @@ function AppRoutes() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/loads" element={<Loads />} />
+            <Route path="/loadcenter" element={<LoadCenter />} />
             <Route path="/invoices" element={<CombinedPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />
             <Route path="/exceptions" element={<ExceptionsUploads />} />
