@@ -11,12 +11,18 @@ const RateBreakdown = ({
   winProb,
   setWinProb,
 }) => {
+  const carrierCost = Number(kpis?.carrierCost ?? 0);
+  const predictedMarket = Number(kpis?.predictedMarket ?? 0);
+  const recommendedSell = Number(kpis?.recommendedSell ?? 0);
+  const winProbHistory = Array.isArray(kpis?.winProbHistory) ? kpis.winProbHistory : [];
+  const swing = Number(kpis?.swing ?? 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ display: 'flex', gap: 24 }}>
-        <KPIWithTrend label="Carrier Cost" value={kpis.carrierCost} format="currency" trendData={[2.2,2.3,2.35,2.37]} trendColor="#4fc3f7" />
-        <KPIWithTrend label="Predicted Market" value={kpis.predictedMarket} format="currency" trendData={[3100,3120,3150,3180]} trendColor="#81c784" />
-        <KPIWithTrend label="Recommended Sell" value={kpis.recommendedSell} format="currency" trendData={[3400,3420,3430,3445]} trendColor="#ffd54f" />
+        <KPIWithTrend label="Carrier Cost" value={carrierCost} format="currency" trendData={winProbHistory} trendColor="#4fc3f7" />
+        <KPIWithTrend label="Predicted Market" value={predictedMarket} format="currency" trendData={winProbHistory} trendColor="#81c784" />
+        <KPIWithTrend label="Recommended Sell" value={recommendedSell} format="currency" trendData={winProbHistory} trendColor="#ffd54f" />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
         <div style={{ flex: 2 }}>
@@ -29,11 +35,11 @@ const RateBreakdown = ({
             onChange={e => setWinProb(Number(e.target.value))}
             style={{ width: '100%' }}
           />
-          <LineChart data={kpis.winProbHistory} label="Win Probability vs. Price" />
+          <LineChart data={winProbHistory} label="Win Probability vs. Price" />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <Gauge value={winProb + '%'} label="Win Probability" min={0} max={100} />
-          <div style={{ fontSize: 14, color: '#aaa' }}>±${kpis.swing}</div>
+          <div style={{ fontSize: 14, color: '#aaa' }}>±${swing}</div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
