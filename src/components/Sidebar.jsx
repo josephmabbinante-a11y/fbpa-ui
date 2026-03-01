@@ -22,7 +22,13 @@ export default function Sidebar() {
   const { theme, toggleTheme } = useTheme();
   const t = themes[theme];
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('opscale_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
@@ -49,6 +55,16 @@ export default function Sidebar() {
   // Show sidebar on mobile only when showMobileSidebar is true
   // On desktop, always show (collapsed or not)
   const sidebarVisible = isMobile ? showMobileSidebar : true;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('opscale_sidebar_collapsed', String(collapsed));
+    } catch {
+      // localStorage may be unavailable
+    }
+
+    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
+  }, [collapsed]);
 
   return (
     <>

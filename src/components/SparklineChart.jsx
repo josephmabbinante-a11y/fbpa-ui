@@ -1,28 +1,15 @@
-<<<<<<< HEAD
-import { memo } from 'react';
-=======
 import { useId, useMemo } from 'react';
->>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
-/**
- * Lightweight sparkline chart for KPI trend visualization
- * Displays a simple area chart below KPI cards
- */
-<<<<<<< HEAD
-const SparklineChart = memo(({ data, color = '#0066cc', height = 40 }) => {
-  const { theme } = useTheme();
-  const t = themes[theme];
-=======
 export default function SparklineChart({ data, color = '#0066cc', height = 40 }) {
   const gradientId = useId();
+
   const normalizedData = useMemo(
     () =>
       (Array.isArray(data) ? data : [])
         .map((point) => {
           const direct = Number(point?.value);
           if (Number.isFinite(direct)) return { value: direct };
->>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 
           const fallback = Object.entries(point || {}).find(([key, value]) => {
             if (key === 'day' || key === 'date' || key === 'month' || key === 'period' || key === 'label') return false;
@@ -38,13 +25,7 @@ export default function SparklineChart({ data, color = '#0066cc', height = 40 })
   if (!normalizedData.length) return null;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: height,
-        marginTop: 8,
-      }}
-    >
+    <div style={{ width: '100%', height, marginTop: 8 }}>
       <ResponsiveContainer width="100%" height="100%" debounce={60}>
         <AreaChart data={normalizedData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <defs>
@@ -66,6 +47,4 @@ export default function SparklineChart({ data, color = '#0066cc', height = 40 })
       </ResponsiveContainer>
     </div>
   );
-});
-
-export default SparklineChart;
+}

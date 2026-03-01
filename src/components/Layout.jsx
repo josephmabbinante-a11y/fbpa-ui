@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
 function getSidebarWidth() {
@@ -12,17 +12,6 @@ function Layout({ children }) {
   const t = themes[theme];
   const [sidebarWidth, setSidebarWidth] = useState(() => getSidebarWidth());
 
-<<<<<<< HEAD
-  const checkSidebarWidth = useCallback(() => {
-    const collapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-    setSidebarWidth(collapsed ? 64 : 240);
-  }, []);
-
-  useEffect(() => {
-    checkSidebarWidth();
-    window.addEventListener('storage', checkSidebarWidth);
-    const interval = setInterval(checkSidebarWidth, 100);
-=======
   useEffect(() => {
     const syncWidth = () => {
       if (window.innerWidth < 900) {
@@ -37,14 +26,13 @@ function Layout({ children }) {
     window.addEventListener('resize', syncWidth);
     window.addEventListener('storage', syncWidth);
     window.addEventListener('opscale-sidebar-toggle', syncWidth);
->>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
 
     return () => {
       window.removeEventListener('resize', syncWidth);
       window.removeEventListener('storage', syncWidth);
       window.removeEventListener('opscale-sidebar-toggle', syncWidth);
     };
-  }, [checkSidebarWidth]);
+  }, []);
 
   const containerStyle = useMemo(() => ({
     display: 'flex',
@@ -77,32 +65,9 @@ function Layout({ children }) {
   }, [sidebarWidth, theme]);
 
   return (
-<<<<<<< HEAD
     <div style={containerStyle}>
       <main style={mainStyle}>
         {children}
-=======
-    <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', color: t.text }}>
-      <main
-        style={{
-          flex: 1,
-          marginLeft: sidebarWidth,
-          transition: 'margin-left 220ms ease',
-          padding: 20,
-        }}
-      >
-        <section
-          className="card-surface page-shell"
-          style={{
-            minHeight: 'calc(100vh - 40px)',
-            gridTemplateColumns: 'minmax(0, 1fr)',
-            backgroundColor: 'rgba(8, 17, 35, 0.56)',
-            borderColor: t.border,
-          }}
-        >
-          {children}
-        </section>
->>>>>>> 5ae5c4519cf46aec6ffcac7f56e912fc15e89b02
       </main>
     </div>
   );

@@ -2,6 +2,7 @@ import mockInvoices from '../mock/invoices';
 import mockExceptions from '../mock/exceptions';
 import mockDashboard from '../mock/dashboard';
 import mockReports from '../mock/reports';
+import { getAccessToken } from '../utils/authToken';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
