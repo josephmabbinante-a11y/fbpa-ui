@@ -1,4 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+// Top-level error boundary component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    // Log error if needed
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div style={{ color: 'red', padding: 24 }}><b>Something went wrong:</b> {this.state.error?.message || 'Unknown error.'}</div>;
+    }
+    return this.props.children;
+  }
+}
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
@@ -66,6 +87,12 @@ const mockFmcsaCarriers = [
   { companyName: 'GLT TRUCKS INC', mcNumber: 'MC940155', usdotNumber: '2854172', phone: '(915) 800-1120', email: 'dispatch@glttrucks.com', address: 'El Paso, TX' },
   { companyName: 'FASTLANE FREIGHT CO', mcNumber: 'MC112450', usdotNumber: '401204', phone: '(312) 555-0173', email: 'team@fastlanefreight.com', address: 'Chicago, IL' },
 ];
+
+function safeString(val) {
+  if (val == null) return '';
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
 
 function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
   const navigate = useNavigate();
@@ -296,21 +323,26 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const progress = getLoadProgress(loadCheckpoints);
   const progressBarColor = getProgressBarColor(progress, loadCheckpoints);
 
+  // Defensive checks for key props
+  const safeLoadSnapshot = loadSnapshot || {};
+  const safeStopsData = Array.isArray(stopsData) ? stopsData : [];
+
   return (
-    <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
+    <ErrorBoundary>
+      <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
       {/* Sticky Load Header */}
       <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
         {/* StickyLoadHeader with live color logic */}
         <StickyLoadHeader
-          loadNumber={loadSnapshot?.number || '123456'}
-          status={loadSnapshot?.status || 'Open'}
-          customer={loadSnapshot?.customer || 'Acme Corp'}
-          totalMiles={loadSnapshot?.totalMiles || 1200}
-          sellRate={loadSnapshot?.sellRate || 5000}
-          buyRate={loadSnapshot?.buyRate || 4300}
-          grossMargin={(loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)}
-          marginPct={((loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)) / (loadSnapshot?.sellRate || 5000) * 100}
-          riskIndicator={loadSnapshot?.riskIndicator || 'Medium'}
+          loadNumber={safeString(safeLoadSnapshot.number || '123456')}
+          status={safeString(safeLoadSnapshot.status || 'Open')}
+          customer={safeString(safeLoadSnapshot.customer || 'Acme Corp')}
+          totalMiles={safeString(safeLoadSnapshot.totalMiles || 1200)}
+          sellRate={safeString(safeLoadSnapshot.sellRate || 5000)}
+          buyRate={safeString(safeLoadSnapshot.buyRate || 4300)}
+          grossMargin={safeString((safeLoadSnapshot.sellRate || 5000) - (safeLoadSnapshot.buyRate || 4300))}
+          marginPct={safeString(((safeLoadSnapshot.sellRate || 5000) - (safeLoadSnapshot.buyRate || 4300)) / (safeLoadSnapshot.sellRate || 5000) * 100)}
+          riskIndicator={safeString(safeLoadSnapshot.riskIndicator || 'Medium')}
         />
         {/* Thin Progress Bar UI */}
         <div
@@ -353,7 +385,7 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
         </div>
       </div>
       {/* Expandable Checklist Drawer */}
-      <ChecklistDrawer checkpoints={loadCheckpoints} />
+      <ChecklistDrawer checkpoints={loadCheckpoints || {}} />
 
       <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
         <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
@@ -364,7 +396,7 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
       </CollapsibleSection>
 
       <CollapsibleSection title="Lane Intelligence" complete={laneIntelligenceComplete} defaultOpen={true}>
-        <LaneIntelligencePanel stops={stopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
+        <LaneIntelligencePanel stops={safeStopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
       </CollapsibleSection>
 
       <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
@@ -372,7 +404,7 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
       </CollapsibleSection>
 
       <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
-        <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData} onComplete={() => setFinancialSectionComplete(true)} />
+        <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData || {}} onComplete={() => setFinancialSectionComplete(true)} />
       </CollapsibleSection>
 
       <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
@@ -384,7 +416,8 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
         {/* TODO: Implement ActivityLogPanel, chronological feed */}
         <div>Activity Log Panel Placeholder</div>
       </CollapsibleSection>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
   // ...existing code...
 

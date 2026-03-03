@@ -1,4 +1,29 @@
 import React, { useEffect, useMemo, useState } from 'react';
+// Top-level error boundary for RateCalculator
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div style={{ color: 'red', padding: 24 }}><b>Something went wrong:</b> {this.state.error?.message || 'Unknown error.'}</div>;
+    }
+    return this.props.children;
+  }
+}
+
+function safeString(val) {
+  if (val == null) return '';
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
 import { useNavigate } from 'react-router-dom';
 import LoadInputs from './LoadInputs';
 import RateBreakdown from './RateBreakdown';
@@ -1109,21 +1134,36 @@ function RateCalculator() {
     setActionMessage(`Simulated margin impact: ${lowMargin.toFixed(4)} to ${highMargin.toFixed(4)} per mile.`);
   };
 
+  // Defensive checks for key props
+  const safeFeatureSnapshot = featureSnapshot || {};
+  const safeHarvestedPricing = harvestedPricing || {};
+  const safeMarketModels = marketModels || {};
+  const safeMileageEstimate = mileageEstimate || {};
+  const safeGeoCoverage = geoCoverage || {};
+  const safeConfidenceMeta = confidenceMeta || {};
+  const safeKpis = kpis || {};
+  const safeLaneData = laneData || [];
+  const safeTopCarriers = safeHarvestedPricing.topCarriers || [];
+  const safeBookedLoads = safeHarvestedPricing.bookedLoads || [];
+  const safeLaneSummary = safeHarvestedPricing.laneSummary || {};
+  const safeStateCapacityScores = capacityHeatMapScores || {};
+
   return (
-    <div className={styles.container}>
+    <ErrorBoundary>
+      <div className={styles.container}>
       <header className={styles.header}>
         <h1>Truckload Rate Calculator</h1>
         <div className={styles.headerIcons} />
       </header>
 
       <div style={{ padding: '0 32px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', color: t.textSecondary, fontSize: 12 }}>
-        <span>Data Updated: {confidenceMeta.dataFreshness}</span>
-        <span>Fuel Index: {confidenceMeta.fuelSource}</span>
-        <span>Engine: {confidenceMeta.engineVersion}</span>
-        <span>Sources: {confidenceMeta.marketSource}</span>
-        <span>{harvestedPricing.loading ? 'Harvesting loads...' : `Harvest: ${harvestedPricing.matchedLoads}/${harvestedPricing.totalLoads} (${harvestedPricing.source})`}</span>
-        <span>Capacity Mode: {marketModels.marketDataMode}</span>
-        <span>Volatility: {marketModels.capacityVolatilityFlag ? 'High' : 'Normal'}</span>
+        <span>Data Updated: {safeString(safeConfidenceMeta.dataFreshness)}</span>
+        <span>Fuel Index: {safeString(safeConfidenceMeta.fuelSource)}</span>
+        <span>Engine: {safeString(safeConfidenceMeta.engineVersion)}</span>
+        <span>Sources: {safeString(safeConfidenceMeta.marketSource)}</span>
+        <span>{safeHarvestedPricing.loading ? 'Harvesting loads...' : `Harvest: ${safeString(safeHarvestedPricing.matchedLoads)}/${safeString(safeHarvestedPricing.totalLoads)} (${safeString(safeHarvestedPricing.source)})`}</span>
+        <span>Capacity Mode: {safeString(safeMarketModels.marketDataMode)}</span>
+        <span>Volatility: {safeMarketModels.capacityVolatilityFlag ? 'High' : 'Normal'}</span>
       </div>
 
       <div
@@ -1143,41 +1183,41 @@ function RateCalculator() {
       >
         <strong style={{ color: t.textSecondary }}>Geo Coverage</strong>
         <span>
-          Origin {geoCoverage.originZip3 || '---'} ({geoCoverage.originRegion || 'Unknown'})
+          Origin {safeString(safeGeoCoverage.originZip3 || '---')} ({safeString(safeGeoCoverage.originRegion || 'Unknown')})
           {'  '}→{'  '}
-          Destination {geoCoverage.destinationZip3 || '---'} ({geoCoverage.destinationRegion || 'Unknown'})
+          Destination {safeString(safeGeoCoverage.destinationZip3 || '---')} ({safeString(safeGeoCoverage.destinationRegion || 'Unknown')})
         </span>
         <span>
-          Miles: {Number(featureSnapshot.miles || 0).toLocaleString()}
-          {'  '}({String(mileageEstimate.method || 'estimated')} • {Math.round(Number(mileageEstimate.confidence || 0) * 100)}%)
+          Miles: {safeString(Number(safeFeatureSnapshot.miles || 0).toLocaleString())}
+          {'  '}({safeString(safeMileageEstimate.method || 'estimated')} • {safeString(Math.round(Number(safeMileageEstimate.confidence || 0) * 100))}%)
           {'  '}|{'  '}
-          Origin Capacity: {Number(marketModels.originCapacityScore || 0).toFixed(0)}/100
+          Origin Capacity: {safeString(Number(safeMarketModels.originCapacityScore || 0).toFixed(0))}/100
           {'  '}|{'  '}
-          Destination Capacity: {Number(marketModels.destinationCapacityScore || 0).toFixed(0)}/100
+          Destination Capacity: {safeString(Number(safeMarketModels.destinationCapacityScore || 0).toFixed(0))}/100
         </span>
         <span style={{ color: t.textSecondary }}>
-          {mileageLoading ? 'Resolving mileage...' : (geoCoverage.loading ? 'Resolving...' : `Source: ${geoCoverage.source}`)}
+          {mileageLoading ? 'Resolving mileage...' : (safeGeoCoverage.loading ? 'Resolving...' : `Source: ${safeString(safeGeoCoverage.source)}`)}
         </span>
       </div>
 
       <main className={styles.main}>
         <section className={styles.leftPanel}>
           <LoadInputs
-            origin={origin}
+            origin={safeString(origin)}
             setOrigin={setOrigin}
-            destination={destination}
+            destination={safeString(destination)}
             setDestination={setDestination}
-            shipmentDetails={shipmentDetails}
+            shipmentDetails={shipmentDetails || {}}
             onShipmentChange={updateShipmentDetails}
-            shipmentErrors={shipmentErrors}
+            shipmentErrors={shipmentErrors || {}}
             rpm={rpm}
             predictedSwing={undefined}
-            equipmentType={equipmentType}
+            equipmentType={safeString(equipmentType)}
             setEquipmentType={setEquipmentType}
             onSwapLane={handleSwapLane}
-            laneVolatilityIndex={marketModels.laneVolatilityIndex}
-            capacityHeatScore={marketModels.capacityHeatScore}
-            rejectionSpikeRisk={marketModels.rejectionSpikeRisk}
+            laneVolatilityIndex={safeMarketModels.laneVolatilityIndex}
+            capacityHeatScore={safeMarketModels.capacityHeatScore}
+            rejectionSpikeRisk={safeMarketModels.rejectionSpikeRisk}
             onPredictRate={handlePredictRate}
             predicting={predicting}
           />
@@ -1224,7 +1264,7 @@ function RateCalculator() {
           </section>
 
           <RateBreakdown
-            kpis={kpis}
+            kpis={safeKpis}
             winProb={winProb}
             setWinProb={setWinProb}
             ruleRate={ruleRate}
@@ -1260,7 +1300,7 @@ function RateCalculator() {
               setOutcomeTimeToCover(value);
               setOutcomeErrors((prev) => ({ ...prev, timeToCover: '' }));
             }}
-            outcomeErrors={outcomeErrors}
+            outcomeErrors={outcomeErrors || {}}
             sensitivity={sensitivity}
             setSensitivity={setSensitivity}
             recommendedSellRate={recommendedSellRate}
@@ -1273,36 +1313,37 @@ function RateCalculator() {
             onLockQuote={handleLockQuote}
             onSimulateMarginImpact={handleSimulateMarginImpact}
             quoteLocked={quoteLocked}
-            confidenceMeta={confidenceMeta}
+            confidenceMeta={safeConfidenceMeta}
             driftWarning={driftWarning}
             onAutoFillOutcome={handleAutoFillOutcome}
             sendingToBidNetwork={sendingToBidNetwork}
             rateIndexBreakdown={rateIndexBreakdown}
-            quoteTelemetry={quoteTelemetry}
+            quoteTelemetry={quoteTelemetry || []}
           />
         </section>
 
         <section className={styles.rightPanel}>
           <MarketTrends
-            forecast={forecast}
+            forecast={forecast || {}}
             setForecast={setForecast}
-            topCarriers={harvestedPricing.topCarriers}
-            laneData={laneData}
-            bookedLoads={harvestedPricing.bookedLoads}
-            laneSummary={harvestedPricing.laneSummary}
-            stateCapacityScores={capacityHeatMapScores}
+            topCarriers={safeTopCarriers}
+            laneData={safeLaneData}
+            bookedLoads={safeBookedLoads}
+            laneSummary={safeLaneSummary}
+            stateCapacityScores={safeStateCapacityScores}
             routeEngineView={{
-              origin,
-              destination,
-              miles: Number(featureSnapshot.miles || 0),
-              method: String(mileageEstimate.method || 'estimated'),
-              confidence: Number(mileageEstimate.confidence || 0),
+              origin: safeString(origin),
+              destination: safeString(destination),
+              miles: Number(safeFeatureSnapshot.miles || 0),
+              method: safeString(safeMileageEstimate.method || 'estimated'),
+              confidence: Number(safeMileageEstimate.confidence || 0),
               loading: mileageLoading,
             }}
           />
         </section>
       </main>
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
 
