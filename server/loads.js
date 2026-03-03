@@ -123,14 +123,14 @@ const riskByLoad = {
     pickupCountdownMinutes: 220,
     warnings: ['carrier_not_assigned'],
   },
-};
-
-const seedEventsByLoad = {
-  'L-102938': [
-    {
-      id: 'EV-909',
-      loadId: 'L-102938',
-      type: 'carrier_assigned',
+  'L-492002': {
+    loadId: 'L-492002',
+    laneVolatilityScore: 55,
+    capacityHeatIndex: 60,
+    complianceStatus: 'valid',
+    pickupCountdownMinutes: 720,
+    warnings: ['margin_below_lane_avg'],
+  },
       message: 'Carrier Prime Logistics assigned',
       actor: { id: 'U-9', name: 'Alex Smith' },
       createdAt: '2026-03-01T18:22:00Z',

@@ -122,6 +122,29 @@ html[data-theme-palette="dispatch-2003"] td {
   font-size: 1em;
 }
 
+/* Slimline theme font and style overrides */
+html[data-theme-palette="slimline"] body {
+  font-family: 'Exo 2', 'Space Grotesk', Arial, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+html[data-theme-palette="slimline"] h1,
+html[data-theme-palette="slimline"] h2,
+html[data-theme-palette="slimline"] h3,
+html[data-theme-palette="slimline"] .h1,
+html[data-theme-palette="slimline"] .h2,
+html[data-theme-palette="slimline"] .h3 {
+  font-family: 'Exo 2', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+html[data-theme-palette="slimline"] table,
+html[data-theme-palette="slimline"] th,
+html[data-theme-palette="slimline"] td {
+  font-family: 'Space Grotesk', Arial, sans-serif;
+  font-size: 1em;
+}
+
 #root {
   min-height: 100vh;
 }

@@ -43,7 +43,6 @@ function SectionCard({ title, children, t }) {
       <div style={{ padding: 14 }}>{children}</div>
     </section>
   );
-}
 
 function Field({ label, children }) {
   return (
@@ -144,7 +143,6 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
     } catch {
       // noop
     }
-
     return {
       companyName: 'Opscale Supply Chain',
       logoUrl: '',
@@ -153,6 +151,16 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
       email: '',
       accentColor: '#2f80ed',
     };
+  });
+  // Section completion hooks (moved to top-level)
+  const [customerSectionComplete, setCustomerSectionComplete] = useState(false);
+  const [stopsSectionComplete, setStopsSectionComplete] = useState(false);
+  const [stopsData, setStopsData] = useState([]);
+  const [laneIntelligenceComplete, setLaneIntelligenceComplete] = useState(false);
+  const [laneIntelligenceData, setLaneIntelligenceData] = useState(null);
+  const [carrierSectionComplete, setCarrierSectionComplete] = useState(false);
+  const [financialSectionComplete, setFinancialSectionComplete] = useState(false);
+
   return (
     <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
       {/* Sticky Load Header */}
@@ -174,27 +182,22 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
       <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
         <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
       </CollapsibleSection>
-  const [customerSectionComplete, setCustomerSectionComplete] = useState(false);
 
       <CollapsibleSection title="Stops" complete={stopsSectionComplete} defaultOpen={true}>
         <StopsSection onComplete={() => setStopsSectionComplete(true)} setStopsData={setStopsData} />
       </CollapsibleSection>
-  const [stopsSectionComplete, setStopsSectionComplete] = useState(false);
-  const [stopsData, setStopsData] = useState([]);
 
-      <CollapsibleSection title="Lane Intelligence" complete={false} defaultOpen={true}>
+      <CollapsibleSection title="Lane Intelligence" complete={laneIntelligenceComplete} defaultOpen={true}>
         <LaneIntelligencePanel stops={stopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
       </CollapsibleSection>
 
       <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
         <CarrierSection enabled={laneIntelligenceComplete} onComplete={() => setCarrierSectionComplete(true)} />
       </CollapsibleSection>
-  const [carrierSectionComplete, setCarrierSectionComplete] = useState(false);
 
       <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
         <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData} onComplete={() => setFinancialSectionComplete(true)} />
       </CollapsibleSection>
-  const [financialSectionComplete, setFinancialSectionComplete] = useState(false);
 
       <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
         {/* TODO: Implement DocumentsSection, readiness score, checklist, dispatch actions */}
@@ -206,42 +209,46 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
         <div>Activity Log Panel Placeholder</div>
       </CollapsibleSection>
     </div>
-          .slice(0, 15);
-      }
+  );
+  // ...existing code...
+}
 
-      let fmcsaResults = [];
-      if (includeFmcsa) {
-        fmcsaResults = mockFmcsaCarriers
-          .filter((carrier) => {
-            if (!query) return true;
-            return [carrier.companyName, carrier.mcNumber, carrier.usdotNumber]
-              .filter(Boolean)
-              .some((value) => String(value).toLowerCase().includes(query));
-          })
-          .map((carrier) => ({ ...carrier, source: 'fmcsa', existsInInternal: false }))
-          .slice(0, 15);
-      }
-
-      const merged = [...internalResults];
-      fmcsaResults.forEach((fmcsaCarrier) => {
-        const alreadyExists = internalResults.some((internalCarrier) => (
-          String(internalCarrier.mcNumber || '').toLowerCase() === String(fmcsaCarrier.mcNumber || '').toLowerCase()
-          || String(internalCarrier.usdotNumber || '').toLowerCase() === String(fmcsaCarrier.usdotNumber || '').toLowerCase()
-        ));
-        merged.push({ ...fmcsaCarrier, existsInInternal: alreadyExists });
-      });
-
-      setCarrierResults(merged);
-      if (!merged.length) {
-        setCarrierActionMessage('No carriers found for this search.');
-      }
-    } catch (error) {
-      setCarrierResults([]);
-      setCarrierError(error?.message || 'Carrier search failed');
-    } finally {
-      setCarrierLoading(false);
+// Carrier search logic moved into a function
+function searchCarriers({ includeFmcsa, mockFmcsaCarriers, query, internalResults, setCarrierResults, setCarrierActionMessage, setCarrierError, setCarrierLoading }) {
+  try {
+    let fmcsaResults = [];
+    if (includeFmcsa) {
+      fmcsaResults = mockFmcsaCarriers
+        .filter((carrier) => {
+          if (!query) return true;
+          return [carrier.companyName, carrier.mcNumber, carrier.usdotNumber]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(query));
+        })
+        .map((carrier) => ({ ...carrier, source: 'fmcsa', existsInInternal: false }))
+        .slice(0, 15);
     }
-  };
+
+    const merged = [...internalResults];
+    fmcsaResults.forEach((fmcsaCarrier) => {
+      const alreadyExists = internalResults.some((internalCarrier) => (
+        String(internalCarrier.mcNumber || '').toLowerCase() === String(fmcsaCarrier.mcNumber || '').toLowerCase()
+        || String(internalCarrier.usdotNumber || '').toLowerCase() === String(fmcsaCarrier.usdotNumber || '').toLowerCase()
+      ));
+      merged.push({ ...fmcsaCarrier, existsInInternal: alreadyExists });
+    });
+
+    setCarrierResults(merged);
+    if (!merged.length) {
+      setCarrierActionMessage('No carriers found for this search.');
+    }
+  } catch (error) {
+    setCarrierResults([]);
+    setCarrierError(error?.message || 'Carrier search failed');
+  } finally {
+    setCarrierLoading(false);
+  }
+}
 
   const addCarrierFromResult = async (carrier) => {
     setCarrierError('');

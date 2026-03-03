@@ -63,8 +63,67 @@ export default function CarrierProfile() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minHeight: '100vh', background: t.bg, color: t.text }}>
+      {/* CARRIER SCORE AT TOP (composite) */}
+      <div style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
+        <div style={{ background: '#fff', color: '#222', borderRadius: 18, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', padding: '8px 32px', fontWeight: 800, fontSize: 22, border: '2px solid #10b981' }}>
+          Carrier Score: 88 / 100 – Reliable
+        </div>
+        {/* Score Breakdown Panel */}
+        <ScoreBreakdownPanel />
+      </div>
       {/* HEADER STRIP */}
       <div style={{
+          // --- Score Breakdown Panel ---
+          function ScoreBreakdownPanel() {
+            const [open, setOpen] = useState(false);
+            // Example breakdown data, replace with real logic
+            const breakdown = [
+              { label: 'Compliance', score: 92, weight: 40 },
+              { label: 'Performance', score: 89, weight: 30 },
+              { label: 'Coverage Match', score: 84, weight: 20 },
+              { label: 'Risk Behavior', score: 78, weight: 10 },
+            ];
+            return (
+              <div style={{ marginTop: 8, textAlign: 'center' }}>
+                <button
+                  style={{
+                    padding: '4px 18px',
+                    borderRadius: 8,
+                    background: open ? t.accent : t.bgAlt,
+                    color: open ? '#fff' : t.text,
+                    border: `1px solid ${t.accent}`,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    fontSize: 15,
+                    marginBottom: 4,
+                  }}
+                  onClick={() => setOpen((v) => !v)}
+                >
+                  {open ? 'Hide Score Breakdown' : 'Show Score Breakdown'}
+                </button>
+                {open && (
+                  <div style={{
+                    margin: '10px auto 0',
+                    background: t.surface,
+                    borderRadius: 12,
+                    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
+                    padding: '16px 24px',
+                    border: `1px solid ${t.border}`,
+                    maxWidth: 340,
+                    textAlign: 'left',
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Score Breakdown</div>
+                    {breakdown.map((item) => (
+                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, marginBottom: 6 }}>
+                        <span>{item.label}</span>
+                        <span style={{ fontWeight: 700 }}>{item.score} <span style={{ color: t.textSecondary, fontWeight: 400 }}>(Weight {item.weight}%)</span></span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
         width: '100%',
         display: 'flex',
         justifyContent: 'space-between',
@@ -110,17 +169,34 @@ export default function CarrierProfile() {
           {/* Compliance Overview Card */}
           <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)', padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Compliance Overview</div>
-            {/* ...compliance fields, health score, banners, etc. */}
-            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 14 }}>
-              <span>Authority Status: <b>Active</b></span>
-              <span>Safety Rating: <b>Satisfactory</b></span>
-              <span>Cargo Insurance: <b>$1,000,000</b></span>
-              <span>Auto Liability: <b>$1,000,000</b></span>
-              <span>Insurance Exp: <b>2026-06-01</b></span>
-              <span>W-9: <b>✔</b></span>
-              <span>Agreement: <b>✔</b></span>
-              <span>COI Verified: <b>2026-03-01</b></span>
-            </div>
+            {/* Predictive compliance fields, health score, banners, etc. */}
+            {(() => {
+              // Example static values, replace with real data
+              const insuranceExpDate = '2026-06-01';
+              const authorityStartDate = '2023-01-15';
+              const today = new Date();
+              const expDate = new Date(insuranceExpDate);
+              const authorityDate = new Date(authorityStartDate);
+              const daysUntilExp = Math.max(0, Math.round((expDate - today) / (1000 * 60 * 60 * 24)));
+              const authorityAgeYears = ((today - authorityDate) / (1000 * 60 * 60 * 24 * 365)).toFixed(1);
+              const expRisk = daysUntilExp < 30 ? 'High Risk' : daysUntilExp < 90 ? 'Medium Risk' : 'Low Risk';
+              const expColor = daysUntilExp < 30 ? '#ef4444' : daysUntilExp < 90 ? '#f59e42' : '#10b981';
+              const oosRate = 3.2; // Example static value
+              return (
+                <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 14 }}>
+                  <span>Authority Status: <b>Active</b></span>
+                  <span>Authority Age: <b>{authorityAgeYears} years</b> <span style={{ color: '#10b981', fontWeight: 600 }}>(Stable)</span></span>
+                  <span>Safety Rating: <b>Satisfactory</b></span>
+                  <span>Cargo Insurance: <b>$1,000,000</b></span>
+                  <span>Auto Liability: <b>$1,000,000</b></span>
+                  <span>Insurance Expiration: <b>{daysUntilExp} days</b> <span style={{ color: expColor, fontWeight: 600 }}>({expRisk})</span></span>
+                  <span>OOS Rate: <b>{oosRate}%</b> <span style={{ color: oosRate < 5 ? '#10b981' : '#ef4444', fontWeight: 600 }}>{oosRate < 5 ? '(Below industry avg)' : '(High)'}</span></span>
+                  <span>W-9: <b>✔</b></span>
+                  <span>Agreement: <b>✔</b></span>
+                  <span>COI Verified: <b>2026-03-01</b></span>
+                </div>
+              );
+            })()}
             <div style={{ marginTop: 10, fontWeight: 600, color: '#10b981' }}>Compliance Health Score: 92 / 100</div>
             {/* Example: Red banner if non-compliant */}
             {/* <div style={{ marginTop: 12, background: '#ef4444', color: '#fff', padding: 10, borderRadius: 8, fontWeight: 700 }}>Carrier Non-Compliant – Dispatch Locked</div> */}
