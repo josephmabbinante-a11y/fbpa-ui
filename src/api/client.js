@@ -777,7 +777,7 @@ export async function getRateLogicMetrics() {
 }
 
 export async function quoteSaiaCarrierRate(payload) {
-  return safeFetch('/api/rate-logic/saia/quote', {
+  return safeFetch('/auction/saia/quote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload || {}),

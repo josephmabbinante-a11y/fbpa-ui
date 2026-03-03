@@ -9,6 +9,7 @@ import bidRoutes from './modules/bids/bid.routes.js';
 import carrierRoutes from './modules/carriers/carrier.routes.js';
 import settingsRoutes from './modules/settings/settings.routes.js';
 import adminRoutes from './modules/admin/admin.routes.js';
+import auctionRoutes from './modules/auction/saiaAuction.routes.js';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/', bidRoutes);
 app.use('/carriers', carrierRoutes);
 app.use('/settings', settingsRoutes);
 app.use('/admin', adminRoutes);
+app.use('/auction', auctionRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
