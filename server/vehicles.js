@@ -12,11 +12,11 @@ function isDbReady() {
 // List all vehicles
 router.get('/', async (req, res) => {
   try {
-    if (!isDbReady()) return res.json(memoryVehicles);
+    if (!isDbReady()) return res.json(Array.isArray(memoryVehicles) ? memoryVehicles : []);
     const vehicles = await Vehicle.find();
-    return res.json(vehicles);
+    return res.json(Array.isArray(vehicles) ? vehicles : []);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.json([]);
   }
 });
 

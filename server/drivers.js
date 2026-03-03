@@ -12,11 +12,11 @@ function isDbReady() {
 // List all drivers
 router.get('/', async (req, res) => {
   try {
-    if (!isDbReady()) return res.json(memoryDrivers);
+    if (!isDbReady()) return res.json(Array.isArray(memoryDrivers) ? memoryDrivers : []);
     const drivers = await Driver.find();
-    return res.json(drivers);
+    return res.json(Array.isArray(drivers) ? drivers : []);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.json([]);
   }
 });
 

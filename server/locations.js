@@ -21,23 +21,23 @@ router.get('/', async (req, res) => {
             { primaryContact: { $regex: q, $options: 'i' } },
             { primaryPhone: { $regex: q, $options: 'i' } },
             { branch: { $regex: q, $options: 'i' } },
-          ],
-        }
-      : {};
-    const items = await Location.find(query).sort({ updatedAt: -1 }).lean();
-    return res.json({ items });
-  } catch (err) {
-    res.status(500).json({ error: { code: 'LOCATIONS_FETCH_ERROR', message: err.message } });
-  }
-});
-
-router.post('/', async (req, res) => {
-  try {
-    const data = req.body || {};
-    if (!data.name) return res.status(400).json({ error: 'name is required' });
-    if (!data.address) return res.status(400).json({ error: 'address is required' });
-    if (!data.id) data.id = generateLocationId();
-    if (!data.locationCodes) data.locationCodes = `LOC-${1000 + (await Location.countDocuments()) + 1}`;
+          try {
+            const q = String(req.query.q || '').trim().toLowerCase();
+            const query = q
+              ? {
+                  $or: [
+                    { name: { $regex: q, $options: 'i' } },
+                    { address: { $regex: q, $options: 'i' } },
+                    { locationTypes: { $regex: q, $options: 'i' } },
+                    { locationCodes: { $regex: q, $options: 'i' } },
+                  ],
+                }
+              : {};
+            const locations = await Location.find(query);
+            return res.json(Array.isArray(locations) ? locations : []);
+          } catch (err) {
+            return res.json([]);
+          }
     const now = new Date();
     data.createdAt = now;
     data.updatedAt = now;

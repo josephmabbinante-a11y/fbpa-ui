@@ -12,11 +12,11 @@ function isDbReady() {
 // List all trips
 router.get('/', async (req, res) => {
   try {
-    if (!isDbReady()) return res.json(memoryTrips);
+    if (!isDbReady()) return res.json(Array.isArray(memoryTrips) ? memoryTrips : []);
     const trips = await Trip.find();
-    return res.json(trips);
+    return res.json(Array.isArray(trips) ? trips : []);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.json([]);
   }
 });
 
