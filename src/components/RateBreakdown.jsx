@@ -42,7 +42,7 @@ const RateBreakdown = ({
   quoteTelemetry,
 }) => {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [showRateIndexBreakdown, setShowRateIndexBreakdown] = useState(false);
 
   const deltaPositive = Number(deltaVsMarketPct || 0) >= 0;

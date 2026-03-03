@@ -3,7 +3,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function RateConfirmationImageUpload({ invoiceId }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [status, setStatus] = useState(null);

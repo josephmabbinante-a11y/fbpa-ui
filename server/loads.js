@@ -1,3 +1,7 @@
+// Simple test route for debugging
+router.get('/test', (req, res) => {
+  res.json({ ok: true, message: 'Loads router is working.' });
+});
 import express from 'express';
 // import fs from 'fs';
 // import path from 'path';

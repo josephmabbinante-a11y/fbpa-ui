@@ -50,7 +50,7 @@ function formatTime(date) {
 
 export default function GPSBreadcrumbTracker() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('407-934-7639');

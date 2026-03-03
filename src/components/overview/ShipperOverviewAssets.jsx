@@ -30,7 +30,7 @@ export default function ShipperOverviewAssets({
   onOpenActivity,
 }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const prefs = { ...DEFAULT_VISIBILITY, ...(visibility || {}) };
 
   if (!data) return null;

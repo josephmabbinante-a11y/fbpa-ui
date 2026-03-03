@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   addLoadBotActivity,
   createLoad,
@@ -18,7 +18,8 @@ export default function LoadBoard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, settings, setAdvancedSetting } = useTheme();
-  const t = themes[theme];
+  const { theme } = useTheme();
+  const t = theme || {};
   const handledPrefillRef = useRef('');
   const [activeTab, setActiveTab] = useState('available');
   const [query, setQuery] = useState('');
@@ -531,7 +532,11 @@ export default function LoadBoard() {
   };
 
   const headerStyle = {
-    marginBottom: 32,
+    marginBottom: 24,
+    minHeight: -52,
+    padding: '0 4px',
+    borderBottom: `1px solid ${t.border}`,
+    background: t.bgAlt,
   };
 
   const titleStyle = {

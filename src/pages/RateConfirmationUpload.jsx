@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
 
 export default function RateConfirmationUpload() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const { theme } = useTheme();
+  const t = theme || {};
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [status, setStatus] = useState(null);

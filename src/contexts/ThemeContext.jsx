@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { themePackages } from './themePackages';
+import { getThemeTokens } from './ThemeTokens';
 
 const ThemeContext = createContext();
 const THEME_STORAGE_KEY = 'opscale_theme_state';
@@ -753,14 +755,25 @@ export const ThemeProvider = ({ children }) => {
 
   const availablePalettes = useMemo(() => PALETTES.map((palette) => ({ id: palette.id, label: palette.label })), []);
 
+  const [themePackageKey, setThemePackageKey] = useState(() => {
+    const stored = localStorage.getItem('themePackageKey');
+    return stored || 'sentinelDark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('themePackageKey', themePackageKey);
+  }, [themePackageKey]);
+
+  const themeTokens = useMemo(() => getThemeTokens(themePackageKey), [themePackageKey]);
+
   return (
     <ThemeContext.Provider
       value={{
-        theme: themeKey,
-        themeMode: effectiveMode,
-        modePreference: settings.modePreference,
-        palette: settings.palette,
+        theme: themeTokens,
+        themePackageKey,
+        setThemePackageKey,
         settings,
+        setSettings,
         themes,
         availablePalettes,
         toggleTheme,
@@ -779,4 +792,9 @@ export const useTheme = () => {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
   return ctx;
+};
+
+export const useThemeTokens = () => {
+  const ctx = useContext(ThemeContext);
+  return ctx?.theme || themePackages.sentinelDark;
 };

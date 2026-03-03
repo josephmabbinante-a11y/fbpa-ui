@@ -238,7 +238,7 @@ function RateCalculator() {
 
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
 
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');

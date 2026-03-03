@@ -73,7 +73,14 @@ export default function LaneIntelligence() {
   };
 
   const headerStyle = {
-    marginBottom: 32,
+    marginBottom: 24,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: -52,
+    padding: '0 4px',
+    borderBottom: `1px solid ${t.border}`,
+    background: t.bgAlt,
   };
 
   const titleStyle = {

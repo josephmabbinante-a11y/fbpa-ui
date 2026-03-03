@@ -5,7 +5,7 @@ import { register } from '../api/client';
 
 const Register = ({ onClose, onRegistered }) => {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [form, setForm] = useState({ email: "", password: "", name: "", organization: "" });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);

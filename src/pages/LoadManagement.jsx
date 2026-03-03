@@ -21,7 +21,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import {
   createCarrier,
@@ -100,7 +100,8 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const [searchParams, setSearchParams] = useSearchParams();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const { theme } = useTheme();
+  const t = theme || {};
   const [loadSize, setLoadSize] = useState('full');
   const [goodsCondition, setGoodsCondition] = useState('new');
   const [carrierSearchSource, setCarrierSearchSource] = useState('internal');
@@ -1081,7 +1082,7 @@ function searchCarriers({ includeFmcsa, mockFmcsaCarriers, query, internalResult
         borderRadius: 14,
       }}
     >
-      <header style={{ display: 'grid', gap: 10 }}>
+      <header style={{ display: 'grid', gap: 4, minHeight: -52, padding: '0 4px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <h1 style={{ margin: 0, fontSize: 26, lineHeight: 1.2 }}>{pageTitle}</h1>
           <button

@@ -9,7 +9,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
  */
 export default function ExceptionBreakdownChart({ data, onClick }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [isHovered, setIsHovered] = useState(false);
   const fallbackPalette = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0099cc'];
 

@@ -107,7 +107,7 @@ function mergeDashboardData(incoming, demoMode = false) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   // Use demoMode from context or fallback to env
   const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: import.meta.env.VITE_MOCK_MODE === 'true' };
   // Default dashboard data: only use mock data if demoMode
@@ -198,7 +198,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, justifyContent: 'space-between' }}>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: '#fff', letterSpacing: 0.2 }}>Operational Command Center</h1>
-            <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text, marginTop: 12 }}>
+            <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight || "#e5e7eb"}`, background: t.bgAlt, color: t.text, marginTop: 12 }}>
               <option value="shipper">Shipper</option>
               <option value="carrier">Carrier</option>
               <option value="broker">Broker</option>

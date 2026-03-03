@@ -9,7 +9,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
  */
 export default function SavingsByCarrierChart({ data, onClick }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [isHovered, setIsHovered] = useState(false);
 
   const [lastValidData, setLastValidData] = useState([]);

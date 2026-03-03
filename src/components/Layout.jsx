@@ -63,7 +63,7 @@ function getSidebarWidth() {
 
 function Layout({ children }) {
   const { theme, settings, setAdvancedSetting } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const location = useLocation();
   const pathname = String(location.pathname || '/');
   const pageRootRef = useRef(null);
@@ -309,7 +309,7 @@ function Layout({ children }) {
           flex: 1,
           marginLeft: sidebarWidth,
           transition: 'margin-left 220ms ease',
-          padding: 'var(--space-4)',
+          padding: '0 24px 24px 24px', // Ensure no top padding so page is at top
         }}
       >
         <section

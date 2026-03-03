@@ -113,187 +113,178 @@ export default function Customers() {
   );
 
   return (
-    <div style={{ display: 'grid', gap: 14 }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 26 }}>Customers</h1>
-          <div style={{ fontSize: 12, color: t.textSecondary }}>Search, review, and open a full customer profile from one command center.</div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" onClick={loadCustomers} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700 }}>
-            {loadingCustomers ? 'Refreshing...' : 'Refresh'}
-          </button>
-          <button
-            type="button"
-            onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
-            disabled={!selected}
-            style={{
-              ...inputStyle,
-              cursor: selected ? 'pointer' : 'not-allowed',
-              fontWeight: 700,
-              borderColor: t.accent,
-            }}
-          >
-            Open Profile
-          </button>
-        </div>
-      </header>
-
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-        {[
-          ['Total Customers', customerMetrics.total],
-          ['Combined Revenue', toMoney(customerMetrics.totalRevenue)],
-          ['Combined Open AR', toMoney(customerMetrics.openAR)],
-        ].map(([label, value]) => (
-          <div key={label} style={{ ...panelStyle, padding: 12 }}>
-            <div style={{ fontSize: 11, color: t.textSecondary, marginBottom: 4 }}>{label}</div>
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
-          </div>
-        ))}
-      </section>
-
-      <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search customer, company, email, phone"
-            style={{ ...inputStyle, minWidth: 280, flex: 1 }}
-          />
-          <div style={{ fontSize: 12, color: t.textSecondary }}>
-            {filteredCustomers.length} of {customers.length} customers
-          </div>
-        </div>
-
-        {error && <div style={{ fontSize: 12, color: t.error }}>{error}</div>}
-        {filteredCustomers.length > renderedCustomers.length && (
-          <div style={{ fontSize: 12, color: t.warning }}>
-            Displaying first {renderedCustomers.length.toLocaleString()} customers. Refine your search to view more.
-          </div>
-        )}
-
-        <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', fontSize: '1rem' }}>
-            <thead>
-              <tr style={{ background: t.bgAlt }}>
-                {['Name', 'Company', 'Email', 'Phone', 'Open AR', 'Invoices', 'Actions'].map((header) => (
-                  <th key={header} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {renderedCustomers.map((customer) => {
-                const isActive = selected === customer.id;
-                return (
-                  <tr key={customer.id} style={{ background: isActive ? t.surfaceStrong : 'transparent' }}>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 600 }}>{customer.name || '—'}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.company || '—'}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.email || '—'}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.phone || '—'}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{toMoney(customer.openAR)}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{Number(customer.invoiceCount || 0)}</td>
-                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => setSelected(customer.id)}
-                          style={{ ...inputStyle, minHeight: 28, padding: '4px 8px', cursor: 'pointer' }}
-                        >
-                          Preview
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/customers/${encodeURIComponent(customer.id)}`)}
-                          style={{ ...inputStyle, minHeight: 28, padding: '4px 8px', cursor: 'pointer', borderColor: t.accent }}
-                        >
-                          Profile
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!filteredCustomers.length && (
-                <tr>
-                  <td colSpan={7} style={{ padding: '14px 12px', color: t.textSecondary }}>No customers found for this search.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 10 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+    <div className="app-bg">
+      <div className="page-container">
+        <header className="customers-header">
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Customer Preview</div>
-            {!selected && <div style={{ fontSize: 12, color: t.textSecondary }}>Select a customer to load summary details.</div>}
+            <h1 style={{ margin: 0, fontSize: 26 }}>Customers</h1>
+            <div className="secondary-text" style={{ fontSize: 12 }}>Search, review, and open a full customer profile from one command center.</div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              disabled={!detail}
-              style={{
-                ...inputStyle,
-                cursor: detail ? 'pointer' : 'not-allowed',
-                fontWeight: 700,
-              }}
-            >
-              Contact Customer
+            <button type="button" onClick={loadCustomers} className="kpi-card" style={{ cursor: 'pointer', fontWeight: 700 }}>
+              {loadingCustomers ? 'Refreshing...' : 'Refresh'}
             </button>
             <button
               type="button"
               onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
               disabled={!selected}
-              style={{
-                ...inputStyle,
-                cursor: selected ? 'pointer' : 'not-allowed',
-                fontWeight: 700,
-                borderColor: t.accent,
-              }}
+              className="kpi-card"
+              style={{ cursor: selected ? 'pointer' : 'not-allowed', fontWeight: 700, borderColor: t.accent }}
             >
-              Open Full Profile
+              Open Profile
             </button>
+          </div>
+        </header>
+
+        <div className="kpi-grid">
+          {[
+            ['Total Customers', customerMetrics.total],
+            ['Combined Revenue', toMoney(customerMetrics.totalRevenue)],
+            ['Combined Open AR', toMoney(customerMetrics.openAR)],
+          ].map(([label, value]) => (
+            <div key={label} className="kpi-card">
+              <div className="secondary-text" style={{ fontSize: 11, marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="table-wrapper">
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '16px' }}>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search customer, company, email, phone"
+              style={{ minWidth: 280, flex: 1, minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px', fontSize: 12 }}
+            />
+            <div className="secondary-text" style={{ fontSize: 12 }}>
+              {filteredCustomers.length} of {customers.length} customers
+            </div>
+          </div>
+
+          {error && <div style={{ fontSize: 12, color: t.error, paddingLeft: 16 }}>{error}</div>}
+          {filteredCustomers.length > renderedCustomers.length && (
+            <div style={{ fontSize: 12, color: t.warning, paddingLeft: 16 }}>
+              Displaying first {renderedCustomers.length.toLocaleString()} customers. Refine your search to view more.
+            </div>
+          )}
+
+          <div style={{ overflow: 'auto' }}>
+            <table style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', fontSize: '1rem' }}>
+              <thead>
+                <tr>
+                  {['Name', 'Company', 'Email', 'Phone', 'Open AR', 'Invoices', 'Actions'].map((header) => (
+                    <th key={header} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {renderedCustomers.map((customer) => {
+                  const isActive = selected === customer.id;
+                  return (
+                    <tr key={customer.id} style={{ background: isActive ? t.surfaceStrong : 'transparent' }}>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 600 }}>{customer.name || '—'}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.company || '—'}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.email || '—'}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.phone || '—'}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{toMoney(customer.openAR)}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{Number(customer.invoiceCount || 0)}</td>
+                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => setSelected(customer.id)}
+                            style={{ minHeight: 28, padding: '4px 8px', cursor: 'pointer', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontWeight: 600 }}
+                          >
+                            Preview
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/customers/${encodeURIComponent(customer.id)}`)}
+                            style={{ minHeight: 28, padding: '4px 8px', cursor: 'pointer', borderRadius: 8, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.text, fontWeight: 600 }}
+                          >
+                            Profile
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!filteredCustomers.length && (
+                  <tr>
+                    <td colSpan={7} className="secondary-text" style={{ padding: '14px 12px' }}>No customers found for this search.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {loading && <div style={{ fontSize: 12, color: t.textSecondary }}>Loading selected customer...</div>}
-        {!loading && detail && (
-          <>
-            <div style={{ fontSize: 13 }}>
-              <strong>{detail.name}</strong>
-              <div style={{ color: t.textSecondary, marginTop: 4 }}>
-                {detail.contact || 'No contact'} • {detail.email || 'No email'} • {detail.phone || 'No phone'}
+        <div className="customer-preview-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>Customer Preview</div>
+              {!selected && <div className="secondary-text" style={{ fontSize: 12 }}>Select a customer to load summary details.</div>}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                disabled={!detail}
+                className="kpi-card"
+                style={{ cursor: detail ? 'pointer' : 'not-allowed', fontWeight: 700 }}
+              >
+                Contact Customer
+              </button>
+              <button
+                type="button"
+                onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
+                disabled={!selected}
+                className="kpi-card"
+                style={{ cursor: selected ? 'pointer' : 'not-allowed', fontWeight: 700, borderColor: t.accent }}
+              >
+                Open Full Profile
+              </button>
+            </div>
+          </div>
+
+          {loading && <div className="secondary-text" style={{ fontSize: 12 }}>Loading selected customer...</div>}
+          {!loading && detail && (
+            <>
+              <div style={{ fontSize: 13 }}>
+                <strong>{detail.name}</strong>
+                <div className="secondary-text" style={{ marginTop: 4 }}>
+                  {detail.contact || 'No contact'} • {detail.email || 'No email'} • {detail.phone || 'No phone'}
+                </div>
+                {detail.address && <div className="secondary-text" style={{ marginTop: 4 }}>{detail.address}</div>}
               </div>
-              {detail.address && <div style={{ color: t.textSecondary, marginTop: 4 }}>{detail.address}</div>}
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-              <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
-              <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
-              <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
-            </div>
+              <div className="kpi-grid">
+                <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
+                <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
+                <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
+              </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-              <StatTable title="Audit Statistics" stats={detail.auditStats} t={t} />
-              <StatTable title="Payment Statistics" stats={detail.paymentStats} t={t} />
-              <AgingTable aging={aging} t={t} />
-            </div>
-          </>
-        )}
-      </section>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+                <StatTable title="Audit Statistics" stats={detail.auditStats} t={t} />
+                <StatTable title="Payment Statistics" stats={detail.paymentStats} t={t} />
+                <AgingTable aging={aging} t={t} />
+              </div>
+            </>
+          )}
+        </div>
 
-      <ContactCustomerModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSend={handleSendMessage}
-        customer={detail}
-        invoice={null}
-        exception={null}
-      />
+        <ContactCustomerModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSend={handleSendMessage}
+          customer={detail}
+          invoice={null}
+          exception={null}
+        />
+      </div>
     </div>
   );
 }
