@@ -52,13 +52,6 @@ const riskByLoad = {
     pickupCountdownMinutes: 720,
     warnings: ['margin_below_lane_avg'],
   },
-      message: 'Carrier Prime Logistics assigned',
-      actor: { id: 'U-9', name: 'Alex Smith' },
-      createdAt: '2026-03-01T18:22:00Z',
-    },
-  ],
-  'L-204811': [],
-  'L-887201': [],
 };
 
 const seedBotActivityByLoad = {
