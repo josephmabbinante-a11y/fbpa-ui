@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
 import LoginTest from './components/LoginTest';
 import { getAccessToken } from './utils/authToken';
+import { LoadStatusDemo } from './components/LoadStatusDemo';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CombinedPage = lazy(() => import('./pages/CombinedPage'));
@@ -149,6 +150,7 @@ function AppRoutes() {
             <Route path="/profile" element={<Navigate to="/settings" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
             <Route path="/truckload-rate-calculator" element={<TruckloadRateCalculator />} />
+            <Route path="/fsm-demo" element={<LoadStatusDemo />} />
           </Routes>
         </Suspense>
       </Layout>

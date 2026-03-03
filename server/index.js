@@ -25,6 +25,7 @@ import loadsRouter from './loads.js';
 import locationsRouter from './locations.js';
 import documentsRouter from './documents.js';
 import emailTemplatesRouter from './emailTemplates.js';
+import loadLifecycleRoutes from './loadLifecycleRoutes';
 
 import vehiclesRouter from './vehicles.js';
 import driversRouter from './drivers.js';
@@ -171,7 +172,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
+app.use('/api', loadLifecycleRoutes);
 
 app.use('/api/customers', customersRouter);
 app.use('/api/carriers', carriersRouter);

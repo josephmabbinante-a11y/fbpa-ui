@@ -531,7 +531,6 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   }
 }
 // ...existing code...
-export default LoadManagement;
 
 // Carrier search logic moved into a function
 function searchCarriers({ includeFmcsa, mockFmcsaCarriers, query, internalResults, setCarrierResults, setCarrierActionMessage, setCarrierError, setCarrierLoading }) {
