@@ -530,6 +530,7 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
     );
   }
 }
+// ...existing code...
 export default LoadManagement;
 
 // Carrier search logic moved into a function

@@ -77,7 +77,6 @@ export default function CarrierProfile() {
       </div>
 
 // --- Score Breakdown Panel ---
-// --- Score Breakdown Panel ---
 function ScoreBreakdownPanel() {
   const [open, setOpen] = useState(false);
   // Example breakdown data, replace with real logic
