@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCarriers } from '../api/client';
@@ -19,11 +18,6 @@ export default function CarrierProfile() {
       setLoading(true);
       setError('');
       const result = await getCarriers({ limit: 5000 });
-            {/* Action buttons should be inside the main return, not after ScoreBreakdownPanel */}
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>View Documents</button>
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Suspend Carrier</button>
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>Request COI Update</button>
-      }
       const carriers = Array.isArray(result?.carriers) ? result.carriers : [];
       const normalizedParam = decodeURIComponent(String(carrier || '')).trim().toLowerCase();
       const matched = carriers.find((entry) => (
@@ -68,42 +62,10 @@ export default function CarrierProfile() {
         <div style={{ background: '#fff', color: '#222', borderRadius: 18, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', padding: '8px 32px', fontWeight: 800, fontSize: 22, border: '2px solid #10b981' }}>
           Carrier Score: 88 / 100 – Reliable
         </div>
-        {/* Score Breakdown Panel */}
-        <ScoreBreakdownPanel />
       </div>
       {/* HEADER STRIP */}
       <div style={{ /* ...existing style... */ }}>
         {/* ...existing code... */}
-      </div>
-
-// ...existing code...
-                {open && (
-                  <div style={{
-                    margin: '10px auto 0',
-                    background: t.surface,
-                    borderRadius: 12,
-                    boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)',
-                    padding: '16px 24px',
-                    border: `1px solid ${t.border}`,
-                    maxWidth: 340,
-                    textAlign: 'left',
-                  }}>
-                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Score Breakdown</div>
-                    {breakdown.map((item) => (
-                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, marginBottom: 6 }}>
-                        <span>{item.label}</span>
-                        <span style={{ fontWeight: 700 }}>{item.score} <span style={{ color: t.textSecondary, fontWeight: 400 }}>(Weight {item.weight}%)</span></span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>View Documents</button>
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Suspend Carrier</button>
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>Request COI Update</button>
-          </div>
-        </div>
       </div>
 
       {/* MAIN DASHBOARD LAYOUT */}
