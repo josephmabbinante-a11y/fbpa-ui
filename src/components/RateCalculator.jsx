@@ -801,28 +801,21 @@ function RateCalculator() {
     refreshMetrics();
   }, []);
 
-  useEffect(() => {
-    let active = true;
 
-    // Use route engine for region info, not external geo API
-    useEffect(() => {
-      const originZip3 = parseZip3(origin);
-      const destinationZip3 = parseZip3(destination);
-      setGeoCoverage((prev) => ({
-        ...prev,
-        loading: false,
-        originZip3,
-        destinationZip3,
-        originRegion: resolveRegionFallback(originZip3) || 'Unknown',
-        destinationRegion: resolveRegionFallback(destinationZip3) || 'Unknown',
-        source: 'route-engine',
-      }));
-    }, [origin, destination]);
-    // Close the outer useEffect
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Use route engine for region info, not external geo API
+  useEffect(() => {
+    const originZip3 = parseZip3(origin);
+    const destinationZip3 = parseZip3(destination);
+    setGeoCoverage((prev) => ({
+      ...prev,
+      loading: false,
+      originZip3,
+      destinationZip3,
+      originRegion: resolveRegionFallback(originZip3) || 'Unknown',
+      destinationRegion: resolveRegionFallback(destinationZip3) || 'Unknown',
+      source: 'route-engine',
+    }));
+  }, [origin, destination]);
 
   const handlePredictRate = async () => {
     const nextShipmentErrors = {};

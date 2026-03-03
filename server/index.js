@@ -1,3 +1,21 @@
+// DEBUG: Startup and route mounting diagnostics
+console.log('[DEBUG] Starting server/index.js');
+process.on('uncaughtException', (err) => {
+  console.error('[DEBUG] Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[DEBUG] Unhandled Rejection:', reason);
+});
+
+// Log all route mounts
+const originalUse = app.use.bind(app);
+app.use = (...args) => {
+  if (typeof args[0] === 'string') {
+    console.log(`[DEBUG] Mounting route: ${args[0]}`);
+  }
+  return originalUse(...args);
+};
+
 /* global process */
 import crypto from 'crypto';
 import express from 'express';
@@ -382,5 +400,8 @@ if (process.env.SERVE_STATIC === 'true') {
 }
 
 app.listen(PORT, () => {
-  console.log(`Auth server running on http://localhost:${PORT}`);
+  console.log(`[DEBUG] Auth server running on http://localhost:${PORT}`);
+  console.log(`[DEBUG] NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`[DEBUG] VITE_API_URL: ${process.env.VITE_API_URL}`);
+  console.log(`[DEBUG] MONGODB_URI: ${process.env.MONGODB_URI}`);
 });
