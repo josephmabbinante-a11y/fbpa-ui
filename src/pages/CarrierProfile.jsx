@@ -99,18 +99,6 @@ export default function CarrierProfile() {
                 )}
               </div>
             );
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '18px 28px 12px 28px',
-        background: t.surface,
-        borderBottom: `2px solid ${t.border}`,
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)',
-      }}>
         {/* LEFT: Carrier Identity */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <div style={{ fontSize: 26, fontWeight: 800 }}>{carrierRecord.name || 'Carrier Name'}</div>
