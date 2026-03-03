@@ -10,17 +10,15 @@ function apiUrl(path) {
 }
 
 function isMockMode() {
-  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
-  try {
-    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
-  } catch {
-    return false;
-  }
+  // Only enable mock mode if VITE_MOCK_MODE or demoMode is true
+  return import.meta.env.VITE_MOCK_MODE === 'true' ||
+    (typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true');
 }
 
 let forceMockFromNetwork = false;
 
 function shouldUseMockLocations() {
+  // Only use mock locations if mock mode is enabled
   return isMockMode() || forceMockFromNetwork;
 }
 

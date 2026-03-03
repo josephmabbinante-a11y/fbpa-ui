@@ -30,12 +30,9 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
 
 // Unify mock mode: check both env and DemoContext/localStorage.
 function isMockMode() {
-  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
-  try {
-    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
-  } catch {
-    return false;
-  }
+  // Only enable mock mode if VITE_MOCK_MODE or demoMode is true
+  return import.meta.env.VITE_MOCK_MODE === 'true' ||
+    (typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true');
 }
 
 const seedMockCarriers = [
