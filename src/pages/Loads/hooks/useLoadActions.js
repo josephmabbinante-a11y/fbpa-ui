@@ -21,9 +21,9 @@ export default function useLoadActions({ selectedId, refreshList, refreshDetail 
 
   return {
     actionState,
-    dispatch: () => runAction(() => dispatchLoad(selectedId, { carrierId: 'CR-18', carrierName: 'Prime Logistics', lockStatus: true }), 'Load dispatched'),
-    reassign: () => runAction(() => reassignLoad(selectedId, { carrierId: 'CR-27', carrierName: 'Reassigned Carrier', reason: 'Capacity adjustment' }), 'Carrier reassigned'),
-    sendToBidNetwork: () => runAction(() => sendToBidNetwork(selectedId, { network: 'internal' }), 'Sent to bid network'),
-    markDelivered: () => runAction(() => markLoadDelivered(selectedId, { deliveredAt: new Date().toISOString(), podReceived: true }), 'Load marked delivered'),
+    dispatch: () => runAction(() => dispatchLoad(selectedId, { carrierId: 'CR-18', carrierName: 'Prime Logistics', lockStatus: true, userId: 'dispatch_ui', transitionReason: 'Dispatch action' }), 'Load dispatched'),
+    reassign: () => runAction(() => reassignLoad(selectedId, { carrierId: 'CR-27', carrierName: 'Reassigned Carrier', reason: 'Capacity adjustment', userId: 'dispatch_ui' }), 'Carrier reassigned'),
+    sendToBidNetwork: () => runAction(() => sendToBidNetwork(selectedId, { network: 'internal', userId: 'dispatch_ui', transitionReason: 'Posted to bid network' }), 'Sent to bid network'),
+    markDelivered: () => runAction(() => markLoadDelivered(selectedId, { deliveredAt: new Date().toISOString(), podReceived: true, userId: 'dispatch_ui', transitionReason: 'Proof of delivery confirmed' }), 'Load marked delivered'),
   };
 }

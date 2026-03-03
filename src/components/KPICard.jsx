@@ -27,7 +27,7 @@ export default function KPICard({ title, value, trend, unit = '' }) {
 
       {trend && trend.length > 0 && (
         <div style={{ height: 40, marginTop: 8 }}>
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
             <AreaChart
               data={trend}
               margin={{ top: 5, right: 5, bottom: 5, left: -25 }}

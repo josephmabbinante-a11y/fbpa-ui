@@ -1,25 +1,65 @@
 // src/pages/Customers.jsx
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ContactCustomerModal from '../components/ContactCustomerModal';
 import { getCustomerAging, getCustomerDetail, getCustomers, sendCustomerMessage } from '../api/client';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+function toMoney(value) {
+  return `$${Number(value || 0).toLocaleString()}`;
+}
 
 export default function Customers() {
   const { theme } = useTheme();
   const t = themes[theme];
+  const navigate = useNavigate();
+
   const [customers, setCustomers] = useState([]);
+  const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
   const [aging, setAging] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [error, setError] = useState('');
+  const CUSTOMER_RENDER_LIMIT = 1000;
+
+  const panelStyle = {
+    border: `1px solid ${t.border}`,
+    borderRadius: 12,
+    background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`,
+    boxShadow: '0 10px 24px rgba(0,0,0,0.14)',
+  };
+
+  const inputStyle = {
+    minHeight: 36,
+    borderRadius: 8,
+    border: `1px solid ${t.border}`,
+    background: t.bgAlt,
+    color: t.text,
+    padding: '8px 10px',
+    fontSize: 12,
+  };
+
+  const loadCustomers = async () => {
+    setLoadingCustomers(true);
+    setError('');
+    const data = await getCustomers();
+    if (data?.error) {
+      setCustomers([]);
+      setError(data.error);
+      setLoadingCustomers(false);
+      return;
+    }
+
+    const rows = Array.isArray(data) ? data : [];
+    setCustomers(rows);
+    setSelected((prev) => prev || rows[0]?.id || null);
+    setLoadingCustomers(false);
+  };
 
   useEffect(() => {
-    getCustomers().then((data) => {
-      if (Array.isArray(data)) setCustomers(data);
-      else setCustomers([]);
-    });
+    loadCustomers();
   }, []);
 
   useEffect(() => {
@@ -42,231 +82,272 @@ export default function Customers() {
     return await sendCustomerMessage({ message, customer, invoice, exception });
   };
 
+  const filteredCustomers = useMemo(() => {
+    const normalizedQuery = String(query || '').trim().toLowerCase();
+    if (!normalizedQuery) return customers;
+
+    return customers.filter((customer) => [
+      customer?.name,
+      customer?.company,
+      customer?.email,
+      customer?.phone,
+      customer?.id,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(normalizedQuery)));
+  }, [customers, query]);
+
+  const customerMetrics = useMemo(() => {
+    const totalRevenue = customers.reduce((sum, customer) => sum + Number(customer.totalRevenue || 0), 0);
+    const openAR = customers.reduce((sum, customer) => sum + Number(customer.openAR || 0), 0);
+    return {
+      total: customers.length,
+      totalRevenue,
+      openAR,
+    };
+  }, [customers]);
+
+  const renderedCustomers = useMemo(
+    () => filteredCustomers.slice(0, CUSTOMER_RENDER_LIMIT),
+    [filteredCustomers]
+  );
+
   return (
-    <div style={{ padding: 32, background: t.bg, color: t.text, minHeight: '100vh' }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Customers</h1>
-      <div style={{ display: 'flex', gap: 32 }}>
-        <div style={{ minWidth: 260 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Customer List</h2>
-          <div style={{ fontSize: 12, color: t.textSecondary, marginBottom: 16 }}>
-            Customers are created automatically from AR invoices. Use this view to manage profiles and analytics.
+    <div style={{ display: 'grid', gap: 14 }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 26 }}>Customers</h1>
+          <div style={{ fontSize: 12, color: t.textSecondary }}>Search, review, and open a full customer profile from one command center.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" onClick={loadCustomers} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700 }}>
+            {loadingCustomers ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            type="button"
+            onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
+            disabled={!selected}
+            style={{
+              ...inputStyle,
+              cursor: selected ? 'pointer' : 'not-allowed',
+              fontWeight: 700,
+              borderColor: t.accent,
+            }}
+          >
+            Open Profile
+          </button>
+        </div>
+      </header>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+        {[
+          ['Total Customers', customerMetrics.total],
+          ['Combined Revenue', toMoney(customerMetrics.totalRevenue)],
+          ['Combined Open AR', toMoney(customerMetrics.openAR)],
+        ].map(([label, value]) => (
+          <div key={label} style={{ ...panelStyle, padding: 12 }}>
+            <div style={{ fontSize: 11, color: t.textSecondary, marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
           </div>
-          <ul id="customer-list" style={{ listStyle: 'none', padding: 0 }}>
-            {customers.map((c) => (
-              <li key={c.id}>
-                <button
-                  style={{
-                    background: selected === c.id ? t.accent : t.surface,
-                    color: selected === c.id ? '#fff' : t.text,
-                    border: `1px solid ${t.border}`,
-                    borderRadius: 4,
-                    padding: '8px 12px',
-                    marginBottom: 8,
-                    width: '100%',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setSelected(c.id)}
-                >
-                  {c.name}
-                </button>
-              </li>
-            ))}
-          </ul>
+        ))}
+      </section>
+
+      <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search customer, company, email, phone"
+            style={{ ...inputStyle, minWidth: 280, flex: 1 }}
+          />
+          <div style={{ fontSize: 12, color: t.textSecondary }}>
+            {filteredCustomers.length} of {customers.length} customers
+          </div>
         </div>
-        <div style={{ flex: 1 }} id="customer-analysis">
-          {!selected && <div style={{ color: t.textSecondary }}>Select a customer to view details.</div>}
-          {loading && <div>Loading...</div>}
-          {detail && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700 }}>{detail.name}</h2>
-                  <div style={{ marginBottom: 12, color: t.textSecondary }}>
-                    {detail.contact} | {detail.email} | {detail.phone}
-                  </div>
-                  <div style={{ marginBottom: 16 }}>{detail.address}</div>
-                </div>
-                <button
-                  style={{
-                    background: '#1976d2',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '7px 18px',
-                    fontWeight: 600,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    marginLeft: 'auto',
-                    marginTop: 8,
-                    height: 36,
-                  }}
-                  onClick={() => setModalOpen(true)}
-                >
-                  Contact Customer
-                </button>
+
+        {error && <div style={{ fontSize: 12, color: t.error }}>{error}</div>}
+        {filteredCustomers.length > renderedCustomers.length && (
+          <div style={{ fontSize: 12, color: t.warning }}>
+            Displaying first {renderedCustomers.length.toLocaleString()} customers. Refine your search to view more.
+          </div>
+        )}
+
+        <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', fontSize: '1rem' }}>
+            <thead>
+              <tr style={{ background: t.bgAlt }}>
+                {['Name', 'Company', 'Email', 'Phone', 'Open AR', 'Invoices', 'Actions'].map((header) => (
+                  <th key={header} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {renderedCustomers.map((customer) => {
+                const isActive = selected === customer.id;
+                return (
+                  <tr key={customer.id} style={{ background: isActive ? t.surfaceStrong : 'transparent' }}>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 600 }}>{customer.name || '—'}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.company || '—'}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.email || '—'}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.phone || '—'}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{toMoney(customer.openAR)}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{Number(customer.invoiceCount || 0)}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelected(customer.id)}
+                          style={{ ...inputStyle, minHeight: 28, padding: '4px 8px', cursor: 'pointer' }}
+                        >
+                          Preview
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/customers/${encodeURIComponent(customer.id)}`)}
+                          style={{ ...inputStyle, minHeight: 28, padding: '4px 8px', cursor: 'pointer', borderColor: t.accent }}
+                        >
+                          Profile
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!filteredCustomers.length && (
+                <tr>
+                  <td colSpan={7} style={{ padding: '14px 12px', color: t.textSecondary }}>No customers found for this search.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Customer Preview</div>
+            {!selected && <div style={{ fontSize: 12, color: t.textSecondary }}>Select a customer to load summary details.</div>}
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              disabled={!detail}
+              style={{
+                ...inputStyle,
+                cursor: detail ? 'pointer' : 'not-allowed',
+                fontWeight: 700,
+              }}
+            >
+              Contact Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
+              disabled={!selected}
+              style={{
+                ...inputStyle,
+                cursor: selected ? 'pointer' : 'not-allowed',
+                fontWeight: 700,
+                borderColor: t.accent,
+              }}
+            >
+              Open Full Profile
+            </button>
+          </div>
+        </div>
+
+        {loading && <div style={{ fontSize: 12, color: t.textSecondary }}>Loading selected customer...</div>}
+        {!loading && detail && (
+          <>
+            <div style={{ fontSize: 13 }}>
+              <strong>{detail.name}</strong>
+              <div style={{ color: t.textSecondary, marginTop: 4 }}>
+                {detail.contact || 'No contact'} • {detail.email || 'No email'} • {detail.phone || 'No phone'}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, margin: '16px 0 24px' }}>
-                <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 12 }}>
-                  <div style={{ fontSize: 12, color: t.textSecondary }}>Total Revenue</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: t.positive }}>
-                    ${Number(detail.totalRevenue || 0).toLocaleString()}
-                  </div>
-                </div>
-                <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 12 }}>
-                  <div style={{ fontSize: 12, color: t.textSecondary }}>Open AR</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: t.warning }}>
-                    ${Number(detail.openAR || 0).toLocaleString()}
-                  </div>
-                </div>
-                <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, padding: 12 }}>
-                  <div style={{ fontSize: 12, color: t.textSecondary }}>Invoice Count</div>
-                  <div style={{ fontSize: 18, fontWeight: 700 }}>{Number(detail.invoiceCount || 0)}</div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 32, marginBottom: 24 }}>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Audit Statistics</h3>
-                  <StatTable stats={detail.auditStats} t={t} />
-                  <div style={{ height: 180, marginTop: 8, background: t.bgAlt, borderRadius: 8, padding: 8 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={Object.entries(detail.auditStats).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }))}>
-                        <XAxis dataKey="name" stroke={t.textSecondary} />
-                        <YAxis stroke={t.textSecondary} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill={t.accent} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Payment Statistics</h3>
-                  <StatTable stats={detail.paymentStats} t={t} />
-                  <div style={{ height: 180, marginTop: 8, background: t.bgAlt, borderRadius: 8, padding: 8 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={Object.entries(detail.paymentStats).map(([k, v]) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v }))}>
-                        <XAxis dataKey="name" stroke={t.textSecondary} />
-                        <YAxis stroke={t.textSecondary} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill={t.positive} radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginBottom: 24 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Detailed Analysis</h3>
-                <AnalysisTable analysis={detail.analysis} t={t} />
-                {/* Billing Bar Chart */}
-                <div style={{ height: 220, marginTop: 16, background: t.bgAlt, borderRadius: 8, padding: 12 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={[
-                      { name: 'Billed', value: detail.analysis.totalBilled },
-                      { name: 'Paid', value: detail.analysis.totalPaid },
-                      { name: 'Outstanding', value: detail.analysis.totalOutstanding },
-                      { name: 'Overdue', value: detail.analysis.totalOverdue },
-                    ]}>
-                      <XAxis dataKey="name" stroke={t.textSecondary} />
-                      <YAxis stroke={t.textSecondary} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill={t.accent} radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              <div>
-                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>Aging Report</h3>
-                {aging ? (
-                  <>
-                    <AgingTable aging={aging} t={t} />
-                    {/* Aging Pie Chart */}
-                    <div style={{ height: 220, marginTop: 16, background: t.bgAlt, borderRadius: 8, padding: 12 }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={Object.entries(aging).map(([bucket, value]) => ({ name: bucket, value }))}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={70}
-                            label
-                          >
-                            {Object.entries(aging).map((entry, idx) => (
-                              <Cell key={entry[0]} fill={[t.accent, t.positive, t.warning, t.error][idx % 4]} />
-                            ))}
-                          </Pie>
-                          <Legend />
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </>
-                ) : <span>Loading aging report...</span>}
-              </div>
-              <ContactCustomerModal
-                open={modalOpen}
-                onClose={() => setModalOpen(false)}
-                onSend={handleSendMessage}
-                customer={detail}
-                invoice={null}
-                exception={null}
-              />
+              {detail.address && <div style={{ color: t.textSecondary, marginTop: 4 }}>{detail.address}</div>}
             </div>
-          )}
-        </div>
-      </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+              <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
+              <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
+              <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+              <StatTable title="Audit Statistics" stats={detail.auditStats} t={t} />
+              <StatTable title="Payment Statistics" stats={detail.paymentStats} t={t} />
+              <AgingTable aging={aging} t={t} />
+            </div>
+          </>
+        )}
+      </section>
+
+      <ContactCustomerModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSend={handleSendMessage}
+        customer={detail}
+        invoice={null}
+        exception={null}
+      />
     </div>
   );
 }
 
-function StatTable({ stats, t }) {
+function MetricCard({ label, value, t }) {
   return (
-    <table style={{ fontSize: 13, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 4, marginBottom: 8 }}>
-      <tbody>
-        {Object.entries(stats).map(([k, v]) => (
-          <tr key={k}>
-            <td style={{ padding: '4px 10px', color: t.textSecondary }}>{k.charAt(0).toUpperCase() + k.slice(1)}</td>
-            <td style={{ padding: '4px 10px', fontWeight: 600 }}>{v}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 10 }}>
+      <div style={{ fontSize: 11, color: t.textSecondary }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700 }}>{value}</div>
+    </div>
   );
 }
 
-function AnalysisTable({ analysis, t }) {
+function StatTable({ title, stats, t }) {
   return (
-    <table style={{ fontSize: 13, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 4, marginBottom: 8 }}>
-      <tbody>
-        {Object.entries(analysis).map(([k, v]) => (
-          <tr key={k}>
-            <td style={{ padding: '4px 10px', color: t.textSecondary }}>{k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}</td>
-            <td style={{ padding: '4px 10px', fontWeight: 600 }}>{typeof v === 'number' ? v.toLocaleString() : v}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ fontSize: 12, color: t.textSecondary, padding: '8px 10px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
+        {title}
+      </div>
+      <table style={{ width: '100%', fontSize: 13 }}>
+        <tbody>
+          {Object.entries(stats || {}).map(([k, v]) => (
+            <tr key={k}>
+              <td style={{ padding: '6px 10px', color: t.textSecondary }}>{k.charAt(0).toUpperCase() + k.slice(1)}</td>
+              <td style={{ padding: '6px 10px', fontWeight: 600 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
 function AgingTable({ aging, t }) {
   return (
-    <table style={{ fontSize: 13, background: t.surface, border: `1px solid ${t.border}`, borderRadius: 4, marginBottom: 8 }}>
-      <thead>
-        <tr>
-          <th style={{ padding: '4px 10px', color: t.textSecondary }}>Aging Bucket</th>
-          <th style={{ padding: '4px 10px', color: t.textSecondary }}>Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {Object.entries(aging).map(([bucket, amount]) => (
-          <tr key={bucket}>
-            <td style={{ padding: '4px 10px' }}>{bucket}</td>
-            <td style={{ padding: '4px 10px', fontWeight: 600 }}>{amount.toLocaleString()}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: 'hidden' }}>
+      <div style={{ fontSize: 12, color: t.textSecondary, padding: '8px 10px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
+        Aging Buckets
+      </div>
+      <table style={{ width: '100%', fontSize: 13 }}>
+        <tbody>
+          {Object.entries(aging || {}).map(([bucket, amount]) => (
+            <tr key={bucket}>
+              <td style={{ padding: '6px 10px' }}>{bucket}</td>
+              <td style={{ padding: '6px 10px', fontWeight: 600 }}>{toMoney(amount)}</td>
+            </tr>
+          ))}
+          {!aging && (
+            <tr>
+              <td colSpan={2} style={{ padding: '8px 10px', color: t.textSecondary }}>Aging data unavailable.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

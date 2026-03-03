@@ -1,8 +1,69 @@
+import { useState } from 'react';
+import GoogleMapEmbed from '../components/GoogleMapEmbed';
 import { useTheme, themes } from '../contexts/ThemeContext';
+
+function parseLane(laneText) {
+  const [originPart = '', destinationPart = ''] = String(laneText || '').split('→');
+  return {
+    origin: originPart.trim(),
+    destination: destinationPart.trim(),
+  };
+}
+
+const laneData = [
+  {
+    lane: 'LAX → DAL',
+    avgRate: '$2,450',
+    volume: 127,
+    winRate: '68%',
+    margin: '26.5%',
+    seasonalTrend: '↑ High Demand',
+    trendDirection: 'up',
+  },
+  {
+    lane: 'CHI → MIA',
+    avgRate: '$1,820',
+    volume: 94,
+    winRate: '55%',
+    margin: '28.3%',
+    seasonalTrend: '→ Stable',
+    trendDirection: 'flat',
+  },
+  {
+    lane: 'ATL → TOR',
+    avgRate: '$3,100',
+    volume: 312,
+    winRate: '72%',
+    margin: '24.8%',
+    seasonalTrend: '↓ Declining',
+    trendDirection: 'down',
+  },
+  {
+    lane: 'DEN → PHX',
+    avgRate: '$1,250',
+    volume: 211,
+    winRate: '81%',
+    margin: '32.1%',
+    seasonalTrend: '↑ Growing',
+    trendDirection: 'up',
+  },
+  {
+    lane: 'NYC → LA',
+    avgRate: '$4,800',
+    volume: 156,
+    winRate: '43%',
+    margin: '19.2%',
+    seasonalTrend: '↓ Declining',
+    trendDirection: 'down',
+  },
+];
 
 export default function LaneIntelligence() {
   const { theme } = useTheme();
   const t = themes[theme];
+  const initialLane = parseLane(laneData[0]?.lane);
+  const [originInput, setOriginInput] = useState(initialLane.origin);
+  const [destinationInput, setDestinationInput] = useState(initialLane.destination);
 
   const containerStyle = {
     padding: 24,
@@ -80,54 +141,6 @@ export default function LaneIntelligence() {
     fontWeight: 600,
   });
 
-  const laneData = [
-    {
-      lane: 'LAX → DAL',
-      avgRate: '$2,450',
-      volume: 127,
-      winRate: '68%',
-      margin: '26.5%',
-      seasonalTrend: '↑ High Demand',
-      trendDirection: 'up',
-    },
-    {
-      lane: 'CHI → MIA',
-      avgRate: '$1,820',
-      volume: 94,
-      winRate: '55%',
-      margin: '28.3%',
-      seasonalTrend: '→ Stable',
-      trendDirection: 'flat',
-    },
-    {
-      lane: 'ATL → TOR',
-      avgRate: '$3,100',
-      volume: 312,
-      winRate: '72%',
-      margin: '24.8%',
-      seasonalTrend: '↓ Declining',
-      trendDirection: 'down',
-    },
-    {
-      lane: 'DEN → PHX',
-      avgRate: '$1,250',
-      volume: 211,
-      winRate: '81%',
-      margin: '32.1%',
-      seasonalTrend: '↑ Growing',
-      trendDirection: 'up',
-    },
-    {
-      lane: 'NYC → LA',
-      avgRate: '$4,800',
-      volume: 156,
-      winRate: '43%',
-      margin: '19.2%',
-      seasonalTrend: '↓ Declining',
-      trendDirection: 'down',
-    },
-  ];
-
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
@@ -136,8 +149,20 @@ export default function LaneIntelligence() {
       </div>
 
       <div style={filterBarStyle}>
-        <input type="text" placeholder="Search by origin..." style={filterInputStyle} />
-        <input type="text" placeholder="Search by destination..." style={filterInputStyle} />
+        <input
+          type="text"
+          placeholder="Origin"
+          style={filterInputStyle}
+          value={originInput}
+          onChange={(event) => setOriginInput(event.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Destination"
+          style={filterInputStyle}
+          value={destinationInput}
+          onChange={(event) => setDestinationInput(event.target.value)}
+        />
         <select style={filterInputStyle} defaultValue="all">
           <option value="all">All Lanes</option>
           <option value="growing">Growing</option>
@@ -150,6 +175,13 @@ export default function LaneIntelligence() {
           <option value="medium">Medium (50-100)</option>
           <option value="low">Low (&lt;50)</option>
         </select>
+      </div>
+
+      <div style={{ backgroundColor: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: t.textSecondary, marginBottom: 8 }}>
+          Google Route Preview • {originInput || 'Origin'} → {destinationInput || 'Destination'}
+        </div>
+        <GoogleMapEmbed origin={originInput} destination={destinationInput} height={220} />
       </div>
 
       <div style={tableWrapperStyle}>
@@ -166,7 +198,17 @@ export default function LaneIntelligence() {
           </thead>
           <tbody>
             {laneData.map((lane) => (
-              <tr key={lane.lane} style={{ cursor: 'pointer' }} onMouseEnter={(e) => e.target.parentElement.style.backgroundColor = t.bgAlt} onMouseLeave={(e) => e.target.parentElement.style.backgroundColor = 'transparent'}>
+              <tr
+                key={lane.lane}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  const parsed = parseLane(lane.lane);
+                  setOriginInput(parsed.origin);
+                  setDestinationInput(parsed.destination);
+                }}
+                onMouseEnter={(e) => e.target.parentElement.style.backgroundColor = t.bgAlt}
+                onMouseLeave={(e) => e.target.parentElement.style.backgroundColor = 'transparent'}
+              >
                 <td style={tdStyle}><strong>{lane.lane}</strong></td>
                 <td style={tdStyle}>{lane.avgRate}</td>
                 <td style={tdStyle}>{lane.volume} loads</td>

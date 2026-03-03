@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { uploadInvoiceFile } from '../api/client';
 import uploadHistory from '../mock/uploads';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import DocumentManagementPanel from './DocumentManagementPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
 
@@ -182,6 +183,13 @@ export default function Uploads() {
 
   return (
     <div style={containerStyle}>
+      {/* Document Management & Search Panel */}
+      <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.bgAlt, marginBottom: 24, padding: 16 }}>
+        <DocumentManagementPanel t={t} />
+      </div>
+
+
+
       <div style={headerStyle}>
         <h1 style={titleStyle}>Uploads</h1>
         {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Uploading...</span>}
@@ -289,7 +297,7 @@ export default function Uploads() {
 
       {/* Upload History */}
       <CollapsibleSection title={`Upload History (${history.length})`} defaultOpen={true} id="upload-history">
-        <table style={tableStyle}>
+        <table style={{...tableStyle, fontSize: '1rem'}}>
           <thead>
             <tr>
               <th style={thStyle}>File Name</th>

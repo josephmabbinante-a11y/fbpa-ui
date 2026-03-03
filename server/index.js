@@ -22,10 +22,15 @@ import uploadsRouter from './uploads.js';
 import invoiceImagesRouter from './invoiceImages.js';
 import ediRouter from './edi.js';
 import loadsRouter from './loads.js';
+import locationsRouter from './locations.js';
+import documentsRouter from './documents.js';
+import emailTemplatesRouter from './emailTemplates.js';
 
 import vehiclesRouter from './vehicles.js';
 import driversRouter from './drivers.js';
 import tripsRouter from './trips.js';
+import trackerRouter from './tracker.js';
+import { getSaiaHealthStatus } from './services/carriers/saia/saiaRateService.js';
 
 dotenv.config();
 
@@ -173,14 +178,30 @@ app.use('/api/uploads', uploadsRouter);
 app.use('/api/invoice-images', invoiceImagesRouter);
 app.use('/api/edi', ediRouter);
 app.use('/api/loads', loadsRouter);
+app.use('/api/locations', locationsRouter);
+app.use('/api/documents', documentsRouter);
+app.use('/api/email-templates', emailTemplatesRouter);
 
 // Fleet data routers
 app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/drivers', driversRouter);
 app.use('/api/trips', tripsRouter);
+app.use('/api/tracker', trackerRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/api/health/saia', async (_req, res) => {
+  const health = await getSaiaHealthStatus();
+  const statusCode = health.status === 'OFFLINE' ? 503 : 200;
+  return res.status(statusCode).json(health);
+});
+
+app.get('/health/saia', async (_req, res) => {
+  const health = await getSaiaHealthStatus();
+  const statusCode = health.status === 'OFFLINE' ? 503 : 200;
+  return res.status(statusCode).json(health);
 });
 
 const users = [

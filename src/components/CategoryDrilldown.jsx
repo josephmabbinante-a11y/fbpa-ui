@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -15,27 +15,41 @@ import {
 } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
-const formatCurrency = (value) =>
-  `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const asNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
-const formatPercent = (value) => `${value.toFixed(1)}%`;
+const formatCurrency = (value) =>
+  `$${asNumber(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const formatPercent = (value) => `${asNumber(value).toFixed(1)}%`;
 
 export default function CategoryDrilldown({ data }) {
   const { theme } = useTheme();
   const t = themes[theme];
-  const [activeCategory, setActiveCategory] = useState(data && data.length ? data[0].category : '');
-  const [lastValidData, setLastValidData] = useState([]);
+  const categories = useMemo(
+    () => (Array.isArray(data) ? data.filter((item) => item && typeof item.category === 'string') : []),
+    [data]
+  );
+  const [activeCategory, setActiveCategory] = useState('');
+
+  useEffect(() => {
+    if (!categories.length) {
+      setActiveCategory('');
+      return;
+    }
+    if (!categories.some((item) => item.category === activeCategory)) {
+      setActiveCategory(categories[0].category);
+    }
+  }, [categories, activeCategory]);
 
   const active = useMemo(() => {
-    const found = (data || []).find((item) => item.category === activeCategory);
-    if (data && data.length && found) setLastValidData(data);
-    return found;
-  }, [data, activeCategory]);
+    if (!categories.length) return null;
+    return categories.find((item) => item.category === activeCategory) || categories[0];
+  }, [categories, activeCategory]);
 
-  const dataToUse = data && data.length ? data : lastValidData;
-  const activeToUse = dataToUse.find((item) => item.category === activeCategory);
-
-  if (!dataToUse || dataToUse.length === 0 || !activeToUse) {
+  if (!active) {
     return (
       <div style={{ width: '100%' }}>
         <h3 style={{ marginBottom: 16, fontSize: '14px', fontWeight: '600', color: '#b0b0b0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -84,11 +98,15 @@ export default function CategoryDrilldown({ data }) {
   };
 
   const palette = [t.positive, t.warning, t.error, t.accent, t.neutral];
+  const kpis = Array.isArray(active.kpis) ? active.kpis.filter(Boolean) : [];
+  const trend = Array.isArray(active.trend) ? active.trend.filter(Boolean) : [];
+  const customers = Array.isArray(active.customers) ? active.customers.filter(Boolean) : [];
+  const causes = Array.isArray(active.causes) ? active.causes.filter(Boolean) : [];
 
   return (
     <div style={{ marginTop: 24 }}>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        {data.map((item) => (
+        {categories.map((item) => (
           <button
             key={item.category}
             type="button"
@@ -102,7 +120,7 @@ export default function CategoryDrilldown({ data }) {
 
       <div style={{ ...cardStyle, marginBottom: 16 }}>
         <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{active.category}</div>
-        <div style={{ fontSize: 12, color: t.textSecondary }}>{active.summary}</div>
+        <div style={{ fontSize: 12, color: t.textSecondary }}>{active.summary || 'No summary available.'}</div>
       </div>
 
       <div
@@ -113,20 +131,20 @@ export default function CategoryDrilldown({ data }) {
           marginBottom: 16,
         }}
       >
-        {active.kpis.map((kpi) => {
+        {kpis.map((kpi) => {
           const value =
             kpi.format === 'currency'
               ? formatCurrency(kpi.value)
               : kpi.format === 'percent'
               ? formatPercent(kpi.value)
-              : kpi.value.toLocaleString();
+              : asNumber(kpi.value).toLocaleString();
           return (
-            <div key={kpi.label} style={kpiStyle}>
+            <div key={String(kpi.label || 'kpi')} style={kpiStyle}>
               <div style={{ fontSize: 11, color: t.textSecondary, textTransform: 'uppercase', letterSpacing: '0.3px' }}>
-                {kpi.label}
+                {kpi.label || 'Metric'}
               </div>
               <div style={{ fontSize: 18, fontWeight: 700, color: t.text }}>{value}</div>
-              <div style={{ fontSize: 11, color: t.textSecondary }}>{kpi.note}</div>
+              <div style={{ fontSize: 11, color: t.textSecondary }}>{kpi.note || ''}</div>
             </div>
           );
         })}
@@ -144,8 +162,8 @@ export default function CategoryDrilldown({ data }) {
             Findings + Recovery Trend
           </div>
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={active.trend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
+              <LineChart data={trend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                 <XAxis dataKey="period" stroke={t.textSecondary} fontSize={11} />
                 <YAxis stroke={t.textSecondary} fontSize={11} />
@@ -171,8 +189,8 @@ export default function CategoryDrilldown({ data }) {
             Top Customers By Impact
           </div>
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={active.customers} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
+              <BarChart data={customers} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                 <XAxis dataKey="customer" stroke={t.textSecondary} fontSize={10} />
                 <YAxis stroke={t.textSecondary} fontSize={11} />
@@ -197,11 +215,11 @@ export default function CategoryDrilldown({ data }) {
             Root Cause Mix
           </div>
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
               <PieChart>
-                <Pie data={active.causes} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                  {active.causes.map((entry, index) => (
-                    <Cell key={`cause-${entry.name}`} fill={palette[index % palette.length]} />
+                <Pie data={causes} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                  {causes.map((entry, index) => (
+                    <Cell key={`cause-${String(entry.name || index)}`} fill={palette[index % palette.length]} />
                   ))}
                 </Pie>
                 <Tooltip

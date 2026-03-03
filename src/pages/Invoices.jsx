@@ -9,9 +9,59 @@ import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import CollapsibleSection from "../components/CollapsibleSection";
 import { InlineAlert, PageHeader, PrimaryButton } from "../components/ui/Primitives";
 
+const MOCK_RECENT_ACTIVITY_KEY = 'mock:invoices:recentActivity';
+const DEFAULT_RECENT_ACTIVITY = [
+  {
+    id: 'ra-1',
+    type: 'exception',
+    invoiceNumber: 'INV-1001',
+    amount: 1245.67,
+    status: 'Review',
+    timestamp: '2026-02-09T14:32:00Z',
+  },
+  {
+    id: 'ra-2',
+    type: 'upload',
+    fileName: 'feb-9-invoices.csv',
+    count: 42,
+    status: 'Processed',
+    timestamp: '2026-02-09T13:15:00Z',
+  },
+  {
+    id: 'ra-3',
+    type: 'exception',
+    invoiceNumber: 'INV-1002',
+    amount: 980.5,
+    status: 'Fail',
+    timestamp: '2026-02-09T10:45:00Z',
+  },
+];
+
+function isMockModeEnabled() {
+  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
+  try {
+    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function readMockRecentActivity() {
+  if (!isMockModeEnabled()) return DEFAULT_RECENT_ACTIVITY;
+  try {
+    const raw = localStorage.getItem(MOCK_RECENT_ACTIVITY_KEY);
+    if (!raw) return DEFAULT_RECENT_ACTIVITY;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : DEFAULT_RECENT_ACTIVITY;
+  } catch {
+    return DEFAULT_RECENT_ACTIVITY;
+  }
+}
+
 export default function Invoices() {
   const navigate = useNavigate();
-  const [data, setData] = useState(mockInvoices);
+  const mockMode = isMockModeEnabled();
+  const [data, setData] = useState(() => (mockMode ? mockInvoices : []));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,29 +70,79 @@ export default function Invoices() {
   const [imageStatus, setImageStatus] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
-  const [imageHistory, setImageHistory] = useState(mockInvoiceImages);
+  const [imageHistory, setImageHistory] = useState(() => (mockMode ? mockInvoiceImages : []));
   const [verificationResult, setVerificationResult] = useState(null);
+  const [recentActivity, setRecentActivity] = useState(() => (mockMode ? readMockRecentActivity() : []));
+
+  const persistRecentActivity = (nextActivity) => {
+    if (!isMockModeEnabled()) return;
+    try {
+      localStorage.setItem(MOCK_RECENT_ACTIVITY_KEY, JSON.stringify(nextActivity));
+    } catch {
+      // Ignore storage write failures.
+    }
+  };
+
+  const appendRecentActivity = (entry) => {
+    setRecentActivity((previous) => {
+      const next = [entry, ...previous].slice(0, 50);
+      persistRecentActivity(next);
+      return next;
+    });
+  };
+
+  const formatActivityAmount = (activity) => {
+    if (Number.isFinite(Number(activity?.amount))) {
+      return `$${Number(activity.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (Number.isFinite(Number(activity?.count))) {
+      return Number(activity.count).toLocaleString();
+    }
+    return '-';
+  };
+
+  const openActivity = (activity) => {
+    const type = String(activity?.type || '').toLowerCase();
+    const invoiceId = String(activity?.invoiceNumber || activity?.invoiceId || '').trim();
+    const hasInvoice = invoiceId && data.some((inv) => inv.id === invoiceId);
+
+    if (hasInvoice) {
+      navigate(`/invoices/${invoiceId}`);
+      return;
+    }
+    if (type === 'upload') {
+      navigate('/uploads');
+      return;
+    }
+    if (type === 'exception' || type === 'verification') {
+      navigate('/exceptions');
+      return;
+    }
+    navigate('/invoices');
+  };
 
   useEffect(() => {
     let mounted = true;
     getInvoices()
       .then((res) => {
         if (!mounted) return;
-        if (res && !res.error && res.invoices) {
+        if (Array.isArray(res)) {
+          setData(res);
+        } else if (res && !res.error && Array.isArray(res.invoices)) {
           setData(res.invoices);
         } else {
-          setData(mockInvoices);
+          setData(mockMode ? mockInvoices : []);
           if (res && res.error) setError(res.error);
         }
       })
       .catch((err) => {
         if (!mounted) return;
-        setData(mockInvoices);
+        setData(mockMode ? mockInvoices : []);
         setError(err.message || String(err));
       })
       .finally(() => mounted && setLoading(false));
     return () => (mounted = false);
-  }, []);
+  }, [mockMode]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -60,10 +160,43 @@ export default function Invoices() {
       if (res && !res.error && res.images) {
         setImageHistory(res.images);
       } else {
-        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
+        setImageHistory(mockMode ? mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId) : []);
       }
     });
-  }, [selectedInvoiceId]);
+  }, [selectedInvoiceId, mockMode]);
+
+  const invoiceKpis = useMemo(() => {
+    const totalInvoices = data.length;
+    const exceptions = data.reduce((sum, inv) => sum + Number(inv.exceptions || 0), 0);
+    const totalAmount = data.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+    const pending = data.filter((inv) => String(inv.status || '').toLowerCase().includes('pending')).length;
+    return { totalInvoices, exceptions, totalAmount, pending };
+  }, [data]);
+
+  const exceptionBreakdownData = useMemo(() => {
+    const groups = new Map();
+    data.forEach((inv) => {
+      const key = String(inv.status || 'Unknown');
+      groups.set(key, (groups.get(key) || 0) + 1);
+    });
+    return Array.from(groups.entries()).map(([name, value]) => ({ name, value }));
+  }, [data]);
+
+  const savingsByCarrierData = useMemo(() => {
+    const groups = new Map();
+    data.forEach((inv) => {
+      const carrier = String(inv.carrier || 'Unknown');
+      const amount = Number(inv.amount || 0);
+      const current = groups.get(carrier) || { carrier, savings: 0, invoiceCount: 0 };
+      current.savings += amount * 0.03;
+      current.invoiceCount += 1;
+      groups.set(carrier, current);
+    });
+    return Array.from(groups.values())
+      .sort((a, b) => b.savings - a.savings)
+      .slice(0, 5)
+      .map((row) => ({ ...row, savings: Number(row.savings.toFixed(2)) }));
+  }, [data]);
 
   const filtered = data.filter(
     (inv) =>
@@ -99,6 +232,14 @@ export default function Invoices() {
         verification: res.verification || null,
       };
       setImageHistory((prev) => [entry, ...prev]);
+      appendRecentActivity({
+        id: `ra-upload-${Date.now()}`,
+        type: 'upload',
+        fileName: entry.fileName,
+        count: 1,
+        status: entry.status || 'Uploaded',
+        timestamp: entry.uploadedAt || new Date().toISOString(),
+      });
       setImageStatus("Image uploaded");
       setImageFile(null);
     } else {
@@ -118,6 +259,14 @@ export default function Invoices() {
       setImageHistory((prev) =>
         prev.map((img) => (img.id === imageId ? { ...img, status: res.status || img.status, verification: res.verification } : img))
       );
+      appendRecentActivity({
+        id: `ra-verify-${Date.now()}`,
+        type: 'verification',
+        invoiceNumber: selectedInvoiceId,
+        amount: Number(res?.verification?.extractedFields?.amount ?? selectedInvoice?.amount ?? 0),
+        status: res.status || 'Verified',
+        timestamp: new Date().toISOString(),
+      });
       setImageStatus("Verification complete");
     } else {
       const fallback = mockInvoiceImages.find((img) => img.id === imageId);
@@ -126,6 +275,14 @@ export default function Invoices() {
         setImageHistory((prev) =>
           prev.map((img) => (img.id === imageId ? { ...img, status: fallback.status, verification: fallback.verification } : img))
         );
+        appendRecentActivity({
+          id: `ra-verify-${Date.now()}`,
+          type: 'verification',
+          invoiceNumber: selectedInvoiceId,
+          amount: Number(fallback?.verification?.extractedFields?.amount ?? selectedInvoice?.amount ?? 0),
+          status: fallback.status || 'Verified',
+          timestamp: new Date().toISOString(),
+        });
         setImageStatus("Verification complete (mock)");
       } else {
         setImageStatus(`Verification failed: ${res && res.error ? res.error : "unknown"}`);
@@ -139,10 +296,10 @@ export default function Invoices() {
 
       {/* Dashboard assets moved from Dashboard.jsx */}
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
-        <KPIWithTrend label="Total Invoices" value={1247} delta={5} trendData={[]} trendColor="#0066cc" />
-        <KPIWithTrend label="Exceptions" value={89} delta={-2} trendData={[]} trendColor="#ef4444" />
-        <KPIWithTrend label="Total Savings" value={12450.75} format="currency" delta={12} trendData={[]} trendColor="#10b981" />
-        <KPIWithTrend label="Pending" value={23} delta={0} trendData={[]} trendColor="#f59e0b" />
+        <KPIWithTrend label="Total Invoices" value={invoiceKpis.totalInvoices} delta={0} trendData={[]} trendColor="#0066cc" />
+        <KPIWithTrend label="Exceptions" value={invoiceKpis.exceptions} delta={0} trendData={[]} trendColor="#ef4444" />
+        <KPIWithTrend label="Total Savings" value={invoiceKpis.totalAmount * 0.03} format="currency" delta={0} trendData={[]} trendColor="#10b981" />
+        <KPIWithTrend label="Pending" value={invoiceKpis.pending} delta={0} trendData={[]} trendColor="#f59e0b" />
       </div>
 
       <CollapsibleSection title="Invoice Imaging" defaultOpen={true}>
@@ -261,7 +418,7 @@ export default function Invoices() {
       </CollapsibleSection>
 
       <CollapsibleSection title="Recent Activity" defaultOpen={true}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
           <thead>
             <tr>
               <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
@@ -272,27 +429,24 @@ export default function Invoices() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td style={{ padding: 8 }}>exception</td>
-              <td style={{ padding: 8 }}>INV-1001</td>
-              <td style={{ padding: 8 }}>$1,245.67</td>
-              <td style={{ padding: 8 }}>Review</td>
-              <td style={{ padding: 8 }}>2/9/2026</td>
-            </tr>
-            <tr>
-              <td style={{ padding: 8 }}>upload</td>
-              <td style={{ padding: 8 }}>feb-9-invoices.csv</td>
-              <td style={{ padding: 8 }}>42</td>
-              <td style={{ padding: 8 }}>Processed</td>
-              <td style={{ padding: 8 }}>2/9/2026</td>
-            </tr>
-            <tr>
-              <td style={{ padding: 8 }}>exception</td>
-              <td style={{ padding: 8 }}>INV-1002</td>
-              <td style={{ padding: 8 }}>$980.5</td>
-              <td style={{ padding: 8 }}>Fail</td>
-              <td style={{ padding: 8 }}>2/9/2026</td>
-            </tr>
+            {recentActivity.length > 0 ? recentActivity.slice(0, 12).map((activity) => (
+              <tr
+                key={activity.id}
+                onClick={() => openActivity(activity)}
+                style={{ cursor: 'pointer' }}
+                title="Open related page"
+              >
+                <td style={{ padding: 8 }}>{activity.type || '-'}</td>
+                <td style={{ padding: 8 }}>{activity.invoiceNumber || activity.fileName || '-'}</td>
+                <td style={{ padding: 8 }}>{formatActivityAmount(activity)}</td>
+                <td style={{ padding: 8 }}>{activity.status || '-'}</td>
+                <td style={{ padding: 8 }}>{activity.timestamp ? new Date(activity.timestamp).toLocaleDateString() : '-'}</td>
+              </tr>
+            )) : (
+              <tr>
+                <td style={{ padding: 8, color: 'var(--text-secondary)' }} colSpan={5}>No recent activity.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </CollapsibleSection>
@@ -350,8 +504,8 @@ export default function Invoices() {
 
       <CollapsibleSection title="Analytics" defaultOpen={true}>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
-          <ExceptionBreakdownChart data={[{ name: 'Rate Mismatch', value: 34, fill: '#8884d8' }, { name: 'Duplicate', value: 28, fill: '#82ca9d' }, { name: 'Accessorial', value: 15, fill: '#ffc658' }, { name: 'Other', value: 12, fill: '#ff8042' }]} />
-          <SavingsByCarrierChart data={[{ carrier: 'FastShip', savings: 2450.75, invoiceCount: 345 }, { carrier: 'Oceanic', savings: 1980.50, invoiceCount: 312 }, { carrier: 'RailMax', savings: 1750.25, invoiceCount: 289 }, { carrier: 'AirLogistics', savings: 1520.10, invoiceCount: 201 }, { carrier: 'Express Co', savings: 1248.15, invoiceCount: 156 }]} />
+            <ExceptionBreakdownChart data={exceptionBreakdownData} />
+            <SavingsByCarrierChart data={savingsByCarrierData} />
         </div>
       </CollapsibleSection>
 

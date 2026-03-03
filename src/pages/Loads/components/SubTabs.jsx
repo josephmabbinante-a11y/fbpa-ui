@@ -6,6 +6,7 @@ const SUB_TABS = [
   { key: 'uncovered', label: 'Uncovered' },
   { key: 'at_risk', label: 'At Risk' },
   { key: 'delivered', label: 'Delivered' },
+  { key: 'void', label: 'Void' },
 ];
 
 export default function SubTabs({ activeTab = 'all', onChange }) {
@@ -33,3 +34,5 @@ export default function SubTabs({ activeTab = 'all', onChange }) {
     </div>
   );
 }
+
+export { SubTabs };
