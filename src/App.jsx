@@ -202,8 +202,9 @@ function App() {
           </BrowserRouter>
         </ErrorBoundary>
       </DemoProvider>
-    </ThemeProvider>
-  );
-}
 
-export default App;
+      </ThemeProvider>
+    );
+  }
+
+  export default App;
