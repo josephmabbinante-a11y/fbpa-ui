@@ -9,6 +9,9 @@ import {
 } from '../api/client';
 import { getLoadDetail } from '../api/loadsClient';
 import { mockLocations } from '../mock/mockLocations';
+import LaneIntelligencePanel from '../components/LaneIntelligencePanel';
+import CarrierSection from '../components/CarrierSection';
+import FinancialSection from '../components/FinancialSection';
 
 const COMPANY_BRANDING_STORAGE_KEY = 'fbpa_company_branding';
 const DOCUMENT_WHITELABEL_STORAGE_KEY = 'fbpa_document_whitelabel';
@@ -150,190 +153,59 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
       email: '',
       accentColor: '#2f80ed',
     };
-  });
-  const [customerBilling, setCustomerBilling] = useState({
-    name: '',
-    address: '',
-    email: '',
-    phone: '',
-  });
-  const [documentTerms, setDocumentTerms] = useState({
-    paymentTerms: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Net 30';
-        const parsed = JSON.parse(saved);
-        return parsed?.paymentTerms || 'Net 30';
-      } catch {
-        return 'Net 30';
-      }
-    })(),
-    footerNote: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Thank you for your business.';
-        const parsed = JSON.parse(saved);
-        return parsed?.footerNote || 'Thank you for your business.';
-      } catch {
-        return 'Thank you for your business.';
-      }
-    })(),
-    rateConfirmationTerms: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.';
-        const parsed = JSON.parse(saved);
-        return parsed?.rateConfirmationTerms || 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.';
-      } catch {
-        return 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.';
-      }
-    })(),
-    shipperName: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return '';
-        const parsed = JSON.parse(saved);
-        return parsed?.shipperName || '';
-      } catch {
-        return '';
-      }
-    })(),
-    shipperAddress: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return '';
-        const parsed = JSON.parse(saved);
-        return parsed?.shipperAddress || '';
-      } catch {
-        return '';
-      }
-    })(),
-    freightTerms: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Prepaid';
-        const parsed = JSON.parse(saved);
-        return parsed?.freightTerms || 'Prepaid';
-      } catch {
-        return 'Prepaid';
-      }
-    })(),
-    specialInstructions: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return '';
-        const parsed = JSON.parse(saved);
-        return parsed?.specialInstructions || '';
-      } catch {
-        return '';
-      }
-    })(),
-  });
+  return (
+    <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
+      {/* Sticky Load Header */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+        {/* StickyLoadHeader with live color logic */}
+        <StickyLoadHeader
+          loadNumber={loadSnapshot?.number || '123456'}
+          status={loadSnapshot?.status || 'Open'}
+          customer={loadSnapshot?.customer || 'Acme Corp'}
+          totalMiles={loadSnapshot?.totalMiles || 1200}
+          sellRate={loadSnapshot?.sellRate || 5000}
+          buyRate={loadSnapshot?.buyRate || 4300}
+          grossMargin={(loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)}
+          marginPct={((loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)) / (loadSnapshot?.sellRate || 5000) * 100}
+          riskIndicator={loadSnapshot?.riskIndicator || 'Medium'}
+        />
+      </div>
 
-  const inputStyle = {
-    width: '100%',
-    background: `linear-gradient(180deg, ${t.bgAlt}, ${t.surface})`,
-    color: t.text,
-    border: `1px solid ${t.accent2}`,
-    borderRadius: 8,
-    minHeight: 36,
-    padding: '8px 10px',
-    fontSize: 13,
-  };
+      <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
+        <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
+      </CollapsibleSection>
+  const [customerSectionComplete, setCustomerSectionComplete] = useState(false);
 
-  const tabBaseStyle = {
-    border: `1px solid ${t.accent2}`,
-    background: `linear-gradient(135deg, ${t.bgAlt}, ${t.surface})`,
-    color: t.textSecondary,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 700,
-    padding: '8px 12px',
-    cursor: 'pointer',
-    boxShadow: '0 6px 14px rgba(0,0,0,0.12)',
-  };
+      <CollapsibleSection title="Stops" complete={stopsSectionComplete} defaultOpen={true}>
+        <StopsSection onComplete={() => setStopsSectionComplete(true)} setStopsData={setStopsData} />
+      </CollapsibleSection>
+  const [stopsSectionComplete, setStopsSectionComplete] = useState(false);
+  const [stopsData, setStopsData] = useState([]);
 
-  const actionButtonStyle = {
-    border: `1px solid ${t.accent2}`,
-    background: `linear-gradient(120deg, ${t.surfaceStrong}, ${t.bgAlt})`,
-    color: t.text,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 600,
-    padding: '8px 12px',
-    cursor: 'pointer',
-  };
+      <CollapsibleSection title="Lane Intelligence" complete={false} defaultOpen={true}>
+        <LaneIntelligencePanel stops={stopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
+      </CollapsibleSection>
 
-  const optionButtonStyle = (active) => ({
-    border: `1px solid ${active ? t.accent : t.border}`,
-    background: active ? `linear-gradient(135deg, ${t.accent}, ${t.accent2})` : `linear-gradient(135deg, ${t.bgAlt}, ${t.surface})`,
-    color: active ? t.bg : t.textSecondary,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 700,
-    padding: '8px 12px',
-    cursor: 'pointer',
-    minWidth: 88,
-  });
+      <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
+        <CarrierSection enabled={laneIntelligenceComplete} onComplete={() => setCarrierSectionComplete(true)} />
+      </CollapsibleSection>
+  const [carrierSectionComplete, setCarrierSectionComplete] = useState(false);
 
-  const tabKeys = useMemo(() => new Set(tabs.map((tab) => tab.key)), []);
-  const panelTab = searchParams.get('panel') || '';
-  const currentTab = tabKeys.has(panelTab) ? panelTab : activeTab;
-  const activeTabLabel = tabs.find((tab) => tab.key === currentTab)?.label || 'Load Basics';
-  const nextTabByKey = {
-    'load-basics': 'customer-info',
-    'customer-info': 'carrier-asset-info',
-    'carrier-asset-info': 'edit-stops',
-    'edit-stops': 'financials',
-    'financials': 'financials',
-  };
-  const nextTabKey = nextTabByKey[currentTab] || 'customer-info';
-  const nextTabLabel = tabs.find((tab) => tab.key === nextTabKey)?.label || 'Customer Info';
-  const isFinancialsTab = currentTab === 'financials';
+      <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
+        <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData} onComplete={() => setFinancialSectionComplete(true)} />
+      </CollapsibleSection>
+  const [financialSectionComplete, setFinancialSectionComplete] = useState(false);
 
-  const setPanelTab = (tabKey) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('panel', tabKey);
-    setSearchParams(nextParams, { replace: true });
-  };
+      <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
+        {/* TODO: Implement DocumentsSection, readiness score, checklist, dispatch actions */}
+        <div>Documents Section Placeholder</div>
+      </CollapsibleSection>
 
-  const mapInternalCarrier = (carrier) => ({
-    id: carrier.id,
-    companyName: carrier.name || 'Unknown Carrier',
-    mcNumber: carrier.mcNumber || 'Not Set',
-    usdotNumber: carrier.usdotNumber || 'Not Set',
-    phone: carrier.phone || 'Not Set',
-    email: carrier.email || 'Not Set',
-    address: carrier.address || 'Not Set',
-    source: 'internal',
-    existsInInternal: true,
-  });
-
-  const runCarrierSearch = async () => {
-    const query = carrierQuery.trim().toLowerCase();
-    setCarrierLoading(true);
-    setCarrierError('');
-    setCarrierActionMessage('');
-
-    try {
-      const includeInternal = carrierSearchSource === 'internal' || carrierSearchSource === 'both';
-      const includeFmcsa = carrierSearchSource === 'fmcsa' || carrierSearchSource === 'both';
-
-      let internalResults = [];
-      if (includeInternal) {
-        const response = await getCarriers();
-        if (response?.error) {
-          throw new Error(response.error);
-        }
-        const rows = Array.isArray(response?.carriers) ? response.carriers : Array.isArray(response) ? response : [];
-        internalResults = rows
-          .filter((carrier) => {
-            if (!query) return true;
-            return [carrier.name, carrier.mcNumber, carrier.taxId, carrier.phone]
-              .filter(Boolean)
-              .some((value) => String(value).toLowerCase().includes(query));
-          })
-          .map(mapInternalCarrier)
+      <CollapsibleSection title="Activity Log" complete={false} defaultOpen={true}>
+        {/* TODO: Implement ActivityLogPanel, chronological feed */}
+        <div>Activity Log Panel Placeholder</div>
+      </CollapsibleSection>
+    </div>
           .slice(0, 15);
       }
 
