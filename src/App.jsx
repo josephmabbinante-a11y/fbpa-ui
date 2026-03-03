@@ -1,4 +1,5 @@
 import React, { lazy, Suspense, useState } from 'react';
+import ErrorBoundary from './components/ErrorBoundary';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DemoProvider, useDemo } from './demo/DemoContext';
@@ -187,17 +188,22 @@ function MockModeBadge() {
     </div>
   );
 }
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+ 
+function App() {
   return (
     <ThemeProvider>
       <DemoProvider>
-        <BrowserRouter>
-          <MockModeBadge />
-          <AppRoutes />
-        </BrowserRouter>
+        <ErrorBoundary>
+          <BrowserRouter>
+            <AppRoutes />
+            <MockModeBadge />
+            <DemoGuide />
+            <AIBot />
+          </BrowserRouter>
+        </ErrorBoundary>
       </DemoProvider>
     </ThemeProvider>
   );
 }
+
+export default App;

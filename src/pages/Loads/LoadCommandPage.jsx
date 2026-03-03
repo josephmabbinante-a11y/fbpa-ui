@@ -363,8 +363,8 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
     setBotWorking('');
 
     if (result?.error) {
-      setBotMessage(result.error);
-      appendBotActivity(selectedLoad.id, `Auto Dispatch failed: ${result.error}`);
+      setBotMessage(typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+      appendBotActivity(selectedLoad.id, `Auto Dispatch failed: ${typeof result.error === 'string' ? result.error : JSON.stringify(result.error)}`);
       return;
     }
 
@@ -388,8 +388,8 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
     setBotWorking('');
 
     if (result?.error) {
-      setBotMessage(result.error);
-      appendBotActivity(selectedLoad.id, `Auction Bot push failed: ${result.error}`, 'auction-bot');
+      setBotMessage(typeof result.error === 'string' ? result.error : JSON.stringify(result.error));
+      appendBotActivity(selectedLoad.id, `Auction Bot push failed: ${typeof result.error === 'string' ? result.error : JSON.stringify(result.error)}`, 'auction-bot');
       return;
     }
 
@@ -509,7 +509,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
 
     const result = await updateLoad(loadId, payload);
     if (result?.error) {
-      setEditState({ saving: false, error: result.error, success: '' });
+      setEditState({ saving: false, error: typeof result.error === 'string' ? result.error : JSON.stringify(result.error), success: '' });
       return;
     }
 
@@ -572,7 +572,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
       }
 
       if (result?.error) {
-        setQuickActionState({ busy: false, error: result.error, success: '' });
+        setQuickActionState({ busy: false, error: typeof result.error === 'string' ? result.error : JSON.stringify(result.error), success: '' });
         return;
       }
 
@@ -594,7 +594,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
         await Promise.all([refreshList(), refreshDetail(load.id)]);
       }
     } catch (error) {
-      setQuickActionState({ busy: false, error: error?.message || 'Action failed', success: '' });
+      setQuickActionState({ busy: false, error: typeof error === 'string' ? error : (error?.message || JSON.stringify(error) || 'Action failed'), success: '' });
     }
   };
 
@@ -630,7 +630,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
     });
 
     if (result?.error) {
-      setQuickActionState({ busy: false, error: result.error, success: '' });
+      setQuickActionState({ busy: false, error: typeof result.error === 'string' ? result.error : JSON.stringify(result.error), success: '' });
       return;
     }
 

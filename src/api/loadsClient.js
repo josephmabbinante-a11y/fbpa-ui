@@ -287,10 +287,12 @@ function normalizeApiListResponse(response = {}) {
 function normalizeApiDetailResponse(response = {}) {
   const load = normalizeApiLoad(response.load);
   const normalizedStatus = normalizeLoadStatus(load?.status);
+  // Always ensure controls is present
+  const controls = response.controls || load?.controls || deriveControlsForStatus(normalizedStatus);
   return {
     ...response,
-    load,
-    controls: response.controls || deriveControlsForStatus(normalizedStatus),
+    load: { ...load, controls },
+    controls,
     loadStatusHistory: normalizeStatusHistoryEntries(response.loadStatusHistory || load?.statusHistory || []),
   };
 }
