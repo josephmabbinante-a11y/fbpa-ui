@@ -8,7 +8,7 @@ import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
 import LoginTest from './components/LoginTest';
 import { getAccessToken } from './utils/authToken';
-import { LoadStatusDemo } from './components/LoadStatusDemo';
+import LoadStatusDemo from './components/LoadStatusDemo';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CombinedPage = lazy(() => import('./pages/CombinedPage'));
