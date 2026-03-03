@@ -23,7 +23,7 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
     if (!res.ok) throw new Error(`Send failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('sendCustomerMessage error:', err);
+    console.error('sendCustomerMessage error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -99,7 +99,7 @@ async function safeFetch(path, options) {
     }
     return await res.json();
   } catch (err) {
-    console.error("safeFetch error:", path, err);
+    console.error("safeFetch error:", path, err?.message || JSON.stringify(err));
     const isNetworkError = err instanceof TypeError && String(err.message || '').toLowerCase().includes('fetch');
     if (isNetworkError) {
       return { error: 'Unable to reach API server. Start backend on port 4000 and retry.' };
@@ -500,7 +500,7 @@ export async function uploadCarriersCsv(file) {
   try {
     return await tryBackendUpload();
   } catch (err) {
-    console.error('uploadCarriersCsv error:', err);
+    console.error('uploadCarriersCsv error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -597,7 +597,7 @@ export async function createInvoice(payload) {
     if (!res.ok) throw new Error(`Create invoice failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('createInvoice error:', err);
+    console.error('createInvoice error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -637,7 +637,7 @@ export async function login(payload) {
     }
     return await res.json();
   } catch (err) {
-    console.error('login error:', err);
+    console.error('login error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -652,7 +652,7 @@ export async function connectEdiIntegration(payload) {
     if (!res.ok) throw new Error(`Connect failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('connectEdiIntegration error:', err);
+    console.error('connectEdiIntegration error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -676,7 +676,7 @@ export async function uploadInvoiceImage(payload) {
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('uploadInvoiceImage error:', err);
+    console.error('uploadInvoiceImage error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -694,7 +694,7 @@ export async function verifyInvoiceImage(payload) {
     if (!res.ok) throw new Error(`Verify failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('verifyInvoiceImage error:', err);
+    console.error('verifyInvoiceImage error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -727,7 +727,7 @@ export async function uploadInvoiceFile(payload) {
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('uploadInvoiceFile error:', err);
+    console.error('uploadInvoiceFile error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -806,7 +806,7 @@ export async function register(payload) {
     }
     return await res.json();
   } catch (err) {
-    console.error('register error:', err);
+    console.error('register error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -819,7 +819,7 @@ export async function getUsers() {
       'Get users failed'
     );
   } catch (err) {
-    console.error('getUsers error:', err);
+    console.error('getUsers error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -837,7 +837,7 @@ export async function updateUser(userId, payload) {
       'Update user failed'
     );
   } catch (err) {
-    console.error('updateUser error:', err);
+    console.error('updateUser error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
