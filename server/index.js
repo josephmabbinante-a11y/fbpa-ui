@@ -1,5 +1,9 @@
 // DEBUG: Startup and route mounting diagnostics
-console.log('[DEBUG] Starting server/index.js');
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+console.log(`[DEBUG] Running file: ${__filename}`);
 process.on('uncaughtException', (err) => {
   console.error('[DEBUG] Uncaught Exception:', err);
 });
@@ -7,14 +11,21 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[DEBUG] Unhandled Rejection:', reason);
 });
 
-// Log all route mounts
+// Log all route mounts and keep a list
+const mountedRoutes = [];
 const originalUse = app.use.bind(app);
 app.use = (...args) => {
   if (typeof args[0] === 'string') {
     console.log(`[DEBUG] Mounting route: ${args[0]}`);
+    mountedRoutes.push(args[0]);
   }
   return originalUse(...args);
 };
+
+// At server startup, print all mounted routes after a short delay
+setTimeout(() => {
+  console.log('[DEBUG] All mounted routes:', mountedRoutes);
+}, 2000);
 
 /* global process */
 import crypto from 'crypto';
