@@ -845,26 +845,30 @@ export async function updateUser(userId, payload) {
 // Document API client for Uploads page
 // These are mock implementations; replace with real API calls as needed.
 
+
 export async function listDocuments({ q = '' } = {}) {
-  // Simulate a filtered document list
-  const docs = JSON.parse(localStorage.getItem('mock-documents') || '[]');
-  if (!q) return { items: docs };
-  const query = q.toLowerCase();
-  return { items: docs.filter(doc => doc.name.toLowerCase().includes(query)) };
+  try {
+    const res = await fetch(`/api/documents?q=${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error('Failed to fetch documents');
+    return await res.json();
+  } catch (err) {
+    return { error: err.message };
+  }
 }
+
 
 export async function deleteDocument(docId) {
-  let docs = JSON.parse(localStorage.getItem('mock-documents') || '[]');
-  docs = docs.filter(doc => doc.id !== docId);
-  localStorage.setItem('mock-documents', JSON.stringify(docs));
-  return { ok: true };
+  try {
+    const res = await fetch(`/api/documents/${encodeURIComponent(docId)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete document');
+    return await res.json();
+  } catch (err) {
+    return { error: err.message };
+  }
 }
 
+
 export function downloadDocument(docId) {
-  const docs = JSON.parse(localStorage.getItem('mock-documents') || '[]');
-  const doc = docs.find(d => d.id === docId);
-  if (!doc) return;
-  // Simulate download by opening the URL
-  window.open(doc.url, '_blank');
+  window.open(`/api/documents/${encodeURIComponent(docId)}/download`, '_blank');
 }
 

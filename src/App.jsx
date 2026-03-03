@@ -118,7 +118,7 @@ function AppRoutes() {
             <Route path="/invoices" element={<CombinedPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />
             <Route path="/exceptions" element={<ExceptionsUploads />} />
-            <Route path="/uploads" element={<ExceptionsUploads />} />
+            <Route path="/uploads" element={<Uploads />} />
             <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/:reportId" element={<ReportDetail />} />
