@@ -40,6 +40,7 @@ function buildMockLocations() {
       updatedAt: new Date().toISOString(),
     };
   });
+}
 
 let mockStore = buildMockLocations();
 

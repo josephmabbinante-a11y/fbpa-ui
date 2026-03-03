@@ -438,6 +438,7 @@ export async function uploadCarriersCsv(file) {
       return { error: err.message || 'Failed to parse carrier CSV' };
     }
   }
+  }
 
 export async function listEmailTemplates(params = {}) {
   const query = new URLSearchParams();
@@ -801,8 +802,6 @@ export async function deleteDocument(docId) {
   }
 }
 
-
 export function downloadDocument(docId) {
   window.open(`/api/documents/${encodeURIComponent(docId)}/download`, '_blank');
 }
-

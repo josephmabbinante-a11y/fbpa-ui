@@ -188,7 +188,7 @@ function createRandomizedMockLoads(count = 240) {
   return generated;
 }
 
-const mockLoads = createRandomizedMockLoads();
+const mockLoads = shouldUseMockLoads() ? createRandomizedMockLoads() : [];
 const mockLoadTemplates = [];
 
 async function safeFetch(path, options) {

@@ -1,191 +1,91 @@
-import { useEffect, useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import logo from '../assets/opscale-logo.svg';
+// ...existing code...
+import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { clearAccessToken } from '../utils/authToken';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: 'DB', path: '/' },
-  { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet-dashboard' },
+  { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: 'FD', path: '/fleet' },
+  { id: 'customers', label: 'Customers', icon: 'CU', path: '/customers' },
+  { id: 'locations', label: 'Locations', icon: 'LO', path: '/locations' },
+  { id: 'carriers', label: 'Carriers', icon: 'CR', path: '/carriers' },
   { id: 'invoices', label: 'Invoices', icon: 'IN', path: '/invoices' },
   { id: 'exceptions', label: 'Exceptions', icon: 'EX', path: '/exceptions' },
   { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic' },
   { id: 'reports', label: 'Reports', icon: 'RP', path: '/reports' },
-  { id: 'carriers', label: 'Carrier Performance', icon: 'CP', path: '/carriers' },
-  { id: 'loads', label: 'Loads', icon: 'LD', path: '/loads' },
   { id: 'uploads', label: 'Uploads', icon: 'UP', path: '/uploads' },
-  { id: 'customers', label: 'Customers', icon: 'CU', path: '/customers' },
-  { id: 'profile', label: 'My Audit IQ Profile', icon: 'PR', path: '/profile' },
-  { id: 'settings', label: 'Settings', icon: 'ST', path: '/settings' },
 ];
 
-export default function Sidebar() {
-  const { theme } = useTheme();
-  const t = themes[theme];
-  const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+const themes = [
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'system', label: 'System' },
+];
 
-  useEffect(() => {
-    const updateViewport = () => {
-      const mobile = window.innerWidth < 900;
-      setIsMobile(mobile);
-      if (mobile) {
-        setCollapsed(true);
-      } else {
-        const stored = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
-        setCollapsed(stored);
-      }
-    };
-
-    updateViewport();
-    window.addEventListener('resize', updateViewport);
-    return () => window.removeEventListener('resize', updateViewport);
-  }, []);
-
-  useEffect(() => {
-    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
-  }, [collapsed]);
-
-  const sidebarWidth = collapsed ? 74 : 264;
-  const navGap = useMemo(() => (collapsed ? 10 : 8), [collapsed]);
-
-  const toggleCollapsed = () => {
-    if (isMobile) {
-      setCollapsed((prev) => !prev);
-      return;
-    }
-    const newState = !collapsed;
-    setCollapsed(newState);
-    localStorage.setItem('opscale_sidebar_collapsed', String(newState));
-  };
+function Sidebar() {
+  const [showSettings, setShowSettings] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState('system');
 
   return (
-    <aside
-      style={{
-        width: sidebarWidth,
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'fixed',
-        inset: '0 auto 0 0',
-        background: `linear-gradient(185deg, ${t.bgAlt}, ${t.surface})`,
-        borderRight: `1px solid ${t.border}`,
-        boxShadow: '18px 0 36px rgba(1, 5, 18, 0.45)',
-        zIndex: 100,
-        transition: 'width 200ms ease',
-      }}
-    >
-      <header
-        style={{
-          minHeight: 70,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'space-between',
-          padding: collapsed ? '12px 8px' : '12px 14px',
-          borderBottom: `1px solid ${t.border}`,
-          gap: 8,
-        }}
-      >
-        {!collapsed && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
+    <aside style={{ width: 260, minHeight: '100vh', background: '#f8f9fa', borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div style={{ padding: '16px', borderBottom: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontWeight: 700, fontSize: 20 }}>FBPA</span>
         <button
-          type="button"
-          onClick={toggleCollapsed}
-          className="neon-outline"
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            border: `1px solid ${t.border}`,
-            backgroundColor: t.surfaceStrong,
-            color: t.textSecondary,
-            cursor: 'pointer',
-          }}
-          title={collapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+          aria-label="Open settings panel"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}
+          onClick={() => setShowSettings((v) => !v)}
         >
-          {collapsed ? '>' : '<'}
+          ⚙️
         </button>
-      </header>
-
-      <nav
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: navGap,
-          padding: '14px 10px',
-          overflowY: 'auto',
-          flex: 1,
-        }}
-      >
+      </div>
+      <nav style={{ flex: 1, padding: '16px 0' }}>
         {navItems.map((item) => (
-          <NavLink
-            key={item.id}
-            to={item.path}
-            className="neon-outline"
-            end={item.path === '/'}
-            style={({ isActive }) => ({
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              borderRadius: 12,
-              border: `1px solid ${isActive ? t.accent : t.border}`,
-              background: isActive
-                ? `linear-gradient(140deg, rgba(24, 210, 255, 0.22), rgba(95, 140, 255, 0.18))`
-                : 'transparent',
-              color: isActive ? t.text : t.textSecondary,
-              padding: collapsed ? '10px 8px' : '10px 12px',
-              fontSize: 13,
-              fontWeight: 600,
-              transition: 'all 180ms ease',
-              boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.04)' : 'none',
-            })}
-          >
-            <span
-              style={{
-                minWidth: 34,
-                height: 30,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 8,
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                border: `1px solid ${t.border}`,
-                fontSize: 11,
-                letterSpacing: 0.4,
-              }}
-            >
-              {item.icon}
-            </span>
-            {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
+          <NavLink key={item.id} to={item.path} className="neon-outline" style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', textDecoration: 'none', color: '#333' }}>
+            <span style={{ marginRight: 8 }}>{item.icon}</span>
+            <span>{item.label}</span>
           </NavLink>
         ))}
+        <div style={{ marginTop: 24 }}>
+          <button
+            type="button"
+            onClick={() => setShowSettings((v) => !v)}
+            style={{ width: '100%', padding: '8px 0', borderRadius: 4, border: 'none', background: '#e0e0e0', color: '#333', fontWeight: 600 }}
+          >
+            Theme / Settings
+          </button>
+        </div>
       </nav>
-
-      <footer style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>
-        <button
-          type="button"
-          className="neon-outline"
-          onClick={() => {
-            try {
-              localStorage.removeItem('accessToken');
-            } catch {
-              // Ignore localStorage issues in private mode.
-            }
-            navigate('/login');
-          }}
-          style={{
-            width: '100%',
-            minHeight: 42,
-            borderRadius: 12,
-            border: `1px solid ${t.border}`,
-            background: `linear-gradient(145deg, ${t.surfaceStrong}, ${t.surface})`,
-            color: t.textSecondary,
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          Log Out
-        </button>
+      <footer style={{ padding: 16, borderTop: '1px solid #e0e0e0' }}>
+        <button type="button" onClick={clearAccessToken} style={{ width: '100%', padding: '8px 0', borderRadius: 4, border: 'none', background: '#e0e0e0', color: '#333', fontWeight: 600 }}>Log Out</button>
       </footer>
+      {showSettings && (
+        <div style={{ position: 'absolute', top: 60, left: 0, width: '100%', background: '#fff', border: '1px solid #e0e0e0', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', zIndex: 10, padding: 20 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="theme-select" style={{ fontWeight: 600, marginRight: 8 }}>Theme:</label>
+            <select
+              id="theme-select"
+              value={selectedTheme}
+              onChange={e => setSelectedTheme(e.target.value)}
+              style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #ccc' }}
+            >
+              {themes.map(theme => (
+                <option key={theme.id} value={theme.id}>{theme.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              style={{ padding: '6px 12px', borderRadius: 4, border: 'none', background: '#e0e0e0', color: '#333', fontWeight: 600 }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
+
+export default Sidebar;
