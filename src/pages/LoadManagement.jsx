@@ -122,7 +122,128 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
   const [showCreateLocation, setShowCreateLocation] = useState(false);
   const [newLocationForm, setNewLocationForm] = useState({ city: '', state: '', zip: '' });
   const [locationMessage, setLocationMessage] = useState('');
+  // Load lifecycle checkpoints data structure
   const [loadSnapshot, setLoadSnapshot] = useState(null);
+  // Example structure for operational checkpoints
+  const [loadCheckpoints, setLoadCheckpoints] = useState({
+    intake: {
+      customer_added: false,
+      credit_verified: false,
+      load_type_selected: false,
+    },
+    pickup: {
+      origin_confirmed: false,
+      pickup_method: null, // 'APPT' or 'FCFS'
+      appt_scheduled: false,
+      fcfs_confirmed: false,
+      bol_received: false,
+    },
+    carrier: {
+      carrier_selected: false,
+      rate_confirmed: false,
+      rate_con_sent: false,
+      rate_con_signed: false,
+    },
+    transit: {
+      picked_up: false,
+      gps_tracking_active: false,
+      en_route: false,
+    },
+    delivery: {
+      destination_confirmed: false,
+      delivery_method: null, // 'APPT' or 'FCFS'
+      appt_scheduled: false,
+      fcfs_confirmed: false,
+      delivered: false,
+      pod_received: false,
+    },
+    issues: [], // For flags, e.g. [{ phase: 'pickup', step: 'origin_confirmed', type: 'delay' }]
+  });
+
+  // Utility: Calculate progress and readiness scoring
+  const getLoadProgress = (checkpoints) => {
+    let completed = 0;
+    let total = 0;
+    let missing = [];
+    // Intake
+    const intakeSteps = [
+      { key: 'customer_added', label: 'Customer Added' },
+      { key: 'credit_verified', label: 'Credit Verified' },
+      { key: 'load_type_selected', label: 'Load Type Selected' },
+    ];
+    intakeSteps.forEach((step) => {
+      total++;
+      if (checkpoints.intake[step.key]) completed++;
+      else missing.push(step.label);
+    });
+    // Pickup
+    total++;
+    if (checkpoints.pickup.origin_confirmed) completed++;
+    else missing.push('Origin Confirmed');
+    // Pickup method
+    if (checkpoints.pickup.pickup_method === 'APPT') {
+      total++;
+      if (checkpoints.pickup.appt_scheduled) completed++;
+      else missing.push('Appointment Scheduled');
+    } else if (checkpoints.pickup.pickup_method === 'FCFS') {
+      total++;
+      if (checkpoints.pickup.fcfs_confirmed) completed++;
+      else missing.push('FCFS Confirmed');
+    }
+    // BOL
+    total++;
+    if (checkpoints.pickup.bol_received) completed++;
+    else missing.push('BOL Received');
+    // Carrier
+    const carrierSteps = [
+      { key: 'carrier_selected', label: 'Carrier Selected' },
+      { key: 'rate_confirmed', label: 'Rate Confirmed' },
+      { key: 'rate_con_sent', label: 'Rate Con Sent' },
+      { key: 'rate_con_signed', label: 'Rate Con Signed' },
+    ];
+    carrierSteps.forEach((step) => {
+      total++;
+      if (checkpoints.carrier[step.key]) completed++;
+      else missing.push(step.label);
+    });
+    // Transit
+    const transitSteps = [
+      { key: 'picked_up', label: 'Picked Up' },
+      { key: 'gps_tracking_active', label: 'GPS Tracking Active' },
+      { key: 'en_route', label: 'En Route' },
+    ];
+    transitSteps.forEach((step) => {
+      total++;
+      if (checkpoints.transit[step.key]) completed++;
+      else missing.push(step.label);
+    });
+    // Delivery
+    total++;
+    if (checkpoints.delivery.destination_confirmed) completed++;
+    else missing.push('Destination Confirmed');
+    if (checkpoints.delivery.delivery_method === 'APPT') {
+      total++;
+      if (checkpoints.delivery.appt_scheduled) completed++;
+      else missing.push('Delivery Appointment Scheduled');
+    } else if (checkpoints.delivery.delivery_method === 'FCFS') {
+      total++;
+      if (checkpoints.delivery.fcfs_confirmed) completed++;
+      else missing.push('Delivery FCFS Confirmed');
+    }
+    total++;
+    if (checkpoints.delivery.delivered) completed++;
+    else missing.push('Delivered');
+    total++;
+    if (checkpoints.delivery.pod_received) completed++;
+    else missing.push('POD Received');
+    return {
+      percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+      completed,
+      total,
+      missing,
+      readiness: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
+  };
   const [documentBusyType, setDocumentBusyType] = useState('');
   const [companyBranding] = useState(() => {
     try {
@@ -161,6 +282,20 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
   const [carrierSectionComplete, setCarrierSectionComplete] = useState(false);
   const [financialSectionComplete, setFinancialSectionComplete] = useState(false);
 
+  // Progress bar color logic
+  const getProgressBarColor = (progress, checkpoints) => {
+    if (checkpoints.issues && checkpoints.issues.length > 0) return '#e74c3c'; // Red for issues
+    if (progress.percent === 100) return '#27ae60'; // Green for complete
+    if (progress.percent === 0) return '#bdc3c7'; // Gray for not started
+    if (progress.percent > 0 && progress.percent < 100) return '#2980b9'; // Blue for in progress
+    // Optionally, yellow for needs action (custom logic)
+    return '#f1c40f';
+  };
+
+  // Render thin progress bar for the load row
+  const progress = getLoadProgress(loadCheckpoints);
+  const progressBarColor = getProgressBarColor(progress, loadCheckpoints);
+
   return (
     <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
       {/* Sticky Load Header */}
@@ -177,7 +312,48 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
           marginPct={((loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)) / (loadSnapshot?.sellRate || 5000) * 100}
           riskIndicator={loadSnapshot?.riskIndicator || 'Medium'}
         />
+        {/* Thin Progress Bar UI */}
+        <div
+          style={{
+            width: '100%',
+            height: 6,
+            borderRadius: 3,
+            background: '#ecf0f1',
+            marginTop: 6,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          title={`Progress: ${progress.percent}%`}
+        >
+          <div
+            style={{
+              width: `${progress.percent}%`,
+              height: '100%',
+              background: progressBarColor,
+              transition: 'width 0.3s',
+            }}
+          />
+          {/* Progress percent and status */}
+          <span
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: -18,
+              fontSize: 12,
+              fontWeight: 600,
+              color: progressBarColor,
+              background: '#fff',
+              padding: '2px 6px',
+              borderRadius: 6,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            }}
+          >
+            {progress.percent}%
+          </span>
+        </div>
       </div>
+      {/* Expandable Checklist Drawer */}
+      <ChecklistDrawer checkpoints={loadCheckpoints} />
 
       <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
         <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
@@ -211,6 +387,148 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
     </div>
   );
   // ...existing code...
+
+  // ChecklistDrawer component
+  function ChecklistDrawer({ checkpoints }) {
+    const [expanded, setExpanded] = useState(false);
+    // Icon logic with color and tooltip
+    const getIcon = (done, issue, needsAction, label, risk) => {
+      let color = '#bdc3c7';
+      let icon = '▢';
+      let tooltip = label;
+      if (issue) {
+        color = '#e74c3c';
+        icon = '⚠️';
+        tooltip += ' — Issue flagged';
+        if (risk) tooltip += ` — Risk: ${risk}`;
+      } else if (done) {
+        color = '#27ae60';
+        icon = '✔';
+        tooltip += ' — Completed';
+      } else if (needsAction) {
+        color = '#f1c40f';
+        icon = '⚡';
+        tooltip += ' — Needs action';
+        if (risk) tooltip += ` — Risk: ${risk}`;
+      } else {
+        tooltip += ' — Not started';
+      }
+      return <span title={tooltip} style={{ color, fontWeight: 600 }}>{icon}</span>;
+    };
+
+    // Steps per phase
+    const phases = [
+      {
+        key: 'intake',
+        label: 'Intake',
+        steps: [
+          { key: 'customer_added', label: 'Customer Added' },
+          { key: 'credit_verified', label: 'Credit Verified' },
+          { key: 'load_type_selected', label: 'Load Type Selected' },
+        ],
+      },
+      {
+        key: 'pickup',
+        label: 'Pickup',
+        steps: [
+          { key: 'origin_confirmed', label: 'Origin Confirmed' },
+          { key: 'pickup_method', label: 'Pickup Method', isConditional: true },
+          { key: 'appt_scheduled', label: 'Appointment Scheduled', conditional: 'APPT' },
+          { key: 'fcfs_confirmed', label: 'FCFS Confirmed', conditional: 'FCFS' },
+          { key: 'bol_received', label: 'BOL Received (optional)' },
+        ],
+      },
+      {
+        key: 'carrier',
+        label: 'Carrier',
+        steps: [
+          { key: 'carrier_selected', label: 'Carrier Selected' },
+          { key: 'rate_confirmed', label: 'Rate Confirmed' },
+          { key: 'rate_con_sent', label: 'Rate Con Sent' },
+          { key: 'rate_con_signed', label: 'Rate Con Signed' },
+        ],
+      },
+      {
+        key: 'transit',
+        label: 'Transit',
+        steps: [
+          { key: 'picked_up', label: 'Picked Up' },
+          { key: 'gps_tracking_active', label: 'GPS Tracking Active' },
+          { key: 'en_route', label: 'En Route' },
+        ],
+      },
+      {
+        key: 'delivery',
+        label: 'Delivery',
+        steps: [
+          { key: 'destination_confirmed', label: 'Destination Confirmed' },
+          { key: 'delivery_method', label: 'Delivery Method', isConditional: true },
+          { key: 'appt_scheduled', label: 'Appointment Scheduled', conditional: 'APPT' },
+          { key: 'fcfs_confirmed', label: 'FCFS Confirmed', conditional: 'FCFS' },
+          { key: 'delivered', label: 'Delivered' },
+          { key: 'pod_received', label: 'POD Received' },
+        ],
+      },
+    ];
+
+    // Render checklist
+    return (
+      <div style={{ marginTop: 8 }}>
+        <button
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#2980b9',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontSize: 13,
+            marginBottom: 4,
+          }}
+          onClick={() => setExpanded((prev) => !prev)}
+          aria-expanded={expanded}
+        >
+          {expanded ? 'Hide Details ▲' : 'Show Details ▼'}
+        </button>
+        {expanded && (
+          <div style={{ display: 'grid', gap: 10, background: '#f8f9fa', borderRadius: 8, padding: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            {phases.map((phase) => (
+              <div key={phase.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontWeight: 700, minWidth: 80 }}>{phase.label}</span>
+                {phase.steps.map((step) => {
+                  // Conditional rendering for pickup/delivery method
+                  if (step.isConditional) {
+                    const method = checkpoints[phase.key][step.key];
+                    if (step.key === 'pickup_method' || step.key === 'delivery_method') {
+                      return method ? (
+                        <span key={step.key} title={step.label} style={{ color: '#2980b9', fontWeight: 600 }}>
+                          {method}
+                        </span>
+                      ) : null;
+                    }
+                    // Only show conditional steps if method matches
+                    if (step.conditional && checkpoints[phase.key][step.key.replace('_scheduled', '_method')] !== step.conditional) return null;
+                  }
+                  // Status logic
+                  const done = !!checkpoints[phase.key][step.key];
+                  const issue = checkpoints.issues && checkpoints.issues.some((iss) => iss.phase === phase.key && iss.step === step.key);
+                  const needsAction = !done && !issue && (step.key !== 'bol_received');
+                  // Example risk logic (can be expanded)
+                  let risk = null;
+                  if (needsAction && step.label.toLowerCase().includes('appointment')) risk = 'HIGH';
+                  if (issue && step.label.toLowerCase().includes('fcfs')) risk = 'MEDIUM';
+                  return (
+                    <span key={step.key} style={{ marginRight: 6 }}>
+                      {getIcon(done, issue, needsAction, step.label, risk)}
+                    </span>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 }
 
 // Carrier search logic moved into a function

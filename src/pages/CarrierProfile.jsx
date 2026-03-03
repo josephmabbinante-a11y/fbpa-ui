@@ -72,32 +72,50 @@ export default function CarrierProfile() {
         <ScoreBreakdownPanel />
       </div>
       {/* HEADER STRIP */}
-      <div style={{
-          // --- Score Breakdown Panel ---
-          function ScoreBreakdownPanel() {
-            const [open, setOpen] = useState(false);
-            // Example breakdown data, replace with real logic
-            const breakdown = [
-              { label: 'Compliance', score: 92, weight: 40 },
-              { label: 'Performance', score: 89, weight: 30 },
-              { label: 'Coverage Match', score: 84, weight: 20 },
-              { label: 'Risk Behavior', score: 78, weight: 10 },
-            ];
-            return (
-              <div style={{ marginTop: 8, textAlign: 'center' }}>
-                <button
-                  style={{
-                    padding: '4px 18px',
-                    borderRadius: 8,
-                    background: open ? t.accent : t.bgAlt,
-                    color: open ? '#fff' : t.text,
-                    border: `1px solid ${t.accent}`,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    fontSize: 15,
-                    marginBottom: 4,
-                  }}
-                  onClick={() => setOpen((v) => !v)}
+      <div style={{ /* ...existing style... */ }}>
+        {/* ...existing code... */}
+      </div>
+
+// --- Score Breakdown Panel ---
+function ScoreBreakdownPanel() {
+  const [open, setOpen] = useState(false);
+  // Example breakdown data, replace with real logic
+  const breakdown = [
+    { label: 'Compliance', score: 92, weight: 40 },
+    { label: 'Performance', score: 89, weight: 30 },
+    { label: 'Coverage Match', score: 84, weight: 20 },
+    { label: 'Risk Behavior', score: 78, weight: 10 },
+  ];
+  return (
+    <div style={{ marginTop: 8, textAlign: 'center' }}>
+      <button
+        style={{
+          padding: '4px 18px',
+          borderRadius: 8,
+          background: open ? t.accent : t.bgAlt,
+          color: open ? '#fff' : t.text,
+          border: `1px solid ${t.accent}`,
+          fontWeight: 700,
+          cursor: 'pointer',
+          fontSize: 15,
+          marginBottom: 4,
+        }}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? 'Hide Score Breakdown' : 'Show Score Breakdown'}
+      </button>
+      {open && (
+        <div style={{ marginTop: 8 }}>
+          {breakdown.map((item) => (
+            <div key={item.label} style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
+              {item.label}: {item.score} (Weight: {item.weight}%)
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
                 >
                   {open ? 'Hide Score Breakdown' : 'Show Score Breakdown'}
                 </button>

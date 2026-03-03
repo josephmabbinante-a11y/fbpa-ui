@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DemoProvider, useDemo } from './demo/DemoContext';
@@ -48,6 +48,7 @@ const CarrierBulkImport = lazy(() => import('./pages/CarrierBulkImport'));
 const DriverTracker = lazy(() => import('./pages/DriverTracker'));
 const BuildLoad = lazy(() => import('./pages/BuildLoad'));
 const SearchLoads = lazy(() => import('./pages/SearchLoads'));
+const TruckloadRateCalculator = lazy(() => import('./pages/TruckloadRateCalculator'));
 
 function LoadingFallback() {
   return (
@@ -147,6 +148,7 @@ function AppRoutes() {
             <Route path="/account" element={<Navigate to="/settings" replace />} />
             <Route path="/profile" element={<Navigate to="/settings" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/truckload-rate-calculator" element={<TruckloadRateCalculator />} />
           </Routes>
         </Suspense>
       </Layout>
@@ -185,6 +187,7 @@ function MockModeBadge() {
 }
 
 export default function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
   return (
     <ThemeProvider>
       <DemoProvider>
