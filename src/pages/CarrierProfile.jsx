@@ -77,6 +77,7 @@ export default function CarrierProfile() {
       </div>
 
 // --- Score Breakdown Panel ---
+// --- Score Breakdown Panel ---
 function ScoreBreakdownPanel() {
   const [open, setOpen] = useState(false);
   // Example breakdown data, replace with real logic
@@ -98,27 +99,26 @@ function ScoreBreakdownPanel() {
           fontWeight: 700,
           cursor: 'pointer',
           fontSize: 15,
-          marginBottom: 4,
         }}
         onClick={() => setOpen((v) => !v)}
       >
         {open ? 'Hide Score Breakdown' : 'Show Score Breakdown'}
       </button>
       {open && (
-        <div style={{ marginTop: 8 }}>
-          {breakdown.map((item) => (
-            <div key={item.label} style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>
-              {item.label}: {item.score} (Weight: {item.weight}%)
-            </div>
-          ))}
+        <div style={{ marginTop: 12, textAlign: 'left', display: 'inline-block', background: t.bgAlt, borderRadius: 10, padding: 16, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)' }}>
+          <h4 style={{ color: t.accent, fontWeight: 700, marginBottom: 8 }}>Score Breakdown</h4>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {breakdown.map((item) => (
+              <li key={item.label} style={{ marginBottom: 6, fontSize: 14 }}>
+                <span style={{ fontWeight: 600 }}>{item.label}:</span> <span style={{ color: t.accent }}>{item.score}</span> <span style={{ color: '#888', fontSize: 12 }}>({item.weight}% weight)</span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
   );
 }
-                >
-                  {open ? 'Hide Score Breakdown' : 'Show Score Breakdown'}
-                </button>
                 {open && (
                   <div style={{
                     margin: '10px auto 0',

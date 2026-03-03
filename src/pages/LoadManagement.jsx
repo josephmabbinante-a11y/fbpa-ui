@@ -67,7 +67,7 @@ const mockFmcsaCarriers = [
   { companyName: 'FASTLANE FREIGHT CO', mcNumber: 'MC112450', usdotNumber: '401204', phone: '(312) 555-0173', email: 'team@fastlanefreight.com', address: 'Chicago, IL' },
 ];
 
-export default function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
+function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
   const navigate = useNavigate();
   const { loadId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -530,6 +530,7 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
     );
   }
 }
+export default LoadManagement;
 
 // Carrier search logic moved into a function
 function searchCarriers({ includeFmcsa, mockFmcsaCarriers, query, internalResults, setCarrierResults, setCarrierActionMessage, setCarrierError, setCarrierLoading }) {
