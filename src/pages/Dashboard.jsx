@@ -7,7 +7,8 @@ import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
-import dashboardEnhanced from '../mock/dashboardEnhanced';
+import { useMemo } from 'react';
+import mockDashboardEnhanced from '../mock/dashboardEnhanced';
 import mockShipments from '../mock/shipments';
 import { listLoads } from '../api/loadsClient';
 
@@ -51,8 +52,12 @@ function readDashboardVariant() {
   }
 }
 
-function mergeDashboardData(incoming) {
-  if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
+function mergeDashboardData(incoming, demoMode = false) {
+  // Only use mock data as fallback if demoMode is enabled
+  const fallback = demoMode ? mockDashboardEnhanced : {
+    summary: {}, trends: {}, exceptionBreakdown: [], savingsByCarrier: [], recentActivity: []
+  };
+  if (!incoming || typeof incoming !== 'object') return fallback;
   const hasUsableSeries = (series) =>
     Array.isArray(series) &&
     series.length > 0 &&
@@ -70,7 +75,7 @@ function mergeDashboardData(incoming) {
     Array.isArray(items) &&
     items.length > 0 &&
     items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
-  const fallbackTrends = dashboardEnhanced.trends || {};
+  const fallbackTrends = fallback.trends || {};
   const incomingTrends = incoming.trends || {};
   const mergedTrends = {};
   Object.keys(fallbackTrends).forEach((key) => {
@@ -78,23 +83,23 @@ function mergeDashboardData(incoming) {
     mergedTrends[key] = hasUsableSeries(nextSeries) ? nextSeries : fallbackTrends[key];
   });
   return {
-    ...dashboardEnhanced,
+    ...fallback,
     ...incoming,
-    summary: { ...dashboardEnhanced.summary, ...(incoming.summary || {}) },
+    summary: { ...fallback.summary, ...(incoming.summary || {}) },
     trends: mergedTrends,
     exceptionBreakdown: hasUsableBreakdown(incoming.exceptionBreakdown)
       ? incoming.exceptionBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : fallback.exceptionBreakdown,
     claimsBreakdown: hasUsableBreakdown(incoming.claimsBreakdown)
       ? incoming.claimsBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : fallback.exceptionBreakdown,
     savingsByCarrier: hasUsableSavings(incoming.savingsByCarrier)
       ? incoming.savingsByCarrier
-      : dashboardEnhanced.savingsByCarrier,
+      : fallback.savingsByCarrier,
     volumeByLane: hasUsableSavings(incoming.volumeByLane)
       ? incoming.volumeByLane
-      : dashboardEnhanced.savingsByCarrier,
-    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : dashboardEnhanced.recentActivity,
+      : fallback.savingsByCarrier,
+    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : fallback.recentActivity,
   };
 }
 
@@ -103,7 +108,13 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const t = themes[theme];
-  const [data, setData] = useState(() => dashboardEnhanced);
+  // Use demoMode from context or fallback to env
+  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: import.meta.env.VITE_MOCK_MODE === 'true' };
+  // Default dashboard data: only use mock data if demoMode
+  const defaultDashboardData = useMemo(() => demoMode ? mockDashboardEnhanced : {
+    summary: {}, trends: {}, exceptionBreakdown: [], savingsByCarrier: [], recentActivity: []
+  }, [demoMode]);
+  const [data, setData] = useState(() => defaultDashboardData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
