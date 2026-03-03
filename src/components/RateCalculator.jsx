@@ -4,9 +4,7 @@ import LoadInputs from './LoadInputs';
 import RateBreakdown from './RateBreakdown';
 import MarketTrends from './MarketTrends';
 import styles from './RateCalculator.module.css';
-import { mockRateData } from '../mock/mockRateData';
 import {
-  getRateGeoByZip3,
   getRateLogicMetrics,
   logQuoteOutcome,
   calculateRateLogic,
@@ -217,8 +215,8 @@ function RateCalculator() {
   const { theme } = useTheme();
   const t = themes[theme];
 
-  const [origin, setOrigin] = useState(mockRateData.shipmentOptions.origins[0]);
-  const [destination, setDestination] = useState(mockRateData.shipmentOptions.destinations[0]);
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
   const [equipmentType, setEquipmentType] = useState('dry_van');
   const [mileageEstimate, setMileageEstimate] = useState({ miles: 900, method: 'estimated', confidence: 0.45 });
   const [mileageLoading, setMileageLoading] = useState(false);
@@ -250,7 +248,7 @@ function RateCalculator() {
     stateCapacityScores: {},
   });
 
-  const [forecast, setForecast] = useState({ ...mockRateData.forecast });
+  const [forecast, setForecast] = useState({});
   const [prediction, setPrediction] = useState(null);
   const [predicting, setPredicting] = useState(false);
   const [sendingToBidNetwork, setSendingToBidNetwork] = useState(false);
@@ -275,7 +273,7 @@ function RateCalculator() {
   const [outcomeTimeToCover, setOutcomeTimeToCover] = useState('37');
   const [outcomeErrors, setOutcomeErrors] = useState({ bookedRate: '', timeToCover: '' });
   const [sensitivity, setSensitivity] = useState(0);
-  const [winProb, setWinProb] = useState(mockRateData.kpis.winProb);
+  const [winProb, setWinProb] = useState(0);
   const [pendingSwapRecalc, setPendingSwapRecalc] = useState(false);
   const [quoteTelemetry, setQuoteTelemetry] = useState([]);
 
@@ -473,14 +471,14 @@ function RateCalculator() {
     };
   }, [origin, destination, equipmentType]);
 
-  const rpm = Number(harvestedPricing.lane7dRpm || mockRateData.marketIntelligence.rpm);
+  const rpm = Number(harvestedPricing.lane7dRpm || 0);
 
   const laneHistory = useMemo(
     () => {
       if (Array.isArray(harvestedPricing.laneRates) && harvestedPricing.laneRates.length > 0) {
         return harvestedPricing.laneRates;
       }
-      return (mockRateData.bookedLoads || []).map((row) => Number(row.avgRate || 0)).filter((value) => Number.isFinite(value) && value > 0);
+      return [];
     },
     [harvestedPricing.laneRates]
   );
@@ -703,7 +701,7 @@ function RateCalculator() {
   }, [rpm, marketModels.laneVolatilityIndex, marketModels.capacityHeatScore, marketModels.rejectionSpikeRisk, featureSnapshot.fuel_price]);
 
   const kpis = useMemo(() => ({
-    ...mockRateData.kpis,
+    // No mock KPIs, use only real or calculated values
     carrierCost: carrierCostRate,
     predictedMarket,
     recommendedSell,
@@ -781,44 +779,25 @@ function RateCalculator() {
   useEffect(() => {
     let active = true;
 
-    const hydrateGeoCoverage = async () => {
+    // Use route engine for region info, not external geo API
+    useEffect(() => {
       const originZip3 = parseZip3(origin);
       const destinationZip3 = parseZip3(destination);
-
       setGeoCoverage((prev) => ({
         ...prev,
-        loading: true,
-        originZip3,
-        destinationZip3,
-      }));
-
-      const [originLookup, destinationLookup] = await Promise.all([
-        getRateGeoByZip3(originZip3),
-        getRateGeoByZip3(destinationZip3),
-      ]);
-
-      if (!active) return;
-
-      const originRegion = originLookup?.market_region || resolveRegionFallback(originZip3) || 'Unknown';
-      const destinationRegion = destinationLookup?.market_region || resolveRegionFallback(destinationZip3) || 'Unknown';
-      const source = (!originLookup?.error && !destinationLookup?.error) ? 'api' : 'local-fallback';
-
-      setGeoCoverage({
         loading: false,
         originZip3,
         destinationZip3,
-        originRegion,
-        destinationRegion,
-        source,
-      });
-    };
-
-    hydrateGeoCoverage();
-
+        originRegion: resolveRegionFallback(originZip3) || 'Unknown',
+        destinationRegion: resolveRegionFallback(destinationZip3) || 'Unknown',
+        source: 'route-engine',
+      }));
+    }, [origin, destination]);
+    // Close the outer useEffect
     return () => {
       active = false;
     };
-  }, [origin, destination]);
+  }, []);
 
   const handlePredictRate = async () => {
     const nextShipmentErrors = {};
@@ -1192,7 +1171,7 @@ function RateCalculator() {
             onShipmentChange={updateShipmentDetails}
             shipmentErrors={shipmentErrors}
             rpm={rpm}
-            predictedSwing={mockRateData.marketIntelligence.predictedSwing}
+            predictedSwing={undefined}
             equipmentType={equipmentType}
             setEquipmentType={setEquipmentType}
             onSwapLane={handleSwapLane}
@@ -1307,10 +1286,10 @@ function RateCalculator() {
           <MarketTrends
             forecast={forecast}
             setForecast={setForecast}
-            topCarriers={harvestedPricing.topCarriers.length > 0 ? harvestedPricing.topCarriers : mockRateData.topCarriers}
+            topCarriers={harvestedPricing.topCarriers}
             laneData={laneData}
-            bookedLoads={harvestedPricing.bookedLoads.length > 0 ? harvestedPricing.bookedLoads : mockRateData.bookedLoads}
-            laneSummary={harvestedPricing.laneSummary || mockRateData.summary}
+            bookedLoads={harvestedPricing.bookedLoads}
+            laneSummary={harvestedPricing.laneSummary}
             stateCapacityScores={capacityHeatMapScores}
             routeEngineView={{
               origin,
@@ -1327,5 +1306,4 @@ function RateCalculator() {
   );
 }
 
-export { RateCalculator };
 export default RateCalculator;

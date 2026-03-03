@@ -330,6 +330,38 @@ const PALETTES = [
       bannerGlow: '0 0 10px rgba(51, 153, 255, 0.10)',
     },
   },
+  {
+    id: 'slimline',
+    label: 'Slimline',
+    light: {
+      bg: '#F8F9FA',
+      surface: '#FFFFFF',
+      text: '#22223B',
+      accent: '#3A86FF',
+      border: '#E0E0E0',
+      success: '#43AA8B',
+      warning: '#F9C74F',
+      error: '#F94144',
+      secondary: '#4361EE',
+      bannerBg: 'linear-gradient(90deg, #F8F9FA 0%, #E9ECEF 100%)',
+      bannerAccent: 'rgba(58, 134, 255, 0.22)',
+      bannerGlow: 'none',
+    },
+    dark: {
+      bg: '#181926',
+      surface: '#232946',
+      text: '#EDEDED',
+      accent: '#3A86FF',
+      border: '#2E2F3E',
+      success: '#43AA8B',
+      warning: '#F9C74F',
+      error: '#F94144',
+      secondary: '#4361EE',
+      bannerBg: 'linear-gradient(90deg, #232946 0%, #181926 100%)',
+      bannerAccent: 'rgba(58, 134, 255, 0.32)',
+      bannerGlow: '0 0 14px rgba(58, 134, 255, 0.14)',
+    },
+  },
 ];
 
 function hexToRgb(hex) {

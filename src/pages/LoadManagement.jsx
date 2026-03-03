@@ -9,6 +9,9 @@ import {
 } from '../api/client';
 import { getLoadDetail } from '../api/loadsClient';
 import { mockLocations } from '../mock/mockLocations';
+import LaneIntelligencePanel from '../components/LaneIntelligencePanel';
+import CarrierSection from '../components/CarrierSection';
+import FinancialSection from '../components/FinancialSection';
 
 const COMPANY_BRANDING_STORAGE_KEY = 'fbpa_company_branding';
 const DOCUMENT_WHITELABEL_STORAGE_KEY = 'fbpa_document_whitelabel';
@@ -40,7 +43,6 @@ function SectionCard({ title, children, t }) {
       <div style={{ padding: 14 }}>{children}</div>
     </section>
   );
-}
 
 function Field({ label, children }) {
   return (
@@ -65,7 +67,7 @@ const mockFmcsaCarriers = [
   { companyName: 'FASTLANE FREIGHT CO', mcNumber: 'MC112450', usdotNumber: '401204', phone: '(312) 555-0173', email: 'team@fastlanefreight.com', address: 'Chicago, IL' },
 ];
 
-export default function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
+function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
   const navigate = useNavigate();
   const { loadId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,7 +122,128 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
   const [showCreateLocation, setShowCreateLocation] = useState(false);
   const [newLocationForm, setNewLocationForm] = useState({ city: '', state: '', zip: '' });
   const [locationMessage, setLocationMessage] = useState('');
+  // Load lifecycle checkpoints data structure
   const [loadSnapshot, setLoadSnapshot] = useState(null);
+  // Example structure for operational checkpoints
+  const [loadCheckpoints, setLoadCheckpoints] = useState({
+    intake: {
+      customer_added: false,
+      credit_verified: false,
+      load_type_selected: false,
+    },
+    pickup: {
+      origin_confirmed: false,
+      pickup_method: null, // 'APPT' or 'FCFS'
+      appt_scheduled: false,
+      fcfs_confirmed: false,
+      bol_received: false,
+    },
+    carrier: {
+      carrier_selected: false,
+      rate_confirmed: false,
+      rate_con_sent: false,
+      rate_con_signed: false,
+    },
+    transit: {
+      picked_up: false,
+      gps_tracking_active: false,
+      en_route: false,
+    },
+    delivery: {
+      destination_confirmed: false,
+      delivery_method: null, // 'APPT' or 'FCFS'
+      appt_scheduled: false,
+      fcfs_confirmed: false,
+      delivered: false,
+      pod_received: false,
+    },
+    issues: [], // For flags, e.g. [{ phase: 'pickup', step: 'origin_confirmed', type: 'delay' }]
+  });
+
+  // Utility: Calculate progress and readiness scoring
+  const getLoadProgress = (checkpoints) => {
+    let completed = 0;
+    let total = 0;
+    let missing = [];
+    // Intake
+    const intakeSteps = [
+      { key: 'customer_added', label: 'Customer Added' },
+      { key: 'credit_verified', label: 'Credit Verified' },
+      { key: 'load_type_selected', label: 'Load Type Selected' },
+    ];
+    intakeSteps.forEach((step) => {
+      total++;
+      if (checkpoints.intake[step.key]) completed++;
+      else missing.push(step.label);
+    });
+    // Pickup
+    total++;
+    if (checkpoints.pickup.origin_confirmed) completed++;
+    else missing.push('Origin Confirmed');
+    // Pickup method
+    if (checkpoints.pickup.pickup_method === 'APPT') {
+      total++;
+      if (checkpoints.pickup.appt_scheduled) completed++;
+      else missing.push('Appointment Scheduled');
+    } else if (checkpoints.pickup.pickup_method === 'FCFS') {
+      total++;
+      if (checkpoints.pickup.fcfs_confirmed) completed++;
+      else missing.push('FCFS Confirmed');
+    }
+    // BOL
+    total++;
+    if (checkpoints.pickup.bol_received) completed++;
+    else missing.push('BOL Received');
+    // Carrier
+    const carrierSteps = [
+      { key: 'carrier_selected', label: 'Carrier Selected' },
+      { key: 'rate_confirmed', label: 'Rate Confirmed' },
+      { key: 'rate_con_sent', label: 'Rate Con Sent' },
+      { key: 'rate_con_signed', label: 'Rate Con Signed' },
+    ];
+    carrierSteps.forEach((step) => {
+      total++;
+      if (checkpoints.carrier[step.key]) completed++;
+      else missing.push(step.label);
+    });
+    // Transit
+    const transitSteps = [
+      { key: 'picked_up', label: 'Picked Up' },
+      { key: 'gps_tracking_active', label: 'GPS Tracking Active' },
+      { key: 'en_route', label: 'En Route' },
+    ];
+    transitSteps.forEach((step) => {
+      total++;
+      if (checkpoints.transit[step.key]) completed++;
+      else missing.push(step.label);
+    });
+    // Delivery
+    total++;
+    if (checkpoints.delivery.destination_confirmed) completed++;
+    else missing.push('Destination Confirmed');
+    if (checkpoints.delivery.delivery_method === 'APPT') {
+      total++;
+      if (checkpoints.delivery.appt_scheduled) completed++;
+      else missing.push('Delivery Appointment Scheduled');
+    } else if (checkpoints.delivery.delivery_method === 'FCFS') {
+      total++;
+      if (checkpoints.delivery.fcfs_confirmed) completed++;
+      else missing.push('Delivery FCFS Confirmed');
+    }
+    total++;
+    if (checkpoints.delivery.delivered) completed++;
+    else missing.push('Delivered');
+    total++;
+    if (checkpoints.delivery.pod_received) completed++;
+    else missing.push('POD Received');
+    return {
+      percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+      completed,
+      total,
+      missing,
+      readiness: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
+  };
   const [documentBusyType, setDocumentBusyType] = useState('');
   const [companyBranding] = useState(() => {
     try {
@@ -141,7 +264,6 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
     } catch {
       // noop
     }
-
     return {
       companyName: 'Opscale Supply Chain',
       logoUrl: '',
@@ -151,225 +273,301 @@ export default function LoadManagement({ pageTitle = 'Load Management', activeTa
       accentColor: '#2f80ed',
     };
   });
-  const [customerBilling, setCustomerBilling] = useState({
-    name: '',
-    address: '',
-    email: '',
-    phone: '',
-  });
-  const [documentTerms, setDocumentTerms] = useState({
-    paymentTerms: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Net 30';
-        const parsed = JSON.parse(saved);
-        return parsed?.paymentTerms || 'Net 30';
-      } catch {
-        return 'Net 30';
-      }
-    })(),
-    footerNote: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Thank you for your business.';
-        const parsed = JSON.parse(saved);
-        return parsed?.footerNote || 'Thank you for your business.';
-      } catch {
-        return 'Thank you for your business.';
-      }
-    })(),
-    rateConfirmationTerms: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.';
-        const parsed = JSON.parse(saved);
-        return parsed?.rateConfirmationTerms || 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.';
-      } catch {
-        return 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.';
-      }
-    })(),
-    shipperName: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return '';
-        const parsed = JSON.parse(saved);
-        return parsed?.shipperName || '';
-      } catch {
-        return '';
-      }
-    })(),
-    shipperAddress: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return '';
-        const parsed = JSON.parse(saved);
-        return parsed?.shipperAddress || '';
-      } catch {
-        return '';
-      }
-    })(),
-    freightTerms: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return 'Prepaid';
-        const parsed = JSON.parse(saved);
-        return parsed?.freightTerms || 'Prepaid';
-      } catch {
-        return 'Prepaid';
-      }
-    })(),
-    specialInstructions: (() => {
-      try {
-        const saved = localStorage.getItem(DOCUMENT_WHITELABEL_STORAGE_KEY);
-        if (!saved) return '';
-        const parsed = JSON.parse(saved);
-        return parsed?.specialInstructions || '';
-      } catch {
-        return '';
-      }
-    })(),
-  });
+  // Section completion hooks (moved to top-level)
+  const [customerSectionComplete, setCustomerSectionComplete] = useState(false);
+  const [stopsSectionComplete, setStopsSectionComplete] = useState(false);
+  const [stopsData, setStopsData] = useState([]);
+  const [laneIntelligenceComplete, setLaneIntelligenceComplete] = useState(false);
+  const [laneIntelligenceData, setLaneIntelligenceData] = useState(null);
+  const [carrierSectionComplete, setCarrierSectionComplete] = useState(false);
+  const [financialSectionComplete, setFinancialSectionComplete] = useState(false);
 
-  const inputStyle = {
-    width: '100%',
-    background: `linear-gradient(180deg, ${t.bgAlt}, ${t.surface})`,
-    color: t.text,
-    border: `1px solid ${t.accent2}`,
-    borderRadius: 8,
-    minHeight: 36,
-    padding: '8px 10px',
-    fontSize: 13,
+  // Progress bar color logic
+  const getProgressBarColor = (progress, checkpoints) => {
+    if (checkpoints.issues && checkpoints.issues.length > 0) return '#e74c3c'; // Red for issues
+    if (progress.percent === 100) return '#27ae60'; // Green for complete
+    if (progress.percent === 0) return '#bdc3c7'; // Gray for not started
+    if (progress.percent > 0 && progress.percent < 100) return '#2980b9'; // Blue for in progress
+    // Optionally, yellow for needs action (custom logic)
+    return '#f1c40f';
   };
 
-  const tabBaseStyle = {
-    border: `1px solid ${t.accent2}`,
-    background: `linear-gradient(135deg, ${t.bgAlt}, ${t.surface})`,
-    color: t.textSecondary,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 700,
-    padding: '8px 12px',
-    cursor: 'pointer',
-    boxShadow: '0 6px 14px rgba(0,0,0,0.12)',
-  };
+  // Render thin progress bar for the load row
+  const progress = getLoadProgress(loadCheckpoints);
+  const progressBarColor = getProgressBarColor(progress, loadCheckpoints);
 
-  const actionButtonStyle = {
-    border: `1px solid ${t.accent2}`,
-    background: `linear-gradient(120deg, ${t.surfaceStrong}, ${t.bgAlt})`,
-    color: t.text,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 600,
-    padding: '8px 12px',
-    cursor: 'pointer',
-  };
+  return (
+    <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
+      {/* Sticky Load Header */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+        {/* StickyLoadHeader with live color logic */}
+        <StickyLoadHeader
+          loadNumber={loadSnapshot?.number || '123456'}
+          status={loadSnapshot?.status || 'Open'}
+          customer={loadSnapshot?.customer || 'Acme Corp'}
+          totalMiles={loadSnapshot?.totalMiles || 1200}
+          sellRate={loadSnapshot?.sellRate || 5000}
+          buyRate={loadSnapshot?.buyRate || 4300}
+          grossMargin={(loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)}
+          marginPct={((loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)) / (loadSnapshot?.sellRate || 5000) * 100}
+          riskIndicator={loadSnapshot?.riskIndicator || 'Medium'}
+        />
+        {/* Thin Progress Bar UI */}
+        <div
+          style={{
+            width: '100%',
+            height: 6,
+            borderRadius: 3,
+            background: '#ecf0f1',
+            marginTop: 6,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          title={`Progress: ${progress.percent}%`}
+        >
+          <div
+            style={{
+              width: `${progress.percent}%`,
+              height: '100%',
+              background: progressBarColor,
+              transition: 'width 0.3s',
+            }}
+          />
+          {/* Progress percent and status */}
+          <span
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: -18,
+              fontSize: 12,
+              fontWeight: 600,
+              color: progressBarColor,
+              background: '#fff',
+              padding: '2px 6px',
+              borderRadius: 6,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+            }}
+          >
+            {progress.percent}%
+          </span>
+        </div>
+      </div>
+      {/* Expandable Checklist Drawer */}
+      <ChecklistDrawer checkpoints={loadCheckpoints} />
 
-  const optionButtonStyle = (active) => ({
-    border: `1px solid ${active ? t.accent : t.border}`,
-    background: active ? `linear-gradient(135deg, ${t.accent}, ${t.accent2})` : `linear-gradient(135deg, ${t.bgAlt}, ${t.surface})`,
-    color: active ? t.bg : t.textSecondary,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 700,
-    padding: '8px 12px',
-    cursor: 'pointer',
-    minWidth: 88,
-  });
+      <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
+        <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
+      </CollapsibleSection>
 
-  const tabKeys = useMemo(() => new Set(tabs.map((tab) => tab.key)), []);
-  const panelTab = searchParams.get('panel') || '';
-  const currentTab = tabKeys.has(panelTab) ? panelTab : activeTab;
-  const activeTabLabel = tabs.find((tab) => tab.key === currentTab)?.label || 'Load Basics';
-  const nextTabByKey = {
-    'load-basics': 'customer-info',
-    'customer-info': 'carrier-asset-info',
-    'carrier-asset-info': 'edit-stops',
-    'edit-stops': 'financials',
-    'financials': 'financials',
-  };
-  const nextTabKey = nextTabByKey[currentTab] || 'customer-info';
-  const nextTabLabel = tabs.find((tab) => tab.key === nextTabKey)?.label || 'Customer Info';
-  const isFinancialsTab = currentTab === 'financials';
+      <CollapsibleSection title="Stops" complete={stopsSectionComplete} defaultOpen={true}>
+        <StopsSection onComplete={() => setStopsSectionComplete(true)} setStopsData={setStopsData} />
+      </CollapsibleSection>
 
-  const setPanelTab = (tabKey) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set('panel', tabKey);
-    setSearchParams(nextParams, { replace: true });
-  };
+      <CollapsibleSection title="Lane Intelligence" complete={laneIntelligenceComplete} defaultOpen={true}>
+        <LaneIntelligencePanel stops={stopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
+      </CollapsibleSection>
 
-  const mapInternalCarrier = (carrier) => ({
-    id: carrier.id,
-    companyName: carrier.name || 'Unknown Carrier',
-    mcNumber: carrier.mcNumber || 'Not Set',
-    usdotNumber: carrier.usdotNumber || 'Not Set',
-    phone: carrier.phone || 'Not Set',
-    email: carrier.email || 'Not Set',
-    address: carrier.address || 'Not Set',
-    source: 'internal',
-    existsInInternal: true,
-  });
+      <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
+        <CarrierSection enabled={laneIntelligenceComplete} onComplete={() => setCarrierSectionComplete(true)} />
+      </CollapsibleSection>
 
-  const runCarrierSearch = async () => {
-    const query = carrierQuery.trim().toLowerCase();
-    setCarrierLoading(true);
-    setCarrierError('');
-    setCarrierActionMessage('');
+      <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
+        <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData} onComplete={() => setFinancialSectionComplete(true)} />
+      </CollapsibleSection>
 
-    try {
-      const includeInternal = carrierSearchSource === 'internal' || carrierSearchSource === 'both';
-      const includeFmcsa = carrierSearchSource === 'fmcsa' || carrierSearchSource === 'both';
+      <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
+        {/* TODO: Implement DocumentsSection, readiness score, checklist, dispatch actions */}
+        <div>Documents Section Placeholder</div>
+      </CollapsibleSection>
 
-      let internalResults = [];
-      if (includeInternal) {
-        const response = await getCarriers();
-        if (response?.error) {
-          throw new Error(response.error);
-        }
-        const rows = Array.isArray(response?.carriers) ? response.carriers : Array.isArray(response) ? response : [];
-        internalResults = rows
-          .filter((carrier) => {
-            if (!query) return true;
-            return [carrier.name, carrier.mcNumber, carrier.taxId, carrier.phone]
-              .filter(Boolean)
-              .some((value) => String(value).toLowerCase().includes(query));
-          })
-          .map(mapInternalCarrier)
-          .slice(0, 15);
+      <CollapsibleSection title="Activity Log" complete={false} defaultOpen={true}>
+        {/* TODO: Implement ActivityLogPanel, chronological feed */}
+        <div>Activity Log Panel Placeholder</div>
+      </CollapsibleSection>
+    </div>
+  );
+  // ...existing code...
+
+  // ChecklistDrawer component
+  function ChecklistDrawer({ checkpoints }) {
+    const [expanded, setExpanded] = useState(false);
+    // Icon logic with color and tooltip
+    const getIcon = (done, issue, needsAction, label, risk) => {
+      let color = '#bdc3c7';
+      let icon = '▢';
+      let tooltip = label;
+      if (issue) {
+        color = '#e74c3c';
+        icon = '⚠️';
+        tooltip += ' — Issue flagged';
+        if (risk) tooltip += ` — Risk: ${risk}`;
+      } else if (done) {
+        color = '#27ae60';
+        icon = '✔';
+        tooltip += ' — Completed';
+      } else if (needsAction) {
+        color = '#f1c40f';
+        icon = '⚡';
+        tooltip += ' — Needs action';
+        if (risk) tooltip += ` — Risk: ${risk}`;
+      } else {
+        tooltip += ' — Not started';
       }
+      return <span title={tooltip} style={{ color, fontWeight: 600 }}>{icon}</span>;
+    };
 
-      let fmcsaResults = [];
-      if (includeFmcsa) {
-        fmcsaResults = mockFmcsaCarriers
-          .filter((carrier) => {
-            if (!query) return true;
-            return [carrier.companyName, carrier.mcNumber, carrier.usdotNumber]
-              .filter(Boolean)
-              .some((value) => String(value).toLowerCase().includes(query));
-          })
-          .map((carrier) => ({ ...carrier, source: 'fmcsa', existsInInternal: false }))
-          .slice(0, 15);
-      }
+    // Steps per phase
+    const phases = [
+      {
+        key: 'intake',
+        label: 'Intake',
+        steps: [
+          { key: 'customer_added', label: 'Customer Added' },
+          { key: 'credit_verified', label: 'Credit Verified' },
+          { key: 'load_type_selected', label: 'Load Type Selected' },
+        ],
+      },
+      {
+        key: 'pickup',
+        label: 'Pickup',
+        steps: [
+          { key: 'origin_confirmed', label: 'Origin Confirmed' },
+          { key: 'pickup_method', label: 'Pickup Method', isConditional: true },
+          { key: 'appt_scheduled', label: 'Appointment Scheduled', conditional: 'APPT' },
+          { key: 'fcfs_confirmed', label: 'FCFS Confirmed', conditional: 'FCFS' },
+          { key: 'bol_received', label: 'BOL Received (optional)' },
+        ],
+      },
+      {
+        key: 'carrier',
+        label: 'Carrier',
+        steps: [
+          { key: 'carrier_selected', label: 'Carrier Selected' },
+          { key: 'rate_confirmed', label: 'Rate Confirmed' },
+          { key: 'rate_con_sent', label: 'Rate Con Sent' },
+          { key: 'rate_con_signed', label: 'Rate Con Signed' },
+        ],
+      },
+      {
+        key: 'transit',
+        label: 'Transit',
+        steps: [
+          { key: 'picked_up', label: 'Picked Up' },
+          { key: 'gps_tracking_active', label: 'GPS Tracking Active' },
+          { key: 'en_route', label: 'En Route' },
+        ],
+      },
+      {
+        key: 'delivery',
+        label: 'Delivery',
+        steps: [
+          { key: 'destination_confirmed', label: 'Destination Confirmed' },
+          { key: 'delivery_method', label: 'Delivery Method', isConditional: true },
+          { key: 'appt_scheduled', label: 'Appointment Scheduled', conditional: 'APPT' },
+          { key: 'fcfs_confirmed', label: 'FCFS Confirmed', conditional: 'FCFS' },
+          { key: 'delivered', label: 'Delivered' },
+          { key: 'pod_received', label: 'POD Received' },
+        ],
+      },
+    ];
 
-      const merged = [...internalResults];
-      fmcsaResults.forEach((fmcsaCarrier) => {
-        const alreadyExists = internalResults.some((internalCarrier) => (
-          String(internalCarrier.mcNumber || '').toLowerCase() === String(fmcsaCarrier.mcNumber || '').toLowerCase()
-          || String(internalCarrier.usdotNumber || '').toLowerCase() === String(fmcsaCarrier.usdotNumber || '').toLowerCase()
-        ));
-        merged.push({ ...fmcsaCarrier, existsInInternal: alreadyExists });
-      });
+    // Render checklist
+    return (
+      <div style={{ marginTop: 8 }}>
+        <button
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#2980b9',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontSize: 13,
+            marginBottom: 4,
+          }}
+          onClick={() => setExpanded((prev) => !prev)}
+          aria-expanded={expanded}
+        >
+          {expanded ? 'Hide Details ▲' : 'Show Details ▼'}
+        </button>
+        {expanded && (
+          <div style={{ display: 'grid', gap: 10, background: '#f8f9fa', borderRadius: 8, padding: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+            {phases.map((phase) => (
+              <div key={phase.key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontWeight: 700, minWidth: 80 }}>{phase.label}</span>
+                {phase.steps.map((step) => {
+                  // Conditional rendering for pickup/delivery method
+                  if (step.isConditional) {
+                    const method = checkpoints[phase.key][step.key];
+                    if (step.key === 'pickup_method' || step.key === 'delivery_method') {
+                      return method ? (
+                        <span key={step.key} title={step.label} style={{ color: '#2980b9', fontWeight: 600 }}>
+                          {method}
+                        </span>
+                      ) : null;
+                    }
+                    // Only show conditional steps if method matches
+                    if (step.conditional && checkpoints[phase.key][step.key.replace('_scheduled', '_method')] !== step.conditional) return null;
+                  }
+                  // Status logic
+                  const done = !!checkpoints[phase.key][step.key];
+                  const issue = checkpoints.issues && checkpoints.issues.some((iss) => iss.phase === phase.key && iss.step === step.key);
+                  const needsAction = !done && !issue && (step.key !== 'bol_received');
+                  // Example risk logic (can be expanded)
+                  let risk = null;
+                  if (needsAction && step.label.toLowerCase().includes('appointment')) risk = 'HIGH';
+                  if (issue && step.label.toLowerCase().includes('fcfs')) risk = 'MEDIUM';
+                  return (
+                    <span key={step.key} style={{ marginRight: 6 }}>
+                      {getIcon(done, issue, needsAction, step.label, risk)}
+                    </span>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+}
+// ...existing code...
 
-      setCarrierResults(merged);
-      if (!merged.length) {
-        setCarrierActionMessage('No carriers found for this search.');
-      }
-    } catch (error) {
-      setCarrierResults([]);
-      setCarrierError(error?.message || 'Carrier search failed');
-    } finally {
-      setCarrierLoading(false);
+// Carrier search logic moved into a function
+function searchCarriers({ includeFmcsa, mockFmcsaCarriers, query, internalResults, setCarrierResults, setCarrierActionMessage, setCarrierError, setCarrierLoading }) {
+  try {
+    let fmcsaResults = [];
+    if (includeFmcsa) {
+      fmcsaResults = mockFmcsaCarriers
+        .filter((carrier) => {
+          if (!query) return true;
+          return [carrier.companyName, carrier.mcNumber, carrier.usdotNumber]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(query));
+        })
+        .map((carrier) => ({ ...carrier, source: 'fmcsa', existsInInternal: false }))
+        .slice(0, 15);
     }
-  };
+
+    const merged = [...internalResults];
+    fmcsaResults.forEach((fmcsaCarrier) => {
+      const alreadyExists = internalResults.some((internalCarrier) => (
+        String(internalCarrier.mcNumber || '').toLowerCase() === String(fmcsaCarrier.mcNumber || '').toLowerCase()
+        || String(internalCarrier.usdotNumber || '').toLowerCase() === String(fmcsaCarrier.usdotNumber || '').toLowerCase()
+      ));
+      merged.push({ ...fmcsaCarrier, existsInInternal: alreadyExists });
+    });
+
+    setCarrierResults(merged);
+    if (!merged.length) {
+      setCarrierActionMessage('No carriers found for this search.');
+    }
+  } catch (error) {
+    setCarrierResults([]);
+    setCarrierError(error?.message || 'Carrier search failed');
+  } finally {
+    setCarrierLoading(false);
+  }
+}
 
   const addCarrierFromResult = async (carrier) => {
     setCarrierError('');

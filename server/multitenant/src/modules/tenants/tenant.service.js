@@ -1,4 +1,4 @@
-import { query } from '../../config/database.js';
+import { Tenant, TenantFeature, TenantSettings } from './tenant.model.js';
 import { AppError } from '../../utils/errorHandler.js';
 
 const DEFAULT_FEATURES = [
@@ -9,40 +9,32 @@ const DEFAULT_FEATURES = [
 ];
 
 export async function createTenant(name) {
-  const result = await query(
-    'INSERT INTO tenants (name) VALUES ($1) RETURNING *',
-    [name]
-  );
-  const tenant = result.rows[0];
+  const tenant = new Tenant({ name });
+  await tenant.save();
 
-  await query('INSERT INTO tenant_settings (tenant_id) VALUES ($1)', [tenant.id]);
+  const settings = new TenantSettings({ tenant_id: tenant._id });
+  await settings.save();
 
   for (const feature of DEFAULT_FEATURES) {
-    await query(
-      'INSERT INTO tenant_features (tenant_id, feature_name, enabled) VALUES ($1, $2, true)',
-      [tenant.id, feature]
-    );
+    const tenantFeature = new TenantFeature({ tenant_id: tenant._id, feature_name: feature, enabled: true });
+    await tenantFeature.save();
   }
 
   return tenant;
 }
 
 export async function listTenants() {
-  const result = await query('SELECT * FROM tenants ORDER BY created_at DESC');
-  return result.rows;
+  return await Tenant.find().sort({ created_at: -1 });
 }
 
 export async function getTenant(id) {
-  const result = await query('SELECT * FROM tenants WHERE id = $1', [id]);
-  if (!result.rows[0]) throw new AppError('Tenant not found', 404, 'NOT_FOUND');
-  return result.rows[0];
+  const tenant = await Tenant.findById(id);
+  if (!tenant) throw new AppError('Tenant not found', 404, 'NOT_FOUND');
+  return tenant;
 }
 
 export async function updateTenantStatus(id, status) {
-  const result = await query(
-    'UPDATE tenants SET status = $1 WHERE id = $2 RETURNING *',
-    [status, id]
-  );
-  if (!result.rows[0]) throw new AppError('Tenant not found', 404, 'NOT_FOUND');
-  return result.rows[0];
+  const tenant = await Tenant.findByIdAndUpdate(id, { status }, { new: true });
+  if (!tenant) throw new AppError('Tenant not found', 404, 'NOT_FOUND');
+  return tenant;
 }
