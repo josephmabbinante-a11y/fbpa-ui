@@ -79,4 +79,96 @@ function assertCircuitReady() {
     retryAfterMs: Math.max(0, CIRCUIT_OPEN_MS - elapsed),
   });
 }
-// ...existing code...
+
+export function getSaiaCircuitState() {
+  return {
+    state: circuitState.state,
+    consecutiveFailures: circuitState.consecutiveFailures,
+    openedAt: circuitState.openedAt,
+    lastError: circuitState.lastError,
+  };
+}
+export async function requestSaiaRateQuote(payload, options = {}) {
+  assertCircuitReady();
+
+  const endpoint = getEndpoint();
+  const subscriptionKey = getSubscriptionKey();
+  const timeoutMs = clampTimeout(process.env.SAIA_TIMEOUT_MS || options.timeoutMs);
+
+  if (!endpoint) {
+    throw createError('SAIA_RATE_QUOTE_URL is not configured', 500, { code: 'SAIA_ENDPOINT_MISSING' });
+  }
+  if (!subscriptionKey) {
+    throw createError('SAIA_SUBSCRIPTION_KEY is not configured', 500, { code: 'SAIA_KEY_MISSING' });
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Ocp-Apim-Subscription-Key': subscriptionKey,
+  };
+  const authHeader = buildAuthHeader();
+  if (authHeader) {
+    headers.Authorization = authHeader;
+  }
+
+  let attempt = 0;
+  let lastError = null;
+
+  while (attempt <= MAX_RETRIES) {
+    attempt += 1;
+    const controller = new AbortController();
+    const timeoutRef = setTimeout(() => controller.abort(), timeoutMs);
+    const startedAt = now();
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload || {}),
+        signal: controller.signal,
+      });
+      const responseTimeMs = now() - startedAt;
+      clearTimeout(timeoutRef);
+
+      let responseBody = null;
+      try {
+        responseBody = await response.json();
+      } catch {
+        responseBody = null;
+      }
+
+      if (!response.ok) {
+        const carrierError = mapCarrierError(response.status, responseBody?.message);
+        carrierError.responseBody = responseBody;
+        carrierError.responseTimeMs = responseTimeMs;
+        throw carrierError;
+      }
+
+      recordSuccess();
+      return {
+        status: response.status,
+        responseTimeMs,
+        data: responseBody,
+      };
+    } catch (err) {
+      clearTimeout(timeoutRef);
+      const isTimeout = err?.name === 'AbortError';
+      const normalizedError = isTimeout
+        ? createError(`Saia request timed out after ${timeoutMs}ms`, 504, { code: 'SAIA_TIMEOUT' })
+        : err;
+
+      lastError = normalizedError;
+      if (!shouldRetry(normalizedError) || attempt > MAX_RETRIES) {
+        recordFailure(normalizedError.message);
+        if (circuitState.state === 'HALF_OPEN') {
+          circuitState.state = 'OPEN';
+          circuitState.openedAt = now();
+        }
+        throw normalizedError;
+      }
+    }
+  }
+
+  recordFailure(lastError?.message || 'Saia request failed');
+  throw lastError || createError('Unknown Saia error', 500, { code: 'SAIA_UNKNOWN' });
+}

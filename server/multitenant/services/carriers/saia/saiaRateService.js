@@ -78,4 +78,84 @@ export function mapInternalLoadToSaiaPayload(internal = {}) {
 
   return {
     shipment: {
+      originZip,
+      destinationZip,
+      pickupDate,
+      serviceType,
+      accountNumber,
+    },
+    freight: freightItems,
+    accessorials,
+  };
+}
+
+export function normalizeSaiaRateResponse(rawResponse, responseTimeMs) {
+  const quoteId = String(
+    pick(
+      rawResponse?.quoteId,
+      rawResponse?.quote_id,
+      rawResponse?.rateQuoteId,
+      rawResponse?.referenceNumber,
+      randomUUID()
+    )
+  );
+
+  const baseRate = parseCharge(pick(rawResponse?.baseRate, rawResponse?.charges?.linehaul, rawResponse?.linehaulCharge));
+  const fuelSurcharge = parseCharge(pick(rawResponse?.fuelSurcharge, rawResponse?.charges?.fuel, rawResponse?.fuelCharge));
+  const accessorialTotal = parseCharge(pick(rawResponse?.accessorialTotal, rawResponse?.charges?.accessorials, rawResponse?.accessorialCharges));
+  const fallbackTotal = parseCharge(pick(rawResponse?.totalRate, rawResponse?.charges?.total, rawResponse?.totalCharge));
+  const totalRate = toMoney(baseRate + fuelSurcharge + accessorialTotal || fallbackTotal);
+
+  const transitDays = Math.max(0, Math.round(Number(pick(rawResponse?.transitDays, rawResponse?.service?.transitDays, 0) || 0)));
+  const serviceLevel = String(pick(rawResponse?.serviceLevel, rawResponse?.service?.level, rawResponse?.serviceType, 'STANDARD'));
+
+  return {
+    carrier: 'SAIA',
+    baseRate,
+    fuelSurcharge,
+    accessorialTotal,
+    totalRate,
+    transitDays,
+    serviceLevel,
+    quoteId,
+    responseTimeMs: Math.max(0, Number(responseTimeMs || 0)),
+    rawResponse: rawResponse || {},
+  };
+}
+
+export function toPricingInput(normalizedRate = {}) {
+  const totalRate = toMoney(normalizedRate.totalRate || 0);
+  const fuelPct = totalRate > 0 ? Number(((Number(normalizedRate.fuelSurcharge || 0) / totalRate) * 100).toFixed(2)) : 0;
+  return {
+    baseCarrierRate: toMoney(normalizedRate.baseRate || 0),
+    fuelPct,
+    accessorialTotal: toMoney(normalizedRate.accessorialTotal || 0),
+    transitTime: Math.max(0, Number(normalizedRate.transitDays || 0)),
+    rawCostInput: totalRate,
+  };
+}
+
+export function sanitizeQuoteForFrontend(normalizedRate = {}) {
+  return {
+    carrier: 'SAIA',
+    baseRate: toMoney(normalizedRate.baseRate || 0),
+    fuelSurcharge: toMoney(normalizedRate.fuelSurcharge || 0),
+    accessorialTotal: toMoney(normalizedRate.accessorialTotal || 0),
+    totalRate: toMoney(normalizedRate.totalRate || 0),
+    transitDays: Math.max(0, Number(normalizedRate.transitDays || 0)),
+    serviceLevel: String(normalizedRate.serviceLevel || ''),
+    quoteId: String(normalizedRate.quoteId || ''),
+    responseTimeMs: Math.max(0, Number(normalizedRate.responseTimeMs || 0)),
+  };
+}
+
+export async function quoteSaiaRate(internalLoad = {}) {
+  const requestPayload = mapInternalLoadToSaiaPayload(internalLoad);
+  const raw = await requestSaiaRateQuote(requestPayload);
+  const normalizedRate = normalizeSaiaRateResponse(raw.data, raw.responseTimeMs);
+  return {
+    requestPayload,
+    normalizedRate,
+  };
+}
 // ...existing code...

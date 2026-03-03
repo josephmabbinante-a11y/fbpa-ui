@@ -13,6 +13,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CombinedPage = lazy(() => import('./pages/CombinedPage'));
 const InvoiceDetail = lazy(() => import('./pages/InvoiceDetail'));
 const ExceptionsUploads = lazy(() => import('./pages/ExceptionsUploads'));
+const Uploads = lazy(() => import('./pages/Uploads'));
 const ExceptionDrilldown = lazy(() => import('./pages/ExceptionDrilldown'));
 const Reports = lazy(() => import('./pages/Reports'));
 const ReportDetail = lazy(() => import('./pages/ReportDetail'));

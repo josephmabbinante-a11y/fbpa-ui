@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: freight
+      POSTGRES_PASSWORD: freight
+      POSTGRES_DB: freightdb
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+  route-intelligence-service:
+    build: ./route-intelligence-service
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgres://freight:freight@postgres:5432/freightdb
+      REDIS_URL: redis://redis:6379
+  pricing-service:
+    build: ./pricing-service
+    depends_on:
+      - route-intelligence-service
+  ml-shadow-service:
+    build: ./ml-shadow-service
+    ports:
+      - "8000:8000"
+  tracking-service:
+    build: ./tracking-service
+    depends_on:
+      - route-intelligence-service
+  capacity-worker:
+    build: ./capacity-worker
+    depends_on:
+      - postgres
