@@ -126,7 +126,14 @@ const defaultAllowedOrigins = [
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-e3wffttsx-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-ui-git-fbpa-josephmabbinante-a11ys-projects.vercel.app',
-  /^https:\/\/.*\.vercel\.app$/,
+  'https://fbpa-dgt9p9xe9-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-pqhb5nod7-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-cxhcpym98-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-96un8xi2g-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-a744vgv53-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-3o2xyfwkj-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-jkqd3brbc-josephmabbinante-a11ys-projects.vercel.app',
+  /^https:\/\/.*\.vercel\.app$/
 ];
 
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')

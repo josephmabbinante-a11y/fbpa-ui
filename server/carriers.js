@@ -33,7 +33,10 @@ function decodeCsvBuffer(buffer) {
   return buffer.toString('utf8').replace(/^\uFEFF/, '');
 }
 
-const seedMemoryCarriers = [
+// Centralized mock mode flag
+const MOCK_MODE = process.env.MOCK_MODE === 'true';
+
+const seedMemoryCarriers = MOCK_MODE ? [
   {
     id: 'cr-memory-1',
     name: 'Prime Logistics',
@@ -90,10 +93,11 @@ const seedMemoryCarriers = [
   },
 ];
 
-let memoryCarriers = [...seedMemoryCarriers];
+let memoryCarriers = MOCK_MODE ? [...seedMemoryCarriers] : [];
 
 function isDbReady() {
-  return mongoose.connection.readyState === 1;
+  // Only use DB if not in mock mode
+  return !MOCK_MODE && mongoose.connection.readyState === 1;
 }
 
 function toSerializableCarrier(carrier) {
@@ -303,7 +307,7 @@ router.get('/', async (req, res) => {
     const hasLimit = Number.isFinite(rawLimit) && rawLimit > 0;
     const limit = hasLimit ? Math.min(rawLimit, 5000) : null;
 
-    if (!isDbReady()) {
+    if (MOCK_MODE || !isDbReady()) {
       const sorted = [...memoryCarriers]
         .sort((left, right) => new Date(right.updatedAt || 0).getTime() - new Date(left.updatedAt || 0).getTime())
         .map((carrier) => toSerializableCarrier(carrier));
@@ -365,7 +369,7 @@ router.post('/fmcsa/import', async (req, res) => {
     const snapshot = fetched.snapshot;
     const normalizedMc = normalizeMc(snapshot.mcNumber);
 
-    if (!isDbReady()) {
+    if (MOCK_MODE || !isDbReady()) {
       const normalizedDot = normalizeDot(snapshot.dotNumber);
       const result = upsertMemoryCarrier({
         id: `cr-${Date.now()}`,
@@ -510,7 +514,7 @@ router.post('/upload-csv', upload.single('file'), async (req, res) => {
     const insuranceExpiryValue = insuranceExpiry && !Number.isNaN(insuranceExpiry.getTime()) ? insuranceExpiry : undefined;
 
     try {
-      if (!isDbReady()) {
+      if (MOCK_MODE || !isDbReady()) {
         const upsertResult = upsertMemoryCarrier({
           id: `cr-${Date.now()}-${index}`,
           name: name || `Carrier ${line}`,
@@ -600,7 +604,7 @@ router.post('/upload-csv', upload.single('file'), async (req, res) => {
 
 router.delete('/purge', async (req, res) => {
   try {
-    if (!isDbReady()) {
+    if (MOCK_MODE || !isDbReady()) {
       const deletedCount = memoryCarriers.length;
       memoryCarriers = [];
       return res.json({
@@ -624,7 +628,7 @@ router.delete('/purge', async (req, res) => {
 // Get carrier by ID
 router.get('/:id', async (req, res) => {
   try {
-    if (!isDbReady()) {
+    if (MOCK_MODE || !isDbReady()) {
       const carrier = memoryCarriers.find((item) => item.id === req.params.id);
       if (!carrier) return res.status(404).json({ error: 'Carrier not found' });
       return res.json(toSerializableCarrier(carrier));
@@ -650,7 +654,7 @@ router.post('/', async (req, res) => {
 
     const mcNormalized = normalizeMc(mcNumber);
 
-    if (!isDbReady()) {
+    if (MOCK_MODE || !isDbReady()) {
       const existing = mcNormalized
         ? memoryCarriers.find((carrier) => carrier.mcNumberNormalized === mcNormalized)
         : null;
@@ -705,7 +709,7 @@ router.patch('/:id', async (req, res) => {
   try {
     const updates = req.body || {};
 
-    if (!isDbReady()) {
+    if (MOCK_MODE || !isDbReady()) {
       const index = memoryCarriers.findIndex((carrier) => carrier.id === req.params.id);
       if (index < 0) return res.status(404).json({ error: 'Carrier not found' });
 
