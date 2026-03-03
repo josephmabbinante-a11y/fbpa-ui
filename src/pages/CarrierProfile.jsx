@@ -99,37 +99,6 @@ export default function CarrierProfile() {
                 )}
               </div>
             );
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '18px 28px 12px 28px',
-        background: t.surface,
-        borderBottom: `2px solid ${t.border}`,
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        boxShadow: '0 2px 8px 0 rgba(0,0,0,0.04)',
-      }}>
-        {/* LEFT: Carrier Identity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <div style={{ fontSize: 26, fontWeight: 800 }}>{carrierRecord.name || 'Carrier Name'}</div>
-          <div style={{ display: 'flex', gap: 18, alignItems: 'center', fontSize: 14, marginTop: 2 }}>
-            <span>MC #{carrierRecord.mcNumber || '—'}</span>
-            <span>DOT #{carrierRecord.dotNumber || '—'}</span>
-            <span style={{ padding: '2px 10px', borderRadius: 12, background: '#10b981', color: '#fff', fontWeight: 700, fontSize: 13 }}>Active</span>
-            <span style={{ padding: '2px 10px', borderRadius: 12, background: '#f59e42', color: '#fff', fontWeight: 700, fontSize: 13 }}>Risk: Low</span>
-          </div>
-        </div>
-        {/* RIGHT: Quick Status & Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 13 }}>
-            <span style={{ color: '#10b981', fontWeight: 700 }}>Authority Verified ✔</span>
-            <span style={{ color: '#10b981', fontWeight: 700 }}>Insurance Verified ✔</span>
-            <span>Compliance Exp: <b>2026-06-01</b></span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.accent, color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Assign to Load</button>
             <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>View Documents</button>
             <button style={{ padding: '6px 14px', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Suspend Carrier</button>
             <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>Request COI Update</button>
