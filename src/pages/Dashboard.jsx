@@ -119,7 +119,6 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
-  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
   const [todayShipments, setTodayShipments] = useState(() => Array.isArray(mockShipments) ? mockShipments : []);
   const [shipmentsSource, setShipmentsSource] = useState('fallback');
   const [shipmentsUpdatedAt, setShipmentsUpdatedAt] = useState(null);
