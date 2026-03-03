@@ -56,10 +56,21 @@ curl -X POST http://localhost:4000/auth/forgot-password \
 
 ## Saia Rate Quote API Integration
 
-Backend integration points:
+
+## Saia Rate Quote API Integration (Auction Board)
+
+**Auction Board endpoints:**
+- `POST /auction/saia/quote` — normalized Saia quote for auction board
+- `GET /auction/saia/circuit` — Saia circuit breaker state for auction board
+
+**Legacy endpoints (for reference):**
 - `POST /api/rate-logic/saia/quote` for normalized Saia quote + pricing inputs
 - `GET /api/rate-logic/health/saia` and `GET /health/saia` for carrier health monitoring
 - `GET /api/rate-logic/saia/logs` for audit log retrieval
+
+**Integration location:**
+- All Saia quoting logic for the auction board is now under `server/multitenant/services/carriers/saia/` and wired via `server/multitenant/src/modules/auction/`.
+
 
 Required environment variables (never hardcode):
 - `SAIA_RATE_QUOTE_URL`
