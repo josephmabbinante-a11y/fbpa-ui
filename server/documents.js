@@ -1,6 +1,51 @@
 import express from 'express';
-
 const router = express.Router();
+
+// In-memory document store for demo (replace with DB in production)
+const documents = [
+  {
+    id: 'doc-1',
+    name: 'Sample Invoice.pdf',
+    type: 'invoice',
+    uploadedAt: new Date().toISOString(),
+    size: 102400,
+    url: 'https://example.com/sample-invoice.pdf',
+  },
+  {
+    id: 'doc-2',
+    name: 'Rate Confirmation.docx',
+    type: 'rate-confirmation',
+    uploadedAt: new Date().toISOString(),
+    size: 20480,
+    url: 'https://example.com/rate-confirmation.docx',
+  },
+];
+
+// List documents
+router.get('/api/documents', (req, res) => {
+  const q = String(req.query.q || '').toLowerCase();
+  let items = documents;
+  if (q) {
+    items = items.filter(doc => doc.name.toLowerCase().includes(q));
+  }
+  res.json({ items });
+});
+
+// Delete document
+router.delete('/api/documents/:id', (req, res) => {
+  const idx = documents.findIndex(doc => doc.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Document not found' });
+  documents.splice(idx, 1);
+  res.json({ ok: true });
+});
+
+// Download document (redirect to URL for demo)
+router.get('/api/documents/:id/download', (req, res) => {
+  const doc = documents.find(doc => doc.id === req.params.id);
+  if (!doc) return res.status(404).json({ error: 'Document not found' });
+  res.redirect(doc.url);
+});
+
 
 const SUPPORTED_DOCUMENT_TYPES = new Set(['invoice', 'rate-confirmation', 'bol']);
 

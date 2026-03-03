@@ -179,6 +179,10 @@ app.use('/api/invoice-images', invoiceImagesRouter);
 app.use('/api/edi', ediRouter);
 app.use('/api/loads', loadsRouter);
 app.use('/api/locations', locationsRouter);
+// Mount document management endpoints before the main documentsRouter to avoid shadowing
+app.get('/api/documents', documentsRouter);
+app.delete('/api/documents/:id', documentsRouter);
+app.get('/api/documents/:id/download', documentsRouter);
 app.use('/api/documents', documentsRouter);
 app.use('/api/email-templates', emailTemplatesRouter);
 
