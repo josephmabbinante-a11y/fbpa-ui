@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const tabs = [
   { key: 'loads', label: 'Loads', path: '/loads' },
   { key: 'rates', label: 'Rate Intelligence', path: '/rate-logic' },
-  { key: 'dispatch', label: 'Dispatch Planner', path: '/shipments' },
+  { key: 'dispatch', label: 'Dispatch Planner', path: '/loads/load-basics' },
   { key: 'billing', label: 'Billing', path: '/invoices' },
   { key: 'command', label: 'Command Center', path: '/dashboard' },
 ];
@@ -35,3 +35,5 @@ export default function PrimaryTabs({ active = 'loads' }) {
     </div>
   );
 }
+
+export { PrimaryTabs };

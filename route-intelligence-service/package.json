@@ -1,0 +1,29 @@
+{
+  "name": "route-intelligence-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Deterministic truck routing + internal billable mileage + lane intelligence",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "bullmq": "^5.58.0",
+    "dotenv": "^17.2.2",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.1",
+    "ioredis": "^5.8.0",
+    "pg": "^8.16.3",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.23",
+    "@types/node": "^22.17.1",
+    "@types/pg": "^8.15.5",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.2"
+  }
+}

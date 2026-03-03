@@ -10,14 +10,17 @@ export default function LoadDetailPanel({ detail, risk, events, actionState, onD
       <FinancialSummaryCard detail={detail} />
       <OperationalActionsCard
         detail={detail}
+        status={detail?.load?.status}
         actionState={actionState}
         onDispatch={onDispatch}
         onReassign={onReassign}
         onBidNetwork={onBidNetwork}
         onDelivered={onDelivered}
       />
-      <RiskSignalsCard risk={risk} />
+      <RiskSignalsCard risk={risk} status={detail?.load?.status} />
       <EventLogCard events={events} />
     </aside>
   );
 }
+
+export { LoadDetailPanel };

@@ -8,10 +8,39 @@ import UserManagement from '../components/admin/UserManagement';
 import DefaultMarginTargets from '../components/admin/DefaultMarginTargets';
 import RoutingDefaults from '../components/admin/RoutingDefaults';
 import NotificationSettings from '../components/admin/NotificationSettings';
-import { getUsers, register, updateUser } from '../api/client';
+import WorkflowAutomationEnginePanel from '../components/admin/WorkflowAutomationEnginePanel';
+import {
+  createEmailTemplate,
+  deleteEmailTemplate,
+  getUsers,
+  listEmailTemplates,
+  register,
+  sendEmailMessage,
+  updateEmailTemplate,
+  updateUser,
+} from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { clearAccessToken } from '../utils/authToken';
+
+const COMPANY_BRANDING_STORAGE_KEY = 'fbpa_company_branding';
+const DOCUMENT_WHITELABEL_STORAGE_KEY = 'fbpa_document_whitelabel';
+
+function readStorage(key, fallback) {
+  try {
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved);
+    if (!parsed || typeof parsed !== 'object') return fallback;
+    return { ...fallback, ...parsed };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStorage(key, payload) {
+  localStorage.setItem(key, JSON.stringify(payload));
+}
 
 const adminSections = [
   {
@@ -24,7 +53,18 @@ const adminSections = [
     icon: 'company',
     title: 'Company & Organization',
     description: 'Manage company profile, branding, and operational defaults.',
-    actions: ['Edit Company Info', 'Upload Logo', 'Currency & Units Settings', 'Default Margin Targets', 'Routing Defaults', 'Notification Settings'],
+    actions: [
+      'Edit your company contact info',
+      'Edit your company insurance coverage',
+      'Edit your dropdown lists',
+      'Upload your company logo',
+      'Customize the default currency and units of measure for your location',
+      'Configure your alerts',
+      'Configure your default routing options',
+      'Automated Workflow Engine',
+      'Edit Driver Pay Settings',
+      'Set Default Target Gross Margins',
+    ],
   },
   {
     icon: 'users',
@@ -48,7 +88,7 @@ const adminSections = [
     icon: 'documents',
     title: 'Documents & Reporting',
     description: 'Customize document templates and reporting output.',
-    actions: ['Carrier Confirmations', 'Invoice Templates', 'Bill of Lading Defaults', 'Font & Branding Settings', 'Reporting Configuration'],
+    actions: ['Carrier Confirmations', 'Invoice Templates', 'Bill of Lading Defaults', 'Font & Branding Settings', 'Reporting Configuration', 'Operator Email Templates'],
   },
   {
     icon: 'billing',
@@ -113,8 +153,379 @@ function ToggleList({ items, t }) {
   );
 }
 
+function OperatorEmailTemplatesPanel({ t }) {
+  const [templateAudience, setTemplateAudience] = useState('customer');
+  const [templateQuery, setTemplateQuery] = useState('');
+  const [templateList, setTemplateList] = useState([]);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [templateMessage, setTemplateMessage] = useState('');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [templateForm, setTemplateForm] = useState({ name: '', subject: '', body: '', tags: '' });
+  const [outboundEmail, setOutboundEmail] = useState({ to: '', subject: '', body: '' });
+
+  const inputStyle = {
+    padding: '8px 10px',
+    borderRadius: 6,
+    border: `1px solid ${t.border}`,
+    background: t.bgAlt,
+    color: t.text,
+    fontSize: 13,
+    fontFamily: 'inherit',
+    width: '100%',
+    boxSizing: 'border-box',
+  };
+
+  const buttonStyle = {
+    padding: '8px 12px',
+    borderRadius: 6,
+    border: `1px solid ${t.border}`,
+    background: t.surface,
+    color: t.text,
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+  };
+
+  const optionButtonStyle = (active) => ({
+    ...buttonStyle,
+    border: `1px solid ${active ? t.accent : t.border}`,
+    background: active ? t.accent : t.surface,
+    color: active ? '#fff' : t.text,
+  });
+
+  const loadEmailTemplates = async (audience = templateAudience, q = templateQuery) => {
+    setTemplateLoading(true);
+    const response = await listEmailTemplates({ audience, q });
+    setTemplateLoading(false);
+
+    if (response?.error) {
+      setTemplateMessage(response.error);
+      setTemplateList([]);
+      return;
+    }
+
+    const items = Array.isArray(response?.items) ? response.items : [];
+    setTemplateList(items);
+    setSelectedTemplateId((prev) => prev || items[0]?.id || '');
+  };
+
+  useEffect(() => {
+    loadEmailTemplates(templateAudience, templateQuery);
+  }, [templateAudience]);
+
+  const selectedTemplate = templateList.find((template) => template.id === selectedTemplateId) || null;
+
+  useEffect(() => {
+    if (!selectedTemplate) {
+      setTemplateForm({ name: '', subject: '', body: '', tags: '' });
+      return;
+    }
+
+    setTemplateForm({
+      name: selectedTemplate.name || '',
+      subject: selectedTemplate.subject || '',
+      body: selectedTemplate.body || '',
+      tags: Array.isArray(selectedTemplate.tags) ? selectedTemplate.tags.join(', ') : '',
+    });
+  }, [selectedTemplateId, templateList]);
+
+  const saveTemplate = async () => {
+    setTemplateMessage('');
+    const payload = {
+      audience: templateAudience,
+      name: templateForm.name,
+      subject: templateForm.subject,
+      body: templateForm.body,
+      tags: templateForm.tags,
+    };
+
+    const response = selectedTemplateId
+      ? await updateEmailTemplate(selectedTemplateId, payload)
+      : await createEmailTemplate(payload);
+
+    if (response?.error) {
+      setTemplateMessage(response.error);
+      return;
+    }
+
+    setTemplateMessage(selectedTemplateId ? 'Template updated.' : 'Template created.');
+    await loadEmailTemplates(templateAudience, templateQuery);
+    const nextTemplateId = response?.template?.id || selectedTemplateId;
+    if (nextTemplateId) setSelectedTemplateId(nextTemplateId);
+  };
+
+  const removeTemplate = async () => {
+    if (!selectedTemplateId) return;
+    const response = await deleteEmailTemplate(selectedTemplateId);
+    if (response?.error) {
+      setTemplateMessage(response.error);
+      return;
+    }
+
+    setTemplateMessage('Template deleted.');
+    setSelectedTemplateId('');
+    await loadEmailTemplates(templateAudience, templateQuery);
+  };
+
+  const applyTemplateToDraft = () => {
+    if (!selectedTemplate) {
+      setTemplateMessage('Select a template first.');
+      return;
+    }
+
+    setOutboundEmail((prev) => ({
+      ...prev,
+      subject: selectedTemplate.subject || prev.subject,
+      body: selectedTemplate.body || prev.body,
+    }));
+    setTemplateMessage('Template applied to email draft.');
+  };
+
+  const sendDraftEmail = async () => {
+    const to = String(outboundEmail.to || '').trim();
+    const subject = String(outboundEmail.subject || '').trim();
+    const body = String(outboundEmail.body || '').trim();
+    if (!to || !subject || !body) {
+      setTemplateMessage('Recipient, subject, and message body are required.');
+      return;
+    }
+
+    const response = await sendEmailMessage({
+      to,
+      subject,
+      text: body,
+      context: {
+        audience: templateAudience,
+        source: 'settings-operator-templates',
+      },
+    });
+
+    if (response?.error) {
+      setTemplateMessage(response.error);
+      return;
+    }
+
+    setTemplateMessage(`Email sent (${response.delivery || 'queued'}).`);
+  };
+
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => setTemplateAudience('customer')} style={optionButtonStyle(templateAudience === 'customer')}>Customer Templates</button>
+          <button type="button" onClick={() => setTemplateAudience('carrier')} style={optionButtonStyle(templateAudience === 'carrier')}>Carrier Templates</button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <input value={templateQuery} onChange={(event) => setTemplateQuery(event.target.value)} placeholder="Search templates" style={{ ...inputStyle, minWidth: 220 }} />
+          <button type="button" style={buttonStyle} onClick={() => loadEmailTemplates(templateAudience, templateQuery)} disabled={templateLoading}>
+            {templateLoading ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 12 }}>
+        <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, overflow: 'hidden', background: t.surface }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
+            <thead>
+              <tr style={{ background: t.bgAlt, color: t.textSecondary }}>
+                <th style={{ padding: 8, textAlign: 'left' }}>Template Name</th>
+                <th style={{ padding: 8, textAlign: 'left' }}>Subject</th>
+                <th style={{ padding: 8, textAlign: 'left' }}>Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {templateList.map((template) => (
+                <tr
+                  key={template.id}
+                  onClick={() => setSelectedTemplateId(template.id)}
+                  style={{ cursor: 'pointer', background: selectedTemplateId === template.id ? 'rgba(var(--glow), 0.14)' : 'transparent' }}
+                >
+                  <td style={{ padding: 8, borderTop: `1px solid ${t.border}` }}>{template.name}</td>
+                  <td style={{ padding: 8, borderTop: `1px solid ${t.border}` }}>{template.subject}</td>
+                  <td style={{ padding: 8, borderTop: `1px solid ${t.border}` }}>{template.updatedAt ? new Date(template.updatedAt).toLocaleString() : '—'}</td>
+                </tr>
+              ))}
+              {templateList.length === 0 && (
+                <tr>
+                  <td colSpan={3} style={{ padding: 12, textAlign: 'center', color: t.textSecondary, borderTop: `1px solid ${t.border}` }}>
+                    No templates for this audience.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ display: 'grid', gap: 10 }}>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>Template Name</label>
+              <input value={templateForm.name} onChange={(event) => setTemplateForm((prev) => ({ ...prev, name: event.target.value }))} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>Subject</label>
+              <input value={templateForm.subject} onChange={(event) => setTemplateForm((prev) => ({ ...prev, subject: event.target.value }))} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>Body</label>
+              <textarea rows={4} value={templateForm.body} onChange={(event) => setTemplateForm((prev) => ({ ...prev, body: event.target.value }))} style={{ ...inputStyle, minHeight: 110, resize: 'vertical' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>Tags (comma separated)</label>
+              <input value={templateForm.tags} onChange={(event) => setTemplateForm((prev) => ({ ...prev, tags: event.target.value }))} style={inputStyle} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" style={buttonStyle} onClick={() => { setSelectedTemplateId(''); setTemplateForm({ name: '', subject: '', body: '', tags: '' }); }}>New Template</button>
+            <button type="button" style={buttonStyle} onClick={saveTemplate}>Save Template</button>
+            <button type="button" style={{ ...buttonStyle, borderColor: '#ef4444', color: '#ef4444' }} onClick={removeTemplate} disabled={!selectedTemplateId}>Delete Template</button>
+            <button type="button" style={buttonStyle} onClick={applyTemplateToDraft} disabled={!selectedTemplateId}>Apply to Draft</button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ border: `1px solid ${t.border}`, borderRadius: 8, background: t.bgAlt, padding: 10, display: 'grid', gap: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: t.textSecondary }}>Operator Email Draft</div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>To</label>
+          <input value={outboundEmail.to} onChange={(event) => setOutboundEmail((prev) => ({ ...prev, to: event.target.value }))} style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>Subject</label>
+          <input value={outboundEmail.subject} onChange={(event) => setOutboundEmail((prev) => ({ ...prev, subject: event.target.value }))} style={inputStyle} />
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' }}>Message</label>
+          <textarea rows={4} value={outboundEmail.body} onChange={(event) => setOutboundEmail((prev) => ({ ...prev, body: event.target.value }))} style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="button" style={buttonStyle} onClick={sendDraftEmail}>Send Email</button>
+        </div>
+      </div>
+
+      {templateMessage && <div style={{ fontSize: 12, color: t.textSecondary }}>{templateMessage}</div>}
+    </div>
+  );
+}
+
 function ActionPanel({ action, t, theme, setTheme }) {
-  const save = (data) => alert('Saved: ' + JSON.stringify(data, null, 2));
+  const [saveMessage, setSaveMessage] = useState('');
+  const [companyBranding, setCompanyBranding] = useState(() => readStorage(COMPANY_BRANDING_STORAGE_KEY, {
+    companyName: 'Opscale Supply Chain',
+    logoUrl: '',
+    address: '',
+    phone: '',
+    email: '',
+    accentColor: '#2f80ed',
+  }));
+  const [documentWhiteLabel, setDocumentWhiteLabel] = useState(() => readStorage(DOCUMENT_WHITELABEL_STORAGE_KEY, {
+    confirmationHeader: 'Rate Confirmation',
+    rateConfirmationTerms: 'Carrier agrees to transport freight per schedule and conditions outlined in this confirmation.',
+    signatureLine: 'Authorized Carrier Signature',
+    sendMethod: 'Email',
+    invoiceTemplate: 'Standard',
+    showLogo: 'Yes',
+    paymentInstructions: '',
+    footerNote: 'Thank you for your business.',
+    bolPrefix: 'BOL-',
+    shipperName: '',
+    shipperAddress: '',
+    freightTerms: 'Prepaid',
+    specialInstructions: '',
+    primaryFont: 'Inter',
+    primaryColor: '#2f80ed',
+    accentColor: '#5ec8ff',
+    logoPosition: 'Top Left',
+  }));
+  const [selectedCompanyList, setSelectedCompanyList] = useState('Commodity');
+  const [companyLists, setCompanyLists] = useState(() => ({
+    Commodity: [
+      { id: 'comm-1', value: 'Alcohol', grouping: 'High Value' },
+      { id: 'comm-2', value: 'Antiques / Works of Art', grouping: 'High Value' },
+      { id: 'comm-3', value: 'Cash, Checks, Currency', grouping: 'High Value' },
+      { id: 'comm-4', value: 'Feed Supplements', grouping: 'Dry' },
+      { id: 'comm-5', value: 'Chemicals', grouping: 'Hazardous' },
+      { id: 'comm-6', value: 'Consumer Electronics', grouping: 'High Value' },
+      { id: 'comm-7', value: 'Bottled Juices', grouping: '' },
+      { id: 'comm-8', value: 'Dry Goods (Food)', grouping: 'Dry' },
+    ],
+    'Load Status': [
+      { id: 'status-1', value: 'Open', grouping: 'Planning' },
+      { id: 'status-2', value: 'Booked', grouping: 'Planning' },
+      { id: 'status-3', value: 'In Transit', grouping: 'Execution' },
+      { id: 'status-4', value: 'Delivered', grouping: 'Closed' },
+    ],
+    'Pay Items': [
+      { id: 'pay-1', value: 'Linehaul', grouping: 'Standard' },
+      { id: 'pay-2', value: 'Fuel Surcharge', grouping: 'Accessorial' },
+      { id: 'pay-3', value: 'Detention', grouping: 'Accessorial' },
+    ],
+    'Payment Methods': [
+      { id: 'method-1', value: 'ACH', grouping: 'Electronic' },
+      { id: 'method-2', value: 'Wire', grouping: 'Electronic' },
+      { id: 'method-3', value: 'Check', grouping: 'Paper' },
+    ],
+    'Truck Length': [
+      { id: 'length-1', value: '48 ft', grouping: 'Dry Van' },
+      { id: 'length-2', value: '53 ft', grouping: 'Dry Van' },
+      { id: 'length-3', value: '28 ft', grouping: 'LTL' },
+    ],
+    'Truck Status': [
+      { id: 'tstatus-1', value: 'Available', grouping: 'Active' },
+      { id: 'tstatus-2', value: 'Out of Service', grouping: 'Inactive' },
+      { id: 'tstatus-3', value: 'Maintenance', grouping: 'Inactive' },
+    ],
+    'Truck Type': [
+      { id: 'type-1', value: 'Dry Van', grouping: 'Van' },
+      { id: 'type-2', value: 'Reefer', grouping: 'Van' },
+      { id: 'type-3', value: 'Flatbed', grouping: 'Open Deck' },
+    ],
+  }));
+
+  const listNames = ['Commodity', 'Load Status', 'Pay Items', 'Payment Methods', 'Truck Length', 'Truck Status', 'Truck Type'];
+  const selectedListRows = companyLists[selectedCompanyList] || [];
+
+  const save = (data) => {
+    setSaveMessage('Settings saved.');
+    alert('Saved: ' + JSON.stringify(data, null, 2));
+  };
+
+  const persistCompanyBranding = (updates, message = 'Company branding saved.') => {
+    setCompanyBranding((previous) => {
+      const next = { ...previous, ...updates };
+      writeStorage(COMPANY_BRANDING_STORAGE_KEY, next);
+      return next;
+    });
+    setSaveMessage(message);
+  };
+
+  const persistDocumentWhiteLabel = (updates, message = 'Document white-label settings saved.') => {
+    setDocumentWhiteLabel((previous) => {
+      const next = { ...previous, ...updates };
+      writeStorage(DOCUMENT_WHITELABEL_STORAGE_KEY, next);
+      return next;
+    });
+    setSaveMessage(message);
+  };
+
+  const persistLogoFile = (file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        persistCompanyBranding({ logoUrl: reader.result }, 'Company logo updated.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const withMessage = (node) => (
+    <div style={{ display: 'grid', gap: 10 }}>
+      {saveMessage && <div style={{ fontSize: 12, color: t.textSecondary }}>{saveMessage}</div>}
+      {node}
+    </div>
+  );
+
   const sectionStyle = { background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 20, marginBottom: 18 };
   const title = (txt) => <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: t.text }}>{txt}</div>;
   const listRow = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}`, fontSize: 13 };
@@ -125,20 +536,214 @@ function ActionPanel({ action, t, theme, setTheme }) {
     <button type="button" onClick={onClick} style={{ padding: '8px 16px', background: 'transparent', color: t.accent, border: `1px solid ${t.accent}`, borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{label}</button>
   );
 
+  const updateCompanyListRows = (updater) => {
+    setCompanyLists((previous) => {
+      const currentRows = previous[selectedCompanyList] || [];
+      return {
+        ...previous,
+        [selectedCompanyList]: updater(currentRows),
+      };
+    });
+  };
+
+  const addCompanyListValue = () => {
+    updateCompanyListRows((rows) => ([
+      ...rows,
+      {
+        id: `${selectedCompanyList.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+        value: 'New Value',
+        grouping: '',
+      },
+    ]));
+    setSaveMessage('List value added.');
+  };
+
+  const sortCompanyListByName = () => {
+    updateCompanyListRows((rows) => [...rows].sort((a, b) => String(a.value || '').localeCompare(String(b.value || ''))));
+    setSaveMessage('List sorted by name.');
+  };
+
+  const updateCompanyListRow = (rowId, field, value) => {
+    updateCompanyListRows((rows) => rows.map((row) => (row.id === rowId ? { ...row, [field]: value } : row)));
+  };
+
+  const removeCompanyListRow = (rowId) => {
+    updateCompanyListRows((rows) => rows.filter((row) => row.id !== rowId));
+    setSaveMessage('List value removed.');
+  };
+
   switch (action) {
     // ── Company & Org ─────────────────────────────────────────────────────────
+    case 'Edit your company contact info':
     case 'Edit Company Info':
-      return <CompanyInfoForm onSave={save} />;
+      return withMessage(
+        <CompanyInfoForm
+          initial={{
+            company: companyBranding.companyName,
+            address: companyBranding.address,
+            phone: companyBranding.phone,
+            email: companyBranding.email,
+          }}
+          onSave={(data) => {
+            persistCompanyBranding({
+              companyName: data.company,
+              address: data.address,
+              phone: data.phone,
+              email: data.email,
+            });
+          }}
+        />
+      );
+    case 'Edit your company insurance coverage':
+      return (
+        <div style={sectionStyle}>
+          {title('Company Insurance Coverage')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'provider', label: 'Insurance Provider', placeholder: 'Carrier name' },
+            { key: 'policyNumber', label: 'Policy Number', placeholder: 'POL-00012345' },
+            { key: 'coverageLimit', label: 'Coverage Limit ($)', type: 'number', placeholder: '1000000' },
+            { key: 'effectiveDate', label: 'Effective Date', type: 'date' },
+            { key: 'expirationDate', label: 'Expiration Date', type: 'date' },
+          ]} />
+        </div>
+      );
+    case 'Edit your dropdown lists':
+      return withMessage(
+        <div style={{ display: 'grid', gap: 12 }}>
+          <div style={{ ...sectionStyle, padding: 16 }}>
+            <div style={{ fontSize: 26, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>☰ Edit Company Lists</div>
+            <div style={{ marginTop: 8, fontSize: 12, color: t.textSecondary }}>Home {'>'} Settings {'>'} Lists</div>
+          </div>
+
+          <div style={{ ...sectionStyle, padding: 14, display: 'grid', gap: 8 }}>
+            <label style={{ fontSize: 12, fontWeight: 700, color: t.textSecondary }}>Select a List</label>
+            <select
+              value={selectedCompanyList}
+              onChange={(event) => setSelectedCompanyList(event.target.value)}
+              style={{ minHeight: 38, borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '0 12px', fontSize: 14 }}
+            >
+              {listNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ ...sectionStyle, padding: 14, background: theme === 'dark' ? 'rgba(24,210,255,0.12)' : 'rgba(10,124,255,0.08)' }}>
+            <div style={{ fontSize: 28, fontWeight: 300, marginBottom: 8 }}>Did you know?</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14, lineHeight: 1.65 }}>
+              <li>All new values are added to the bottom of the list when you click the "Add New Value" button.</li>
+              <li>Values are modified by clicking on the value you want to edit.</li>
+              <li>Use the "order" value to reorder list items.</li>
+              <li>Changes are saved automatically.</li>
+            </ul>
+          </div>
+
+          <div style={{ ...sectionStyle, padding: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', borderBottom: `1px solid ${t.border}`, background: t.bgAlt, flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setSaveMessage('List settings opened.')} style={{ border: 'none', borderRight: `1px solid ${t.border}`, background: 'transparent', color: t.text, fontSize: 13, fontWeight: 600, padding: '10px 14px', cursor: 'pointer' }}>
+                🔧 List Settings
+              </button>
+              <button type="button" onClick={addCompanyListValue} style={{ border: 'none', borderRight: `1px solid ${t.border}`, background: 'transparent', color: t.accent, fontSize: 13, fontWeight: 700, padding: '10px 14px', cursor: 'pointer' }}>
+                + Add New Value
+              </button>
+              <button type="button" onClick={sortCompanyListByName} style={{ border: 'none', background: 'transparent', color: t.accent, fontSize: 13, fontWeight: 700, padding: '10px 14px', cursor: 'pointer' }}>
+                ↻ Sort By Name
+              </button>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
+                <thead>
+                  <tr style={{ background: t.bgAlt, color: t.textSecondary }}>
+                    <th style={{ width: 80, padding: '8px 10px', borderBottom: `1px solid ${t.border}`, textAlign: 'left' }}>Order</th>
+                    <th style={{ padding: '8px 10px', borderBottom: `1px solid ${t.border}`, textAlign: 'left' }}>Value</th>
+                    <th style={{ width: 220, padding: '8px 10px', borderBottom: `1px solid ${t.border}`, textAlign: 'left' }}>Grouping</th>
+                    <th style={{ width: 120, padding: '8px 10px', borderBottom: `1px solid ${t.border}`, textAlign: 'center' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedListRows.map((row, index) => (
+                    <tr key={row.id}>
+                      <td style={{ padding: '6px 10px', borderBottom: `1px solid ${t.border}` }}>{index + 1}</td>
+                      <td style={{ padding: '6px 10px', borderBottom: `1px solid ${t.border}` }}>
+                        <input
+                          value={row.value}
+                          onChange={(event) => updateCompanyListRow(row.id, 'value', event.target.value)}
+                          style={{ width: '100%', minHeight: 32, borderRadius: 6, border: `1px solid ${t.border}`, background: t.surface, color: t.text, padding: '0 10px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '6px 10px', borderBottom: `1px solid ${t.border}` }}>
+                        <input
+                          value={row.grouping}
+                          onChange={(event) => updateCompanyListRow(row.id, 'grouping', event.target.value)}
+                          style={{ width: '100%', minHeight: 32, borderRadius: 6, border: `1px solid ${t.border}`, background: t.surface, color: t.text, padding: '0 10px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '6px 10px', borderBottom: `1px solid ${t.border}`, textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => removeCompanyListRow(row.id)}
+                          style={{ border: `1px solid ${t.error}`, color: t.error, background: 'transparent', borderRadius: 6, fontSize: 12, fontWeight: 700, padding: '5px 8px', cursor: 'pointer' }}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {selectedListRows.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ padding: 14, textAlign: 'center', color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
+                        No values in this list.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    case 'Upload your company logo':
     case 'Upload Logo':
-      return <LogoUpload onUpload={f => alert('Logo: ' + f.name)} />;
+      return withMessage(
+        <div style={sectionStyle}>
+          {title('Upload Company Logo')}
+          <LogoUpload onUpload={persistLogoFile} />
+          {companyBranding.logoUrl && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, color: t.textSecondary, marginBottom: 6 }}>Current logo on documents:</div>
+              <img src={companyBranding.logoUrl} alt="Current company logo" style={{ maxHeight: 72, maxWidth: 280, objectFit: 'contain' }} />
+            </div>
+          )}
+        </div>
+      );
+    case 'Customize the default currency and units of measure for your location':
     case 'Currency & Units Settings':
       return <CurrencyUnitsForm onSave={save} />;
+    case 'Set Default Target Gross Margins':
     case 'Default Margin Targets':
       return <DefaultMarginTargets onSave={save} />;
+    case 'Configure your default routing options':
     case 'Routing Defaults':
       return <RoutingDefaults onSave={save} />;
+    case 'Configure your alerts':
     case 'Notification Settings':
       return <NotificationSettings onSave={save} />;
+    case 'Automated Workflow Engine':
+      return <WorkflowAutomationEnginePanel t={t} onSave={save} />;
+    case 'Edit Driver Pay Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Driver Pay Settings')}
+          <SimpleForm t={t} onSave={save} fields={[
+            { key: 'payModel', label: 'Default Pay Model', type: 'select', options: ['Per Mile', 'Percentage', 'Hourly'], default: 'Per Mile' },
+            { key: 'baseRate', label: 'Base Pay Rate', type: 'number', placeholder: '0.65' },
+            { key: 'detentionPay', label: 'Detention Pay ($/hr)', type: 'number', placeholder: '25' },
+            { key: 'layoverPay', label: 'Layover Pay ($/day)', type: 'number', placeholder: '150' },
+            { key: 'bonusPolicy', label: 'Bonus Policy', type: 'textarea', default: 'On-time delivery bonus: $50 per qualifying load' },
+          ]} />
+        </div>
+      );
 
     // ── Users & Permissions ───────────────────────────────────────────────────
     case 'Add/Edit Users':
@@ -222,17 +827,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
         </div>
       );
     case 'Workflow Automation Rules':
-      return (
-        <div style={sectionStyle}>
-          {title('Workflow Automation Rules')}
-          <ToggleList t={t} items={[
-            { key: 'autoDispatch', label: 'Auto-Dispatch on Carrier Accept', desc: 'Automatically dispatch load when carrier confirms' },
-            { key: 'autoInvoice', label: 'Auto-Generate Invoice on Delivery', desc: 'Create invoice when POD is uploaded' },
-            { key: 'escalateException', label: 'Escalate Overdue Exceptions', desc: 'Alert manager if exception not resolved in 48h' },
-            { key: 'rateAlert', label: 'Rate Variance Alert', desc: 'Notify if carrier rate differs from contract by > 5%' },
-          ]} />
-        </div>
-      );
+      return <WorkflowAutomationEnginePanel t={t} onSave={save} />;
     case 'Rate Logic Configuration':
       return (
         <div style={sectionStyle}>
@@ -312,51 +907,77 @@ function ActionPanel({ action, t, theme, setTheme }) {
 
     // ── Documents & Reporting ─────────────────────────────────────────────────
     case 'Carrier Confirmations':
-      return (
+      return withMessage(
         <div style={sectionStyle}>
           {title('Carrier Confirmation Template')}
-          <SimpleForm t={t} onSave={save} fields={[
-            { key: 'header', label: 'Confirmation Header', placeholder: 'Rate Confirmation' },
-            { key: 'terms', label: 'Terms & Conditions', type: 'textarea' },
-            { key: 'signatureLine', label: 'Signature Line Label', placeholder: 'Authorized Carrier Signature' },
-            { key: 'sendMethod', label: 'Send Method', type: 'select', options: ['Email', 'Fax', 'Portal', 'All'], default: 'Email' },
+          <SimpleForm t={t} onSave={(data) => persistDocumentWhiteLabel({
+            confirmationHeader: data.header,
+            rateConfirmationTerms: data.terms,
+            signatureLine: data.signatureLine,
+            sendMethod: data.sendMethod,
+          })} fields={[
+            { key: 'header', label: 'Confirmation Header', placeholder: 'Rate Confirmation', default: documentWhiteLabel.confirmationHeader },
+            { key: 'terms', label: 'Terms & Conditions', type: 'textarea', default: documentWhiteLabel.rateConfirmationTerms },
+            { key: 'signatureLine', label: 'Signature Line Label', placeholder: 'Authorized Carrier Signature', default: documentWhiteLabel.signatureLine },
+            { key: 'sendMethod', label: 'Send Method', type: 'select', options: ['Email', 'Fax', 'Portal', 'All'], default: documentWhiteLabel.sendMethod || 'Email' },
           ]} />
         </div>
       );
     case 'Invoice Templates':
-      return (
+      return withMessage(
         <div style={sectionStyle}>
           {title('Invoice Templates')}
-          <SimpleForm t={t} onSave={save} fields={[
-            { key: 'template', label: 'Default Template', type: 'select', options: ['Standard', 'Detailed', 'Summary', 'Custom'], default: 'Standard' },
-            { key: 'showLogo', label: 'Show Company Logo', type: 'select', options: ['Yes', 'No'], default: 'Yes' },
-            { key: 'paymentInstructions', label: 'Payment Instructions', type: 'textarea' },
-            { key: 'footerNote', label: 'Footer Note', type: 'textarea' },
+          <SimpleForm t={t} onSave={(data) => persistDocumentWhiteLabel({
+            invoiceTemplate: data.template,
+            showLogo: data.showLogo,
+            paymentInstructions: data.paymentInstructions,
+            footerNote: data.footerNote,
+          })} fields={[
+            { key: 'template', label: 'Default Template', type: 'select', options: ['Standard', 'Detailed', 'Summary', 'Custom'], default: documentWhiteLabel.invoiceTemplate || 'Standard' },
+            { key: 'showLogo', label: 'Show Company Logo', type: 'select', options: ['Yes', 'No'], default: documentWhiteLabel.showLogo || 'Yes' },
+            { key: 'paymentInstructions', label: 'Payment Instructions', type: 'textarea', default: documentWhiteLabel.paymentInstructions },
+            { key: 'footerNote', label: 'Footer Note', type: 'textarea', default: documentWhiteLabel.footerNote },
           ]} />
         </div>
       );
     case 'Bill of Lading Defaults':
-      return (
+      return withMessage(
         <div style={sectionStyle}>
           {title('Bill of Lading Defaults')}
-          <SimpleForm t={t} onSave={save} fields={[
-            { key: 'bolPrefix', label: 'BOL Number Prefix', placeholder: 'BOL-' },
-            { key: 'shipper', label: 'Default Shipper Name', placeholder: 'Company name' },
-            { key: 'shipperAddr', label: 'Default Shipper Address', placeholder: '123 Main St' },
-            { key: 'terms', label: 'Default Freight Terms', type: 'select', options: ['Prepaid', 'Collect', '3rd Party'], default: 'Prepaid' },
-            { key: 'specialInstructions', label: 'Special Instructions', type: 'textarea' },
+          <SimpleForm t={t} onSave={(data) => persistDocumentWhiteLabel({
+            bolPrefix: data.bolPrefix,
+            shipperName: data.shipper,
+            shipperAddress: data.shipperAddr,
+            freightTerms: data.terms,
+            specialInstructions: data.specialInstructions,
+          })} fields={[
+            { key: 'bolPrefix', label: 'BOL Number Prefix', placeholder: 'BOL-', default: documentWhiteLabel.bolPrefix || 'BOL-' },
+            { key: 'shipper', label: 'Default Shipper Name', placeholder: 'Company name', default: documentWhiteLabel.shipperName || companyBranding.companyName },
+            { key: 'shipperAddr', label: 'Default Shipper Address', placeholder: '123 Main St', default: documentWhiteLabel.shipperAddress || companyBranding.address },
+            { key: 'terms', label: 'Default Freight Terms', type: 'select', options: ['Prepaid', 'Collect', '3rd Party'], default: documentWhiteLabel.freightTerms || 'Prepaid' },
+            { key: 'specialInstructions', label: 'Special Instructions', type: 'textarea', default: documentWhiteLabel.specialInstructions },
           ]} />
         </div>
       );
     case 'Font & Branding Settings':
-      return (
+      return withMessage(
         <div style={sectionStyle}>
           {title('Font & Branding Settings')}
-          <SimpleForm t={t} onSave={save} fields={[
-            { key: 'primaryFont', label: 'Primary Font', type: 'select', options: ['Inter', 'Roboto', 'Open Sans', 'Exo 2', 'Helvetica'], default: 'Inter' },
-            { key: 'primaryColor', label: 'Primary Brand Color (hex)', placeholder: '#0a7cff' },
-            { key: 'accentColor', label: 'Accent Color (hex)', placeholder: '#18d2ff' },
-            { key: 'logoPosition', label: 'Logo Position on Documents', type: 'select', options: ['Top Left', 'Top Center', 'Top Right'], default: 'Top Left' },
+          <SimpleForm t={t} onSave={(data) => {
+            persistDocumentWhiteLabel({
+              primaryFont: data.primaryFont,
+              primaryColor: data.primaryColor,
+              accentColor: data.accentColor,
+              logoPosition: data.logoPosition,
+            });
+            persistCompanyBranding({
+              accentColor: data.primaryColor || companyBranding.accentColor,
+            }, 'Brand colors saved.');
+          }} fields={[
+            { key: 'primaryFont', label: 'Primary Font', type: 'select', options: ['Inter', 'Roboto', 'Open Sans', 'Exo 2', 'Helvetica'], default: documentWhiteLabel.primaryFont || 'Inter' },
+            { key: 'primaryColor', label: 'Primary Brand Color (hex)', placeholder: '#0a7cff', default: documentWhiteLabel.primaryColor || companyBranding.accentColor },
+            { key: 'accentColor', label: 'Accent Color (hex)', placeholder: '#18d2ff', default: documentWhiteLabel.accentColor || '#5ec8ff' },
+            { key: 'logoPosition', label: 'Logo Position on Documents', type: 'select', options: ['Top Left', 'Top Center', 'Top Right'], default: documentWhiteLabel.logoPosition || 'Top Left' },
           ]} />
         </div>
       );
@@ -370,6 +991,13 @@ function ActionPanel({ action, t, theme, setTheme }) {
             { key: 'scheduledEmail', label: 'Scheduled Report Email', type: 'email', placeholder: 'reports@company.com' },
             { key: 'frequency', label: 'Delivery Frequency', type: 'select', options: ['Daily', 'Weekly', 'Monthly', 'Off'], default: 'Weekly' },
           ]} />
+        </div>
+      );
+    case 'Operator Email Templates':
+      return (
+        <div style={sectionStyle}>
+          {title('Operator Email Templates')}
+          <OperatorEmailTemplatesPanel t={t} />
         </div>
       );
 
@@ -466,7 +1094,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
 
 // ── Account & Profile Panel ──────────────────────────────────────────────────
 
-function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
+function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAdvancedSetting, availablePalettes }) {
   const tabFromAction = (a) => {
     if (['Team Management', 'Billing & Plan', 'Integrations', 'API Keys', 'Preferences'].includes(a)) return a;
     return 'Profile';
@@ -479,6 +1107,39 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', password: '', role: 'user' });
   const [editingUserId, setEditingUserId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', role: 'user' });
+  // Theme Center section open states
+  const [isModeOpen, setIsModeOpen] = useState(true);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(true);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(true);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(true);
+
+  const fontScale = Number.isFinite(Number(settings?.fontScale)) ? Number(settings.fontScale) : 1;
+  const fontWeight = Number.isFinite(Number(settings?.fontWeight)) ? Number(settings.fontWeight) : 600;
+  const effectsStrength = Number.isFinite(Number(settings?.effectsStrength)) ? Number(settings.effectsStrength) : 1;
+
+  const applyThemeStage = (stage) => {
+    if (stage === 'subtle') {
+      setAdvancedSetting('fontScale', 0.95);
+      setAdvancedSetting('fontWeight', 500);
+      setAdvancedSetting('effectsStrength', 0.8);
+      return;
+    }
+    if (stage === 'intense') {
+      setAdvancedSetting('fontScale', 1.05);
+      setAdvancedSetting('fontWeight', 650);
+      setAdvancedSetting('effectsStrength', 1.25);
+      return;
+    }
+    setAdvancedSetting('fontScale', 1);
+    setAdvancedSetting('fontWeight', 600);
+    setAdvancedSetting('effectsStrength', 1);
+  };
+
+  const currentThemeStage = (() => {
+    if (fontScale >= 1.04 && fontWeight >= 640 && effectsStrength >= 1.2) return 'intense';
+    if (fontScale <= 0.96 && fontWeight <= 540 && effectsStrength <= 0.85) return 'subtle';
+    return 'balanced';
+  })();
 
   useEffect(() => {
     setTab(tabFromAction(activeAction));
@@ -848,20 +1509,184 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
 
       {tab === 'Preferences' && (
         <>
+          {/* 1. Mode Section */}
           <div style={sec}>
-            {secTitle('Appearance')}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-              <span style={{ fontSize: 13, fontWeight: 500 }}>Theme</span>
-              <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-                {['light', 'dark'].map(th => (
-                  <button key={th} onClick={() => setTheme(th)} style={{
-                    padding: '6px 16px', borderRadius: 6, border: `1px solid ${theme === th ? t.accent : t.border}`,
-                    background: theme === th ? t.accent : 'transparent', color: theme === th ? '#fff' : t.textSecondary,
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
-                  }}>{th === 'light' ? '☀️ Light' : '🌙 Dark'}</button>
-                ))}
+            <button
+              type="button"
+              onClick={() => setIsModeOpen((v) => !v)}
+              style={{ width: '100%', border: 'none', background: 'transparent', color: t.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0, cursor: 'pointer' }}
+            >
+              {secTitle('Theme Mode')}
+              <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 700 }}>{isModeOpen ? '− Collapse' : '+ Expand'}</span>
+            </button>
+            {isModeOpen && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>Theme</span>
+                <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                  {['light', 'dark'].map(th => (
+                    <button key={th} onClick={() => setTheme(th)} style={{
+                      padding: '6px 16px', borderRadius: 6, border: `1px solid ${theme === th ? t.accent : t.border}`,
+                      background: theme === th ? t.accent : 'transparent', color: theme === th ? '#fff' : t.textSecondary,
+                      fontSize: 12, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                    }}>{th === 'light' ? '☀️ Light' : '🌙 Dark'}</button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+
+          {/* 2. Palette Section */}
+          <div style={sec}>
+            <button
+              type="button"
+              onClick={() => setIsPaletteOpen((v) => !v)}
+              style={{ width: '100%', border: 'none', background: 'transparent', color: t.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0, cursor: 'pointer' }}
+            >
+              {secTitle('Theme Palette')}
+              <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 700 }}>{isPaletteOpen ? '− Collapse' : '+ Expand'}</span>
+            </button>
+            {isPaletteOpen && (
+              <div style={{ padding: '10px 0' }}>
+                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 8 }}>Select Palette</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {(availablePalettes || []).map((paletteOption) => (
+                    <button
+                      key={paletteOption.id}
+                      type="button"
+                      onClick={() => setTheme(paletteOption.id)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${settings?.palette === paletteOption.id ? t.accent : t.border}`,
+                        background: settings?.palette === paletteOption.id ? t.accent : 'transparent',
+                        color: settings?.palette === paletteOption.id ? '#fff' : t.textSecondary,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {paletteOption.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Surface & Layer Preview Section */}
+          <div style={sec}>
+            <button
+              type="button"
+              onClick={() => setIsPreviewOpen((v) => !v)}
+              style={{ width: '100%', border: 'none', background: 'transparent', color: t.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0, cursor: 'pointer' }}
+            >
+              {secTitle('Surface & Layer Preview')}
+              <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 700 }}>{isPreviewOpen ? '− Collapse' : '+ Expand'}</span>
+            </button>
+            {isPreviewOpen && (
+              <div style={{ padding: '10px 0' }}>
+                {/* Placeholder for live mini preview and visual mode cards */}
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ width: 80, height: 60, borderRadius: 8, background: t.surface, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary, fontSize: 12 }}>Surface</div>
+                  <div style={{ width: 80, height: 60, borderRadius: 8, background: t.bgAlt, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary, fontSize: 12 }}>Alt</div>
+                  <div style={{ width: 80, height: 60, borderRadius: 8, background: t.bg, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.textSecondary, fontSize: 12 }}>BG</div>
+                  <div style={{ width: 80, height: 60, borderRadius: 8, background: t.accent, border: `1px solid ${t.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>Accent</div>
+                </div>
+                <div style={{ marginTop: 10, fontSize: 12, color: t.textSecondary }}>Preview of key surfaces and accent color for the selected palette and mode.</div>
+              </div>
+            )}
+          </div>
+
+          {/* 4. Advanced Controls Section */}
+          <div style={sec}>
+            <button
+              type="button"
+              onClick={() => setIsAdvancedOpen((v) => !v)}
+              style={{ width: '100%', border: 'none', background: 'transparent', color: t.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0, cursor: 'pointer' }}
+            >
+              {secTitle('Advanced Controls')}
+              <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 700 }}>{isAdvancedOpen ? '− Collapse' : '+ Expand'}</span>
+            </button>
+            {isAdvancedOpen && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0' }}>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>Theme Stage</span>
+                  <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
+                    {[
+                      { key: 'subtle', label: 'Subtle' },
+                      { key: 'balanced', label: 'Balanced' },
+                      { key: 'intense', label: 'Intense' },
+                    ].map((stage) => (
+                      <button
+                        key={stage.key}
+                        type="button"
+                        onClick={() => applyThemeStage(stage.key)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 6,
+                          border: `1px solid ${currentThemeStage === stage.key ? t.accent : t.border}`,
+                          background: currentThemeStage === stage.key ? t.accent : 'transparent',
+                          color: currentThemeStage === stage.key ? '#fff' : t.textSecondary,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {stage.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ padding: '10px 0', borderTop: `1px solid ${t.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>Font Size</span>
+                    <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 600 }}>{Math.round(fontScale * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="90"
+                    max="120"
+                    step="5"
+                    value={Math.round(fontScale * 100)}
+                    onChange={(event) => setAdvancedSetting('fontScale', Number(event.target.value) / 100)}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div style={{ padding: '10px 0', borderTop: `1px solid ${t.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>Font Heaviness</span>
+                    <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 600 }}>{Math.round(fontWeight)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="400"
+                    max="700"
+                    step="50"
+                    value={Math.round(fontWeight)}
+                    onChange={(event) => setAdvancedSetting('fontWeight', Number(event.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div style={{ padding: '10px 0', borderTop: `1px solid ${t.border}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>Page Effects Heaviness</span>
+                    <span style={{ fontSize: 12, color: t.textSecondary, fontWeight: 600 }}>{Math.round(effectsStrength * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="150"
+                    step="5"
+                    value={Math.round(effectsStrength * 100)}
+                    onChange={(event) => setAdvancedSetting('effectsStrength', Number(event.target.value) / 100)}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <div style={sec}>
             {secTitle('Notifications')}
@@ -890,7 +1715,7 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
 // ── Main Settings Component ──────────────────────────────────────────────────
 
 export default function Settings() {
-  const { theme, toggleTheme, setTheme } = useTheme();
+  const { theme, themeMode, toggleTheme, setTheme, settings, setAdvancedSetting, availablePalettes } = useTheme();
   const { demoMode, enableDemo, disableDemo } = useDemo();
   const t = themes[theme];
 
@@ -917,7 +1742,7 @@ export default function Settings() {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={toggleTheme} style={{ borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 13, fontWeight: 600, padding: '7px 14px', cursor: 'pointer' }}>
-            {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
+            {themeMode === 'dark' ? '🌙 Dark' : '☀️ Light'}
           </button>
           <button onClick={demoMode ? disableDemo : enableDemo} style={{ borderRadius: 8, border: `1px solid ${demoMode ? t.accent : t.border}`, background: demoMode ? t.accent : t.bgAlt, color: demoMode ? '#fff' : t.textSecondary, fontSize: 13, fontWeight: 600, padding: '7px 14px', cursor: 'pointer' }}>
             {demoMode ? '🟢 Mock Data: ON' : '⚪ Mock Data: OFF'}
@@ -939,7 +1764,7 @@ export default function Settings() {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
                   padding: '10px 12px', borderRadius: 8, marginBottom: 4, border: 'none', cursor: 'pointer',
-                  background: isActive ? (theme === 'dark' ? 'rgba(24,210,255,0.15)' : 'rgba(10,124,255,0.1)') : 'transparent',
+                  background: isActive ? (themeMode === 'dark' ? 'rgba(24,210,255,0.15)' : 'rgba(10,124,255,0.1)') : 'transparent',
                   color: isActive ? t.text : t.textSecondary,
                   fontWeight: isActive ? 700 : 500, fontSize: 13,
                   borderLeft: `3px solid ${isActive ? t.accent : 'transparent'}`,
@@ -957,7 +1782,7 @@ export default function Settings() {
         <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
           {/* Actions list */}
           {!isAccountSection && (
-            <div style={{ width: 200, flexShrink: 0, borderRight: `1px solid ${t.border}`, padding: '16px 10px', background: theme === 'dark' ? 'rgba(10,19,38,0.6)' : 'rgba(245,249,255,0.8)' }}>
+            <div style={{ width: 200, flexShrink: 0, borderRight: `1px solid ${t.border}`, padding: '16px 10px', background: themeMode === 'dark' ? 'rgba(10,19,38,0.6)' : 'rgba(245,249,255,0.8)' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary, letterSpacing: 0.5, marginBottom: 10 }}>ACTIONS</div>
               {activeSection.actions.map((action) => {
                 const isActive = action === activeAction;
@@ -969,7 +1794,7 @@ export default function Settings() {
                     style={{
                       display: 'block', width: '100%', textAlign: 'left', padding: '8px 10px',
                       borderRadius: 6, marginBottom: 3, border: 'none', cursor: 'pointer',
-                      background: isActive ? (theme === 'dark' ? 'rgba(24,210,255,0.15)' : 'rgba(10,124,255,0.1)') : 'transparent',
+                      background: isActive ? (themeMode === 'dark' ? 'rgba(24,210,255,0.15)' : 'rgba(10,124,255,0.1)') : 'transparent',
                       color: isActive ? t.text : t.textSecondary, fontWeight: isActive ? 700 : 500, fontSize: 13,
                       borderLeft: `2px solid ${isActive ? t.accent : 'transparent'}`,
                     }}
@@ -993,7 +1818,15 @@ export default function Settings() {
             )}
 
             {isAccountSection ? (
-              <AccountProfilePanel activeAction={activeAction} t={t} theme={theme} setTheme={setTheme} />
+              <AccountProfilePanel
+                activeAction={activeAction}
+                t={t}
+                theme={theme}
+                setTheme={setTheme}
+                settings={settings}
+                setAdvancedSetting={setAdvancedSetting}
+                availablePalettes={availablePalettes}
+              />
             ) : (
               <ActionPanel action={activeAction} t={t} theme={theme} setTheme={setTheme} />
             )}

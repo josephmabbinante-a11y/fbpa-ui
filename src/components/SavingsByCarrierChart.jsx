@@ -38,7 +38,7 @@ export default function SavingsByCarrierChart({ data, onClick }) {
       style={{
         width: '100%',
         height: 360,
-        backgroundColor: isHovered ? t.bgAlt : t.surface,
+        background: `radial-gradient(130px 90px at 18% 14%, rgba(var(--glow), 0.16), transparent 72%), radial-gradient(120px 90px at 82% 78%, rgba(var(--glow), 0.12), transparent 72%), ${isHovered ? t.bgAlt : t.surface}`,
         border: `1px solid ${isHovered ? t.accent : t.border}`,
         borderRadius: '4px',
         padding: '16px',
@@ -67,7 +67,7 @@ export default function SavingsByCarrierChart({ data, onClick }) {
 
       <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
         {chartData.length ? (
-          <ResponsiveContainer width="100%" height="100%" debounce={60}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
             <BarChart
               data={chartData}
               layout="vertical"

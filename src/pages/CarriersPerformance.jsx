@@ -216,7 +216,7 @@ export default function CarriersPerformance() {
             On-Time Performance
           </div>
           <div style={{ height: 260 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
               <BarChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                 <XAxis dataKey="carrier" stroke={t.textSecondary} fontSize={10} />
@@ -242,7 +242,7 @@ export default function CarriersPerformance() {
             Billing & Invoice Discrepancies
           </div>
           <div style={{ height: 260 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
               <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                 <XAxis dataKey="carrier" stroke={t.textSecondary} fontSize={10} />

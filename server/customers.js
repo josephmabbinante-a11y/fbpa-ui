@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { Customer, Invoice } from './models.js';
@@ -10,6 +11,40 @@ const normalizeString = (value) => (value || '').trim();
 const normalizeKey = (value) => normalizeString(value).toLowerCase();
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const seedMemoryCustomers = [
+  {
+    id: 'c-memory-1',
+    name: 'Acme Retail Group',
+    email: 'ops@acmeretail.test',
+    phone: '(555) 101-2000',
+    company: 'Acme Retail Group',
+    billingAddress: '100 Main St, Dallas, TX',
+    nameLower: 'acme retail group',
+    emailLower: 'ops@acmeretail.test',
+    status: 'Active',
+    totalRevenue: 0,
+    openAR: 0,
+    invoiceCount: 0,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+  },
+];
+
+let memoryCustomers = [...seedMemoryCustomers];
+
+function isDbReady() {
+  return mongoose.connection.readyState === 1;
+}
+
+function toSerializableCustomer(customer) {
+  return {
+    ...customer,
+    totalRevenue: Number(customer?.totalRevenue || 0),
+    openAR: Number(customer?.openAR || 0),
+    invoiceCount: Number(customer?.invoiceCount || 0),
+  };
+}
+
 function diffInDays(from, to) {
   return Math.floor((to - from) / DAY_MS);
 }
@@ -20,6 +55,10 @@ function toAmount(value) {
 }
 
 async function getCustomerAggregates() {
+  if (!isDbReady()) {
+    return {};
+  }
+
   const aggregates = await Invoice.aggregate([
     { $match: { type: 'AR', customerId: { $ne: null } } },
     {
@@ -49,6 +88,13 @@ async function getCustomerAggregates() {
 // Get all customers
 router.get('/', async (req, res) => {
   try {
+    if (!isDbReady()) {
+      const data = [...memoryCustomers]
+        .sort((left, right) => new Date(right.updatedAt || 0).getTime() - new Date(left.updatedAt || 0).getTime())
+        .map((customer) => toSerializableCustomer(customer));
+      return res.json(data);
+    }
+
     const [customers, aggregates] = await Promise.all([
       Customer.find().sort({ updatedAt: -1 }),
       getCustomerAggregates(),
@@ -66,6 +112,34 @@ router.get('/', async (req, res) => {
 // Get customer by ID
 router.get('/:id', async (req, res) => {
   try {
+    if (!isDbReady()) {
+      const customer = memoryCustomers.find((item) => item.id === req.params.id);
+      if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+      const normalized = toSerializableCustomer(customer);
+      return res.json({
+        ...normalized,
+        contact: normalized.company || '',
+        address: normalized.billingAddress || '',
+        auditStats: {
+          invoices: normalized.invoiceCount,
+          exceptions: 0,
+          reviewed: normalized.invoiceCount,
+        },
+        paymentStats: {
+          paid: 0,
+          pending: 0,
+          overdue: 0,
+        },
+        analysis: {
+          totalBilled: Number(normalized.totalRevenue || 0),
+          totalPaid: 0,
+          totalOutstanding: Number(normalized.openAR || 0),
+          totalOverdue: 0,
+        },
+      });
+    }
+
     const customer = await Customer.findOne({ id: req.params.id });
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
     const invoices = await Invoice.find({ customerId: req.params.id, type: 'AR' }).sort({ createdAt: -1 });
@@ -120,6 +194,10 @@ router.get('/:id', async (req, res) => {
 // Get customer aging (invoices)
 router.get('/:id/aging', async (req, res) => {
   try {
+    if (!isDbReady()) {
+      return res.json({ '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 });
+    }
+
     const invoices = await Invoice.find({ customerId: req.params.id, type: 'AR' });
     const now = new Date();
     const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
@@ -147,6 +225,29 @@ router.post('/', async (req, res) => {
   try {
     const { name, contact, email, phone, address } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name is required' });
+
+    if (!isDbReady()) {
+      const id = `c-${Date.now()}`;
+      const newCustomer = {
+        id,
+        name: normalizeString(name),
+        email: normalizeString(email),
+        phone: normalizeString(phone),
+        company: normalizeString(contact),
+        billingAddress: normalizeString(address),
+        nameLower: normalizeKey(name),
+        emailLower: normalizeKey(email),
+        status: 'Active',
+        totalRevenue: 0,
+        openAR: 0,
+        invoiceCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      memoryCustomers = [newCustomer, ...memoryCustomers];
+      return res.status(201).json(toSerializableCustomer(newCustomer));
+    }
+
     const id = `c-${Date.now()}`;
     const newCustomer = new Customer({
       id,
@@ -173,6 +274,32 @@ router.post('/upload-csv', upload.single('file'), async (req, res) => {
     const csv = req.file.buffer.toString('utf-8');
     const records = parse(csv, { columns: true, skip_empty_lines: true });
     const added = [];
+
+    if (!isDbReady()) {
+      for (const row of records) {
+        if (!row.name) continue;
+        const customer = {
+          id: `c-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          name: normalizeString(row.name),
+          email: normalizeString(row.email),
+          phone: normalizeString(row.phone),
+          company: normalizeString(row.contact),
+          billingAddress: normalizeString(row.address),
+          nameLower: normalizeKey(row.name),
+          emailLower: normalizeKey(row.email),
+          status: 'Active',
+          totalRevenue: 0,
+          openAR: 0,
+          invoiceCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        memoryCustomers = [customer, ...memoryCustomers];
+        added.push(toSerializableCustomer(customer));
+      }
+      return res.json({ message: `Uploaded ${added.length} customers`, customers: added });
+    }
+
     for (const row of records) {
       if (!row.name) continue;
       const id = `c-${Date.now()}-${Math.floor(Math.random() * 10000)}`;

@@ -157,7 +157,7 @@ export default function Reports() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
             <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12 }}>
               <h3 style={{ marginTop: 0 }}>Monthly Summary</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
                 <thead>
                   <tr>
                     <th style={{ textAlign: 'left' }}>Month</th>
@@ -181,7 +181,7 @@ export default function Reports() {
 
             <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12 }}>
               <h3 style={{ marginTop: 0 }}>Top Savings Carriers</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
                 <thead>
                   <tr>
                     <th style={{ textAlign: 'left' }}>Carrier</th>

@@ -118,8 +118,33 @@ const auditTrailSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
+const carrierRateLogSchema = new mongoose.Schema({
+  id: { type: String, unique: true, required: true },
+  carrier: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  originZip: String,
+  destinationZip: String,
+  weight: Number,
+  freightClass: String,
+  returnedRate: Number,
+  quoteId: String,
+  responseTimeMs: Number,
+  fuelSurcharge: Number,
+  accessorialTotal: Number,
+  serviceLevel: String,
+  status: { type: String, enum: ['SUCCESS', 'ERROR'], default: 'SUCCESS' },
+  errorCode: String,
+  requestPayload: mongoose.Schema.Types.Mixed,
+  responsePayload: mongoose.Schema.Types.Mixed,
+  createdAt: { type: Date, default: Date.now },
+});
+
+carrierRateLogSchema.index({ carrier: 1, createdAt: -1 });
+carrierRateLogSchema.index({ originZip: 1, destinationZip: 1, createdAt: -1 });
+
 export const Customer = mongoose.model('Customer', customerSchema);
 export const Carrier = mongoose.model('Carrier', carrierSchema);
 export const Invoice = mongoose.model('Invoice', invoiceSchema);
 export const Exception = mongoose.model('Exception', exceptionSchema);
 export const AuditTrail = mongoose.model('AuditTrail', auditTrailSchema);
+export const CarrierRateLog = mongoose.model('CarrierRateLog', carrierRateLogSchema);

@@ -1,0 +1,4 @@
+quote_id,origin_zip3,destination_zip3,miles,equipment_type,pickup_date,fuel_price,lane_7d_avg,lane_30d_avg,rejection_trend,rpm_variance,available_trucks,inbound_loads,region_density,carrier_score,shipment_weight,commodity,service_level,hazmat,temp_controlled,declared_value
+QX-2001,900,752,1435,dry_van,2026-03-05,3.87,2.37,2.31,0.34,0.19,128,162,1.08,0.76,24000,General Freight,standard,false,false,45000
+QX-2002,606,303,715,reefer,2026-03-06,3.95,2.64,2.57,0.41,0.22,112,171,1.15,0.73,18000,Produce,expedite,false,true,78000
+QX-2003,981,850,1410,flatbed,2026-03-07,3.92,2.88,2.73,0.47,0.26,101,184,1.22,0.69,32000,Building Materials,critical,false,false,120000

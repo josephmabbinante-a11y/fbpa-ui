@@ -102,7 +102,7 @@ export default function Exceptions() {
         </select>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, fontSize: '1rem' }}>
         <thead>
           <tr>
             <th style={{ textAlign: 'left' }}>Invoice</th>

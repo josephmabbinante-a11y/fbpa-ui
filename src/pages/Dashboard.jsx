@@ -9,6 +9,7 @@ import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import dashboardEnhanced from '../mock/dashboardEnhanced';
 import mockShipments from '../mock/shipments';
+import { listLoads } from '../api/loadsClient';
 
 const DASH_PREFS_KEY = 'dashboardPrefs';
 const DASH_VARIANT_KEY = 'dashboardVariant';
@@ -108,6 +109,77 @@ export default function Dashboard() {
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
   const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
+  const [todayShipments, setTodayShipments] = useState(() => Array.isArray(mockShipments) ? mockShipments : []);
+  const [shipmentsSource, setShipmentsSource] = useState('fallback');
+  const [shipmentsUpdatedAt, setShipmentsUpdatedAt] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const isToday = (value) => {
+      const date = new Date(value || '');
+      if (Number.isNaN(date.getTime())) return false;
+      const now = new Date();
+      return date.getFullYear() === now.getFullYear()
+        && date.getMonth() === now.getMonth()
+        && date.getDate() === now.getDate();
+    };
+
+    const toCurrency = (value) => `$${Number(value || 0).toLocaleString()}`;
+
+    const mapLoadToRow = (load) => {
+      const revenue = Number(load?.revenue || 0);
+      const carrierCost = Number(load?.carrierCost || 0);
+      const margin = revenue - carrierCost;
+
+      return {
+        id: load?.id || `L-${Date.now()}`,
+        customer: load?.customer?.name || '—',
+        carrier: load?.carrier?.name || 'Pending',
+        origin: `${load?.origin?.city || '—'}${load?.origin?.state ? `, ${load.origin.state}` : ''}`,
+        destination: `${load?.destination?.city || '—'}${load?.destination?.state ? `, ${load.destination.state}` : ''}`,
+        status: String(load?.status || 'open').replaceAll('_', ' '),
+        revenue: toCurrency(revenue),
+        cost: toCurrency(carrierCost),
+        margin: toCurrency(margin),
+        dueDate: load?.deliveryAt ? new Date(load.deliveryAt).toLocaleString() : '—',
+        raw: load,
+      };
+    };
+
+    const refreshShipments = async () => {
+      const result = await listLoads({ tab: 'all', page: 1, pageSize: 100, sort: '-updatedAt' });
+
+      if (!mounted) return;
+
+      if (result?.error || !Array.isArray(result?.items)) {
+        setShipmentsSource('fallback');
+        setShipmentsUpdatedAt(new Date());
+        if (!Array.isArray(todayShipments) || todayShipments.length === 0) {
+          setTodayShipments(Array.isArray(mockShipments) ? mockShipments : []);
+        }
+        return;
+      }
+
+      const items = result.items;
+      const todaysItems = items.filter((item) => isToday(item.pickupAt || item.updatedAt));
+      const rows = (todaysItems.length > 0 ? todaysItems : items)
+        .slice(0, 25)
+        .map(mapLoadToRow);
+
+      setTodayShipments(rows);
+      setShipmentsSource('api');
+      setShipmentsUpdatedAt(new Date());
+    };
+
+    refreshShipments();
+    const timer = window.setInterval(refreshShipments, 15000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   // --- Operational Command Center Layout ---
   return (
@@ -180,7 +252,17 @@ export default function Dashboard() {
             <button style={{ marginRight: 8, padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Filter fields coming soon!')}>Filter Fields</button>
             <button style={{ padding: '6px 14px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, cursor: 'pointer' }} onClick={() => alert('Advanced search coming soon!')}>Show Advanced</button>
           </div>
-          <button style={{ padding: '8px 18px', background: t.positive, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }} onClick={() => alert('New shipment creation coming soon!')}>Add New Shipment</button>
+          <div style={{ display: 'grid', justifyItems: 'end', gap: 6 }}>
+            <div style={{ fontSize: 12, color: t.textSecondary }}>
+              Source: {shipmentsSource === 'api' ? 'Live API' : 'Fallback data'}{shipmentsUpdatedAt ? ` • Updated ${shipmentsUpdatedAt.toLocaleTimeString()}` : ''}
+            </div>
+            <button
+              style={{ padding: '8px 18px', background: t.positive, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
+              onClick={() => navigate('/loadcenter', { state: { source: 'dashboard', action: 'create-shipment' } })}
+            >
+              Add New Shipment
+            </button>
+          </div>
         </div>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
@@ -199,8 +281,19 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {(mockShipments || []).map((ship) => (
-                <tr key={ship.id} style={{ cursor: 'pointer' }} onClick={() => alert(`Navigate to shipment detail for ${ship.id}`)}>
+              {(todayShipments || []).map((ship) => (
+                <tr
+                  key={ship.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate('/loadcenter', {
+                    state: {
+                      source: 'dashboard',
+                      action: 'open-shipment',
+                      shipmentId: ship.id,
+                      shipment: ship.raw || ship,
+                    },
+                  })}
+                >
                   <td style={{ padding: '8px 12px' }}><strong>{ship.id}</strong></td>
                   <td style={{ padding: '8px 12px' }}>{ship.customer}</td>
                   <td style={{ padding: '8px 12px' }}>{ship.carrier}</td>

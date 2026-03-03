@@ -49,6 +49,8 @@ export default function PaginationBar({ page, pageSize, total, onPageChange, onP
   );
 }
 
+export { PaginationBar };
+
 function buttonStyle(disabled) {
   return {
     padding: '6px 10px',

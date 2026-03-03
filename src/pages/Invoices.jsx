@@ -60,7 +60,8 @@ function readMockRecentActivity() {
 
 export default function Invoices() {
   const navigate = useNavigate();
-  const [data, setData] = useState(mockInvoices);
+  const mockMode = isMockModeEnabled();
+  const [data, setData] = useState(() => (mockMode ? mockInvoices : []));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,9 +70,9 @@ export default function Invoices() {
   const [imageStatus, setImageStatus] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
-  const [imageHistory, setImageHistory] = useState(mockInvoiceImages);
+  const [imageHistory, setImageHistory] = useState(() => (mockMode ? mockInvoiceImages : []));
   const [verificationResult, setVerificationResult] = useState(null);
-  const [recentActivity, setRecentActivity] = useState(() => readMockRecentActivity());
+  const [recentActivity, setRecentActivity] = useState(() => (mockMode ? readMockRecentActivity() : []));
 
   const persistRecentActivity = (nextActivity) => {
     if (!isMockModeEnabled()) return;
@@ -125,21 +126,23 @@ export default function Invoices() {
     getInvoices()
       .then((res) => {
         if (!mounted) return;
-        if (res && !res.error && res.invoices) {
+        if (Array.isArray(res)) {
+          setData(res);
+        } else if (res && !res.error && Array.isArray(res.invoices)) {
           setData(res.invoices);
         } else {
-          setData(mockInvoices);
+          setData(mockMode ? mockInvoices : []);
           if (res && res.error) setError(res.error);
         }
       })
       .catch((err) => {
         if (!mounted) return;
-        setData(mockInvoices);
+        setData(mockMode ? mockInvoices : []);
         setError(err.message || String(err));
       })
       .finally(() => mounted && setLoading(false));
     return () => (mounted = false);
-  }, []);
+  }, [mockMode]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -157,10 +160,43 @@ export default function Invoices() {
       if (res && !res.error && res.images) {
         setImageHistory(res.images);
       } else {
-        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
+        setImageHistory(mockMode ? mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId) : []);
       }
     });
-  }, [selectedInvoiceId]);
+  }, [selectedInvoiceId, mockMode]);
+
+  const invoiceKpis = useMemo(() => {
+    const totalInvoices = data.length;
+    const exceptions = data.reduce((sum, inv) => sum + Number(inv.exceptions || 0), 0);
+    const totalAmount = data.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+    const pending = data.filter((inv) => String(inv.status || '').toLowerCase().includes('pending')).length;
+    return { totalInvoices, exceptions, totalAmount, pending };
+  }, [data]);
+
+  const exceptionBreakdownData = useMemo(() => {
+    const groups = new Map();
+    data.forEach((inv) => {
+      const key = String(inv.status || 'Unknown');
+      groups.set(key, (groups.get(key) || 0) + 1);
+    });
+    return Array.from(groups.entries()).map(([name, value]) => ({ name, value }));
+  }, [data]);
+
+  const savingsByCarrierData = useMemo(() => {
+    const groups = new Map();
+    data.forEach((inv) => {
+      const carrier = String(inv.carrier || 'Unknown');
+      const amount = Number(inv.amount || 0);
+      const current = groups.get(carrier) || { carrier, savings: 0, invoiceCount: 0 };
+      current.savings += amount * 0.03;
+      current.invoiceCount += 1;
+      groups.set(carrier, current);
+    });
+    return Array.from(groups.values())
+      .sort((a, b) => b.savings - a.savings)
+      .slice(0, 5)
+      .map((row) => ({ ...row, savings: Number(row.savings.toFixed(2)) }));
+  }, [data]);
 
   const filtered = data.filter(
     (inv) =>
@@ -260,10 +296,10 @@ export default function Invoices() {
 
       {/* Dashboard assets moved from Dashboard.jsx */}
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
-        <KPIWithTrend label="Total Invoices" value={1247} delta={5} trendData={[]} trendColor="#0066cc" />
-        <KPIWithTrend label="Exceptions" value={89} delta={-2} trendData={[]} trendColor="#ef4444" />
-        <KPIWithTrend label="Total Savings" value={12450.75} format="currency" delta={12} trendData={[]} trendColor="#10b981" />
-        <KPIWithTrend label="Pending" value={23} delta={0} trendData={[]} trendColor="#f59e0b" />
+        <KPIWithTrend label="Total Invoices" value={invoiceKpis.totalInvoices} delta={0} trendData={[]} trendColor="#0066cc" />
+        <KPIWithTrend label="Exceptions" value={invoiceKpis.exceptions} delta={0} trendData={[]} trendColor="#ef4444" />
+        <KPIWithTrend label="Total Savings" value={invoiceKpis.totalAmount * 0.03} format="currency" delta={0} trendData={[]} trendColor="#10b981" />
+        <KPIWithTrend label="Pending" value={invoiceKpis.pending} delta={0} trendData={[]} trendColor="#f59e0b" />
       </div>
 
       <CollapsibleSection title="Invoice Imaging" defaultOpen={true}>
@@ -382,7 +418,7 @@ export default function Invoices() {
       </CollapsibleSection>
 
       <CollapsibleSection title="Recent Activity" defaultOpen={true}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
           <thead>
             <tr>
               <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
@@ -468,8 +504,8 @@ export default function Invoices() {
 
       <CollapsibleSection title="Analytics" defaultOpen={true}>
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
-          <ExceptionBreakdownChart data={[{ name: 'Rate Mismatch', value: 34, fill: '#8884d8' }, { name: 'Duplicate', value: 28, fill: '#82ca9d' }, { name: 'Accessorial', value: 15, fill: '#ffc658' }, { name: 'Other', value: 12, fill: '#ff8042' }]} />
-          <SavingsByCarrierChart data={[{ carrier: 'FastShip', savings: 2450.75, invoiceCount: 345 }, { carrier: 'Oceanic', savings: 1980.50, invoiceCount: 312 }, { carrier: 'RailMax', savings: 1750.25, invoiceCount: 289 }, { carrier: 'AirLogistics', savings: 1520.10, invoiceCount: 201 }, { carrier: 'Express Co', savings: 1248.15, invoiceCount: 156 }]} />
+            <ExceptionBreakdownChart data={exceptionBreakdownData} />
+            <SavingsByCarrierChart data={savingsByCarrierData} />
         </div>
       </CollapsibleSection>
 

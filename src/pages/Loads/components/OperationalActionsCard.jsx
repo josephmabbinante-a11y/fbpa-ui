@@ -1,8 +1,14 @@
 import React from 'react';
+import { deriveRouteDetailModules } from '../../../utils/loadLifecycle';
 
-export default function OperationalActionsCard({ detail, actionState, onDispatch, onReassign, onBidNetwork, onDelivered }) {
+export default function OperationalActionsCard({ detail, status, actionState, onDispatch, onReassign, onBidNetwork, onDelivered }) {
   const can = detail?.controls || {};
   const disabled = actionState?.busy;
+  const modules = deriveRouteDetailModules(status);
+
+  if (!modules.showDispatchControls && !can.canMarkDelivered) {
+    return null;
+  }
 
   return (
     <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 12 }}>

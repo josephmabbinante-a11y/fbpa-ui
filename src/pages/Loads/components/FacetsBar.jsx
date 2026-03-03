@@ -1,11 +1,12 @@
 import React from 'react';
 
 const STATUS_ORDER = [
-  { key: 'open', label: 'Open' },
-  { key: 'in_transit', label: 'In Transit' },
-  { key: 'uncovered', label: 'Uncovered' },
-  { key: 'at_risk', label: 'At Risk' },
-  { key: 'delivered', label: 'Delivered' },
+  { key: 'DRAFT', label: 'Draft' },
+  { key: 'PRE_DISPATCH', label: 'Pre Dispatch' },
+  { key: 'IN_TRANSIT', label: 'In Transit' },
+  { key: 'DELIVERED', label: 'Delivered' },
+  { key: 'EXCEPTION', label: 'Exception' },
+  { key: 'CANCELLED', label: 'Cancelled' },
 ];
 
 export default function FacetsBar({ facets }) {
@@ -31,3 +32,5 @@ export default function FacetsBar({ facets }) {
     </div>
   );
 }
+
+export { FacetsBar };

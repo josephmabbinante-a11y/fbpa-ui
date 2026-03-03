@@ -1,115 +1,73 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import GPSBreadcrumbTracker from '../components/GPSBreadcrumbTracker';
+import { formatLoadStatusLabel, normalizeLoadStatus } from '../utils/loadLifecycle';
+
+function money(amount) {
+  return `$${Number(amount || 0).toLocaleString()}`;
+}
 
 export default function Shipments() {
   const { theme } = useTheme();
   const t = themes[theme];
 
-  const containerStyle = {
-    padding: 24,
-    backgroundColor: t.bg,
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [query, setQuery] = useState('');
+
+  const panelStyle = {
+    border: `1px solid ${t.border}`,
+    borderRadius: 12,
+    background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`,
+    boxShadow: '0 10px 24px rgba(0,0,0,0.14)',
+  };
+
+  const inputStyle = {
+    minHeight: 36,
+    borderRadius: 8,
+    border: `1px solid ${t.border}`,
+    background: t.bgAlt,
     color: t.text,
-    minHeight: '100vh',
-  };
-
-  const headerStyle = {
-    marginBottom: 32,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
-  const titleStyle = {
-    fontSize: 28,
-    fontWeight: 700,
-    marginBottom: 8,
-  };
-
-  const subtitleStyle = {
-    fontSize: 14,
-    color: t.textSecondary,
+    padding: '8px 10px',
+    fontSize: 12,
   };
 
   const buttonStyle = {
-    padding: '10px 16px',
-    backgroundColor: t.accent,
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    fontSize: 13,
-    fontWeight: 600,
+    ...inputStyle,
     cursor: 'pointer',
-    transition: 'opacity 0.2s ease',
-  };
-
-  const filterBarStyle = {
-    display: 'flex',
-    gap: 12,
-    marginBottom: 24,
-    flexWrap: 'wrap',
-  };
-
-  const filterInputStyle = {
-    padding: '8px 12px',
-    borderRadius: 4,
-    border: `1px solid ${t.border}`,
-    backgroundColor: t.surface,
-    color: t.text,
-    fontSize: 12,
-  };
-
-  const tableWrapperStyle = {
-    backgroundColor: t.surface,
-    border: `1px solid ${t.border}`,
-    borderRadius: 8,
-    overflow: 'hidden',
-  };
-
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-  };
-
-  const thStyle = {
-    backgroundColor: t.bgAlt,
-    padding: '12px 16px',
-    textAlign: 'left',
-    fontSize: 12,
-    fontWeight: 600,
-    color: t.textSecondary,
-    borderBottom: `1px solid ${t.border}`,
-  };
-
-  const tdStyle = {
-    padding: '12px 16px',
-    fontSize: 13,
-    borderBottom: `1px solid ${t.border}`,
+    fontWeight: 700,
+    borderColor: t.accent,
   };
 
   const statusBadgeStyle = (status) => {
-    let bg, fg;
-    if (status === 'Delivered') {
-      bg = '#10b98150';
-      fg = '#059669';
-    } else if (status === 'In Transit') {
-      bg = '#3b82f650';
-      fg = '#2563eb';
-    } else if (status === 'Booked') {
-      bg = '#f59e0b50';
-      fg = '#d97706';
+    const normalizedStatus = normalizeLoadStatus(status);
+    let bg;
+    let fg;
+    if (normalizedStatus === 'DELIVERED') {
+      bg = `${t.positive}30`;
+      fg = t.positive;
+    } else if (normalizedStatus === 'IN_TRANSIT') {
+      bg = `${t.accent}30`;
+      fg = t.accent;
+    } else if (normalizedStatus === 'EXCEPTION') {
+      bg = `${t.error}30`;
+      fg = t.error;
+    } else {
+      bg = `${t.warning}30`;
+      fg = t.warning;
     }
+
     return {
       display: 'inline-block',
       padding: '4px 8px',
-      borderRadius: 3,
-      backgroundColor: bg,
+      borderRadius: 999,
+      background: bg,
       color: fg,
       fontSize: 11,
       fontWeight: 600,
+      border: `1px solid ${t.border}`,
     };
   };
 
-  // Mock shipments data
   const shipments = [
     {
       id: 'SHP-001',
@@ -117,7 +75,7 @@ export default function Shipments() {
       carrier: 'TransCo',
       origin: 'Los Angeles, CA',
       destination: 'Dallas, TX',
-      status: 'In Transit',
+      status: 'IN_TRANSIT',
       revenue: '$2,450',
       cost: '$1,800',
       margin: '$650 (26.5%)',
@@ -129,7 +87,7 @@ export default function Shipments() {
       carrier: 'FastHaul',
       origin: 'Chicago, IL',
       destination: 'Miami, FL',
-      status: 'Delivered',
+      status: 'DELIVERED',
       revenue: '$1,820',
       cost: '$1,200',
       margin: '$620 (34.1%)',
@@ -141,72 +99,143 @@ export default function Shipments() {
       carrier: 'RedLine',
       origin: 'Atlanta, GA',
       destination: 'Toronto, ON',
-      status: 'Booked',
-      revenue: '$3,100',
-      cost: '$2,100',
-      margin: '$1,000 (32.3%)',
+      status: 'BOOKED',
+      revenue: 3100,
+      cost: 2100,
       dueDate: '2026-02-20',
     },
   ];
 
+  const normalizedRows = useMemo(() => shipments.map((item) => {
+    const revenue = Number(String(item.revenue).replace(/[^\d.-]/g, '') || 0);
+    const cost = Number(String(item.cost).replace(/[^\d.-]/g, '') || 0);
+    const marginValue = revenue - cost;
+    const marginPct = revenue > 0 ? (marginValue / revenue) * 100 : 0;
+
+    return {
+      ...item,
+      status: normalizeLoadStatus(item.status),
+      revenue,
+      cost,
+      marginValue,
+      marginPct,
+    };
+  }), [shipments]);
+
+  const filteredRows = useMemo(() => {
+    const q = String(query || '').trim().toLowerCase();
+    return normalizedRows.filter((item) => {
+      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+      if (!q) return true;
+
+      return [
+        item.id,
+        item.customer,
+        item.carrier,
+        item.origin,
+        item.destination,
+      ].some((value) => String(value || '').toLowerCase().includes(q));
+    });
+  }, [normalizedRows, query, statusFilter]);
+
+  const summary = useMemo(() => {
+    const revenue = filteredRows.reduce((sum, item) => sum + item.revenue, 0);
+    const cost = filteredRows.reduce((sum, item) => sum + item.cost, 0);
+    const margin = revenue - cost;
+    return {
+      count: filteredRows.length,
+      revenue,
+      cost,
+      margin,
+    };
+  }, [filteredRows]);
+
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
+    <div style={{ display: 'grid', gap: 14 }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div>
-          <div style={titleStyle}>📦 Shipments</div>
-          <div style={subtitleStyle}>Core workflow engine • Timeline visibility • Document tracking</div>
+          <h1 style={{ margin: 0, fontSize: 26 }}>Shipments</h1>
+          <div style={{ fontSize: 12, color: t.textSecondary }}>Core workflow engine with status, routing, and margin visibility.</div>
         </div>
-        <button style={buttonStyle} onMouseEnter={(e) => e.target.style.opacity = 0.9} onMouseLeave={(e) => e.target.style.opacity = 1}>
+        <button style={buttonStyle}>
           + New Shipment
         </button>
-      </div>
+      </header>
 
-      <div style={filterBarStyle}>
-        <select style={filterInputStyle} defaultValue="all">
-          <option value="all">All Statuses</option>
-          <option value="booked">Booked</option>
-          <option value="transit">In Transit</option>
-          <option value="delivered">Delivered</option>
-        </select>
-        <input type="text" placeholder="Search load #..." style={filterInputStyle} />
-        <input type="text" placeholder="Filter by customer..." style={filterInputStyle} />
-        <input type="text" placeholder="Filter by carrier..." style={filterInputStyle} />
-      </div>
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+        {[
+          ['Visible Loads', summary.count],
+          ['Revenue', money(summary.revenue)],
+          ['Cost', money(summary.cost)],
+          ['Margin', money(summary.margin)],
+        ].map(([label, value]) => (
+          <div key={label} style={{ ...panelStyle, padding: 12 }}>
+            <div style={{ fontSize: 11, color: t.textSecondary, marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
+          </div>
+        ))}
+      </section>
 
-      <div style={tableWrapperStyle}>
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>Load #</th>
-              <th style={thStyle}>Customer</th>
-              <th style={thStyle}>Carrier</th>
-              <th style={thStyle}>Origin</th>
-              <th style={thStyle}>Destination</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Revenue</th>
-              <th style={thStyle}>Cost</th>
-              <th style={thStyle}>Margin</th>
-              <th style={thStyle}>Due Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shipments.map((ship) => (
-              <tr key={ship.id} style={{ cursor: 'pointer' }} onMouseEnter={(e) => e.target.parentElement.style.backgroundColor = t.bgAlt} onMouseLeave={(e) => e.target.parentElement.style.backgroundColor = 'transparent'}>
-                <td style={tdStyle}><strong>{ship.id}</strong></td>
-                <td style={tdStyle}>{ship.customer}</td>
-                <td style={tdStyle}>{ship.carrier}</td>
-                <td style={tdStyle}>{ship.origin}</td>
-                <td style={tdStyle}>{ship.destination}</td>
-                <td style={tdStyle}><div style={statusBadgeStyle(ship.status)}>{ship.status}</div></td>
-                <td style={tdStyle}>{ship.revenue}</td>
-                <td style={tdStyle}>{ship.cost}</td>
-                <td style={tdStyle}><strong>{ship.margin}</strong></td>
-                <td style={tdStyle}>{ship.dueDate}</td>
+      <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select style={{ ...inputStyle, minWidth: 150 }} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <option value="all">All Statuses</option>
+            <option value="BOOKED">Booked</option>
+            <option value="IN_TRANSIT">In Transit</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="EXCEPTION">Exception</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Search load, customer, carrier, lane"
+            style={{ ...inputStyle, minWidth: 260, flex: 1 }}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          <div style={{ fontSize: 12, color: t.textSecondary }}>{filteredRows.length} shipments</div>
+        </div>
+
+        <div style={{ marginBottom: 4 }}>
+          <GPSBreadcrumbTracker />
+        </div>
+
+        <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse', fontSize: '1rem' }}>
+            <thead>
+              <tr style={{ background: t.bgAlt }}>
+                {['Load #', 'Customer', 'Carrier', 'Origin', 'Destination', 'Status', 'Revenue', 'Cost', 'Margin', 'Due Date'].map((head) => (
+                  <th key={head} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 12, color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
+                    {head}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredRows.map((ship) => (
+                <tr key={ship.id} style={{ background: 'transparent' }}>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 700 }}>{ship.id}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.customer}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.carrier}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.origin}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.destination}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}><span style={statusBadgeStyle(ship.status)}>{formatLoadStatusLabel(ship.status)}</span></td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{money(ship.revenue)}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{money(ship.cost)}</td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 700 }}>
+                    {money(ship.marginValue)} ({ship.marginPct.toFixed(1)}%)
+                  </td>
+                  <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.dueDate}</td>
+                </tr>
+              ))}
+              {!filteredRows.length && (
+                <tr>
+                  <td colSpan={10} style={{ padding: '14px 12px', color: t.textSecondary }}>No shipments match this filter.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

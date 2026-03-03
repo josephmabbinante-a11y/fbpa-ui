@@ -54,7 +54,7 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
         height: 360,
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: isHovered ? t.bgAlt : t.surface,
+        background: `radial-gradient(120px 90px at 15% 12%, rgba(var(--glow), 0.18), transparent 70%), radial-gradient(140px 100px at 84% 80%, rgba(var(--glow), 0.12), transparent 72%), ${isHovered ? t.bgAlt : t.surface}`,
         border: `1px solid ${isHovered ? '#ef4444' : t.border}`,
         borderRadius: '4px',
         padding: '16px',
@@ -83,7 +83,7 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
 
       <div style={{ flex: 1 }}>
         {normalizedData.length ? (
-          <ResponsiveContainer width="100%" height="100%" debounce={60}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
             <PieChart>
               <Pie
                 data={normalizedData}

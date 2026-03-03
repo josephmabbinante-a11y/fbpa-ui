@@ -162,7 +162,7 @@ export default function CategoryDrilldown({ data }) {
             Findings + Recovery Trend
           </div>
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
               <LineChart data={trend} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                 <XAxis dataKey="period" stroke={t.textSecondary} fontSize={11} />
@@ -189,7 +189,7 @@ export default function CategoryDrilldown({ data }) {
             Top Customers By Impact
           </div>
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
               <BarChart data={customers} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                 <XAxis dataKey="customer" stroke={t.textSecondary} fontSize={10} />
@@ -215,7 +215,7 @@ export default function CategoryDrilldown({ data }) {
             Root Cause Mix
           </div>
           <div style={{ height: 220 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
               <PieChart>
                 <Pie data={causes} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
                   {causes.map((entry, index) => (
