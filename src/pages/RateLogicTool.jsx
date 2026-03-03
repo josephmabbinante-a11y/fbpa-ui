@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { RateCalculator } from '../components/RateCalculator.jsx';
+import RateCalculator from '../components/RateCalculator.jsx';
 import QuoteEmailGenerator from '../components/QuoteEmailGenerator';
 
 export default function RateLogicTool() {
