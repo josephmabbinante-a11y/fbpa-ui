@@ -19,10 +19,10 @@ export default function CarrierProfile() {
       setLoading(true);
       setError('');
       const result = await getCarriers({ limit: 5000 });
-      if (result?.error) {
-        setError(result.error);
-        setLoading(false);
-        return;
+            {/* Action buttons should be inside the main return, not after ScoreBreakdownPanel */}
+            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>View Documents</button>
+            <button style={{ padding: '6px 14px', borderRadius: 6, background: '#ef4444', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer' }}>Suspend Carrier</button>
+            <button style={{ padding: '6px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 700, cursor: 'pointer' }}>Request COI Update</button>
       }
       const carriers = Array.isArray(result?.carriers) ? result.carriers : [];
       const normalizedParam = decodeURIComponent(String(carrier || '')).trim().toLowerCase();
