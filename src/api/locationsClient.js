@@ -23,6 +23,7 @@ function shouldUseMockLocations() {
 }
 
 function buildMockLocations() {
+  if (!isMockMode()) return [];
   return mockLocations.slice(0, 24).map((entry, index) => {
     const n = index + 1;
     return {
@@ -39,7 +40,6 @@ function buildMockLocations() {
       updatedAt: new Date().toISOString(),
     };
   });
-}
 
 let mockStore = buildMockLocations();
 
