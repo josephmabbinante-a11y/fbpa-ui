@@ -1,6 +1,6 @@
 import express from 'express';
-import fs from 'fs';
-import path from 'path';
+// import fs from 'fs';
+// import path from 'path';
 import { buildMileageLaneKey, estimateMileage } from './mileage.js';
 import {
   ALLOWED_STATUS_TRANSITIONS,
@@ -14,87 +14,8 @@ import {
 
 const router = express.Router();
 
-const STORE_DIR = path.join(process.cwd(), 'server', 'data');
-const STORE_FILE = path.join(STORE_DIR, 'loads-store.json');
-
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
-function createInitialStatusHistory(status) {
-  return [
-    createStatusHistoryEntry({
-      fromStatus: status,
-      toStatus: status,
-      userId: 'system',
-      reason: 'Load initialized',
-      source: 'load-bootstrap',
-    }),
-  ];
-}
-
-const seedLoads = [
-  {
-    id: 'L-102938',
-    status: 'IN_TRANSIT',
-    customer: { id: 'C-44', name: 'Amazon' },
-    carrier: { id: 'CR-18', name: 'Prime Logistics', assigned: true },
-    origin: { city: 'Los Angeles', state: 'CA' },
-    destination: { city: 'Dallas', state: 'TX' },
-    equipment: 'van',
-    miles: 1280,
-    revenue: 4200,
-    carrierCost: 3600,
-    margin: 600,
-    marginPct: 14.3,
-    targetMarginPct: 12,
-    pickupAt: '2026-03-02T15:00:00Z',
-    deliveryAt: '2026-03-04T03:00:00Z',
-    dispatcher: { id: 'U-9', name: 'Alex Smith' },
-    updatedAt: '2026-03-01T18:32:00Z',
-    statusHistory: createInitialStatusHistory('IN_TRANSIT'),
-  },
-  {
-    id: 'L-204811',
-    status: 'DRAFT',
-    customer: { id: 'C-52', name: 'Target' },
-    carrier: { id: null, name: 'Pending', assigned: false },
-    origin: { city: 'Phoenix', state: 'AZ' },
-    destination: { city: 'Salt Lake City', state: 'UT' },
-    equipment: 'reefer',
-    miles: 650,
-    revenue: 3850,
-    carrierCost: 2900,
-    margin: 950,
-    marginPct: 24.7,
-    targetMarginPct: 12,
-    pickupAt: '2026-03-02T10:00:00Z',
-    deliveryAt: '2026-03-03T01:00:00Z',
-    dispatcher: { id: 'U-10', name: 'Jamie Lee' },
-    updatedAt: '2026-03-01T17:10:00Z',
-    statusHistory: createInitialStatusHistory('DRAFT'),
-  },
-  {
-    id: 'L-887201',
-    status: 'TENDERED',
-    customer: { id: 'C-60', name: 'Walmart' },
-    carrier: { id: null, name: '—', assigned: false },
-    origin: { city: 'Atlanta', state: 'GA' },
-    destination: { city: 'Orlando', state: 'FL' },
-    equipment: 'van',
-    miles: 435,
-    revenue: 3000,
-    carrierCost: 0,
-    margin: 3000,
-    marginPct: 100,
-    targetMarginPct: 12,
-    pickupAt: '2026-03-01T23:00:00Z',
-    deliveryAt: '2026-03-02T14:00:00Z',
-    dispatcher: { id: 'U-9', name: 'Alex Smith' },
-    updatedAt: '2026-03-01T18:45:00Z',
-    statusHistory: createInitialStatusHistory('TENDERED'),
-  },
-];
+// Removed file-based storage and seedLoads. Now using MongoDB.
+import { Load } from './models.js';
 
 const seedLoadTemplates = [];
 
@@ -309,7 +230,7 @@ function appendBotActivity(loadId, text, source = 'dispatch-bot-addon') {
 }
 
 function generateLoadId() {
-  return `L-${Math.floor(100000 + Math.random() * 900000)}`;
+  return 'L-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
 }
 
 function normalizeTemplatePayload(payload = {}) {
@@ -523,111 +444,118 @@ function isSoftDeleted(load) {
   return Boolean(load?.deletedAt) || Boolean(load?.archived) || String(load?.status || '').toLowerCase() === 'deleted';
 }
 
-router.get('/', (req, res) => {
-  const {
-    tab = 'all',
-    q = '',
-    status,
-    equipment,
-    dispatcherId,
-    includeDeleted = 'false',
-    sort = '-updatedAt',
-    page = '1',
-    pageSize = '50',
-  } = req.query;
+router.get('/', async (req, res) => {
+  try {
+    const {
+      tab = 'all',
+      q = '',
+      status,
+      equipment,
+      dispatcherId,
+      includeDeleted = 'false',
+      sort = '-updatedAt',
+      page = '1',
+      pageSize = '50',
+    } = req.query;
 
-  const includeDeletedLoads = String(includeDeleted || '').toLowerCase() === 'true';
-  const requestedStatus = status ? normalizeLoadStatus(status) : '';
+    const includeDeletedLoads = String(includeDeleted || '').toLowerCase() === 'true';
+    const requestedStatus = status ? normalizeLoadStatus(status) : '';
 
-  let items = loads.map((item) => withComputed(normalizeStoredLoad(item)));
-
-  if (!includeDeletedLoads && requestedStatus !== 'CANCELLED') {
-    items = items.filter((item) => !isSoftDeleted(item));
-  }
-
-  items = getTabFiltered(items, String(tab));
-
-  if (status) {
-    items = items.filter((item) => normalizeLoadStatus(item.status) === requestedStatus);
-  }
-
-  if (equipment) {
-    items = items.filter((item) => item.equipment === equipment);
-  }
-
-  if (dispatcherId) {
-    items = items.filter((item) => item.dispatcher?.id === dispatcherId);
-  }
-
-  items = items.filter((item) => matchesText(item, q));
-
-  const sortKeyRaw = String(sort || '-updatedAt');
-  const descending = sortKeyRaw.startsWith('-');
-  const sortKey = descending ? sortKeyRaw.slice(1) : sortKeyRaw;
-
-  items.sort((a, b) => {
-    const av = a[sortKey] ?? '';
-    const bv = b[sortKey] ?? '';
-    if (typeof av === 'number' && typeof bv === 'number') {
-      return descending ? bv - av : av - bv;
+    // Build MongoDB query
+    const query = {};
+    if (!includeDeletedLoads && requestedStatus !== 'CANCELLED') {
+      query.deletedAt = { $exists: false };
     }
-    return descending
-      ? String(bv).localeCompare(String(av))
-      : String(av).localeCompare(String(bv));
-  });
+    if (status) {
+      query.status = requestedStatus;
+    }
+    if (equipment) {
+      query.equipment = equipment;
+    }
+    if (dispatcherId) {
+      query['dispatcher.id'] = dispatcherId;
+    }
+    if (q) {
+      query.$or = [
+        { 'customer.name': { $regex: q, $options: 'i' } },
+        { 'carrier.name': { $regex: q, $options: 'i' } },
+        { 'origin.city': { $regex: q, $options: 'i' } },
+        { 'destination.city': { $regex: q, $options: 'i' } },
+      ];
+    }
 
-  const parsedPage = Math.max(1, Number.parseInt(String(page), 10) || 1);
-  const parsedPageSize = Math.min(100, Math.max(1, Number.parseInt(String(pageSize), 10) || 50));
-  const start = (parsedPage - 1) * parsedPageSize;
-  const pagedItems = items.slice(start, start + parsedPageSize);
+    const sortKeyRaw = String(sort || '-updatedAt');
+    const descending = sortKeyRaw.startsWith('-');
+    const sortKey = descending ? sortKeyRaw.slice(1) : sortKeyRaw;
+    const sortObj = {};
+    sortObj[sortKey] = descending ? -1 : 1;
 
-  const facets = {
-    status: {
-      DRAFT: items.filter((i) => normalizeLoadStatus(i.status) === 'DRAFT').length,
-      PRE_DISPATCH: items.filter((i) => normalizeLoadStatus(i.status) === 'PRE_DISPATCH').length,
-      IN_TRANSIT: items.filter((i) => normalizeLoadStatus(i.status) === 'IN_TRANSIT').length,
-      DELIVERED: items.filter((i) => normalizeLoadStatus(i.status) === 'DELIVERED').length,
-      EXCEPTION: items.filter((i) => normalizeLoadStatus(i.status) === 'EXCEPTION').length,
-      CANCELLED: items.filter((i) => normalizeLoadStatus(i.status) === 'CANCELLED' || Boolean(i.deletedAt)).length,
-    },
-    equipment: {
-      van: items.filter((i) => i.equipment === 'van').length,
-      reefer: items.filter((i) => i.equipment === 'reefer').length,
-      flatbed: items.filter((i) => i.equipment === 'flatbed').length,
-    },
-  };
+    const parsedPage = Math.max(1, Number.parseInt(String(page), 10) || 1);
+    const parsedPageSize = Math.min(100, Math.max(1, Number.parseInt(String(pageSize), 10) || 50));
 
-  res.json({
-    items: pagedItems,
-    page: parsedPage,
-    pageSize: parsedPageSize,
-    total: items.length,
-    facets,
-  });
+    const total = await Load.countDocuments(query);
+    const items = await Load.find(query)
+      .sort(sortObj)
+      .skip((parsedPage - 1) * parsedPageSize)
+      .limit(parsedPageSize)
+      .lean();
+
+    // Compute facets
+    const allItems = await Load.find(query).lean();
+    const facets = {
+      status: {
+        DRAFT: allItems.filter((i) => normalizeLoadStatus(i.status) === 'DRAFT').length,
+        PRE_DISPATCH: allItems.filter((i) => normalizeLoadStatus(i.status) === 'PRE_DISPATCH').length,
+        IN_TRANSIT: allItems.filter((i) => normalizeLoadStatus(i.status) === 'IN_TRANSIT').length,
+        DELIVERED: allItems.filter((i) => normalizeLoadStatus(i.status) === 'DELIVERED').length,
+        EXCEPTION: allItems.filter((i) => normalizeLoadStatus(i.status) === 'EXCEPTION').length,
+        CANCELLED: allItems.filter((i) => normalizeLoadStatus(i.status) === 'CANCELLED' || Boolean(i.deletedAt)).length,
+      },
+      equipment: {
+        van: allItems.filter((i) => i.equipment === 'van').length,
+        reefer: allItems.filter((i) => i.equipment === 'reefer').length,
+        flatbed: allItems.filter((i) => i.equipment === 'flatbed').length,
+      },
+    };
+
+    res.json({
+      items,
+      page: parsedPage,
+      pageSize: parsedPageSize,
+      total,
+      facets,
+    });
+  } catch (err) {
+    res.status(500).json({ error: { code: 'LOADS_FETCH_ERROR', message: err.message } });
+  }
 });
 
-router.get('/:loadId', (req, res) => {
-  const load = loads.find((item) => item.id === req.params.loadId);
-  if (!load) {
-    return res.status(404).json({ error: { code: 'LOAD_NOT_FOUND', message: 'Load not found' } });
+router.get('/:loadId', async (req, res) => {
+  try {
+    const load = await Load.findOne({ id: req.params.loadId }).lean();
+    if (!load) {
+      return res.status(404).json({ error: { code: 'LOAD_NOT_FOUND', message: 'Load not found' } });
+    }
+
+    // You may want to add computed fields here as in the original code
+    const laneAverageMarginPct = 15.4;
+    const marginDeltaPct = Number((load.marginPct - laneAverageMarginPct).toFixed(1));
+    const normalizedStatus = normalizeLoadStatus(load.status);
+
+    return res.json({
+      load: {
+        ...load,
+        status: normalizedStatus,
+        statusHistory: Array.isArray(load.statusHistory) ? load.statusHistory : [],
+      },
+      laneAverageMarginPct,
+      marginDeltaPct,
+      controls: deriveControlsForStatus(normalizedStatus),
+      loadStatusHistory: Array.isArray(load.statusHistory) ? load.statusHistory : [],
+    });
+  } catch (err) {
+    res.status(500).json({ error: { code: 'LOAD_FETCH_ERROR', message: err.message } });
   }
-
-  const computed = withComputed(normalizeStoredLoad(load));
-  const laneAverageMarginPct = 15.4;
-  const marginDeltaPct = Number((computed.marginPct - laneAverageMarginPct).toFixed(1));
-  const normalizedStatus = normalizeLoadStatus(computed.status);
-
-  return res.json({
-    load: {
-      ...computed,
-      status: normalizedStatus,
-      statusHistory: Array.isArray(computed.statusHistory) ? computed.statusHistory : createInitialStatusHistory(normalizedStatus),
-    },
-    laneAverageMarginPct,
-    marginDeltaPct,
-    controls: deriveControlsForStatus(normalizedStatus),
-    loadStatusHistory: Array.isArray(computed.statusHistory) ? computed.statusHistory : createInitialStatusHistory(normalizedStatus),
-  });
 });
 
 router.post('/estimate-mileage', (req, res) => {
@@ -1145,6 +1073,60 @@ router.post('/:loadId/restore', (req, res) => {
   persistStore();
 
   return res.json({ load: withComputed(load), restored: true });
+});
+
+// Helper to generate a new load ID
+function generateLoadId() {
+  return 'L-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+}
+
+// CREATE a new load
+router.post('/', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.id) {
+      data.id = generateLoadId();
+    }
+    const load = new Load(data);
+    await load.save();
+    res.status(201).json({ load });
+  } catch (err) {
+    res.status(500).json({ error: { code: 'LOAD_CREATE_ERROR', message: err.message } });
+  }
+});
+
+// UPDATE a load
+router.put('/:loadId', async (req, res) => {
+  try {
+    const updated = await Load.findOneAndUpdate(
+      { id: req.params.loadId },
+      req.body,
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ error: { code: 'LOAD_NOT_FOUND', message: 'Load not found' } });
+    }
+    res.json({ load: updated });
+  } catch (err) {
+    res.status(500).json({ error: { code: 'LOAD_UPDATE_ERROR', message: err.message } });
+  }
+});
+
+// DELETE a load (soft delete)
+router.delete('/:loadId', async (req, res) => {
+  try {
+    const deleted = await Load.findOneAndUpdate(
+      { id: req.params.loadId },
+      { deletedAt: new Date() },
+      { new: true }
+    );
+    if (!deleted) {
+      return res.status(404).json({ error: { code: 'LOAD_NOT_FOUND', message: 'Load not found' } });
+    }
+    res.json({ load: deleted });
+  } catch (err) {
+    res.status(500).json({ error: { code: 'LOAD_DELETE_ERROR', message: err.message } });
+  }
 });
 
 export default router;

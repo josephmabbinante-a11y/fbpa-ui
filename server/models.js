@@ -1,4 +1,46 @@
 import mongoose from 'mongoose';
+
+// Load Schema
+const loadSchema = new mongoose.Schema({
+  id: { type: String, unique: true, required: true },
+  status: { type: String, required: true },
+  customer: { id: String, name: String },
+  carrier: { id: String, name: String, assigned: Boolean },
+  origin: { city: String, state: String },
+  destination: { city: String, state: String },
+  equipment: String,
+  miles: Number,
+  revenue: Number,
+  carrierCost: Number,
+  margin: Number,
+  marginPct: Number,
+  targetMarginPct: Number,
+  pickupAt: String,
+  deliveryAt: String,
+  dispatcher: { id: String, name: String },
+  updatedAt: String,
+  statusHistory: [mongoose.Schema.Types.Mixed],
+  createdAt: { type: Date, default: Date.now },
+  updatedAtDb: { type: Date, default: Date.now },
+});
+
+// Location Schema
+const locationSchema = new mongoose.Schema({
+  id: { type: String, unique: true, required: true },
+  name: { type: String, required: true },
+  address: String,
+  locationTypes: String,
+  locationCodes: String,
+  savingsRate: String,
+  primaryContact: String,
+  primaryPhone: String,
+  branch: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+export const Load = mongoose.model('Load', loadSchema);
+export const Location = mongoose.model('Location', locationSchema);
 // User Schema
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
