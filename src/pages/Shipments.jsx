@@ -26,7 +26,7 @@ export default function Shipments() {
     borderRadius: 8,
     border: `1px solid ${t.border}`,
     background: t.bgAlt,
-    color: t.text,
+    color: t.textPrimary,
     padding: '8px 10px',
     fontSize: 12,
   };
@@ -36,6 +36,8 @@ export default function Shipments() {
     cursor: 'pointer',
     fontWeight: 700,
     borderColor: t.accent,
+    background: t.accent,
+    color: t.surface,
   };
 
   const statusBadgeStyle = (status) => {

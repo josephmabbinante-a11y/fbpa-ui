@@ -68,7 +68,7 @@ export default function CarrierBulkImport() {
     borderRadius: 8,
     border: `1px solid ${t.border}`,
     background: t.bgAlt,
-    color: t.text,
+    color: t.textPrimary,
     padding: '8px 10px',
     fontSize: 12,
   };
@@ -163,7 +163,7 @@ export default function CarrierBulkImport() {
             onChange={(event) => onPickFile(event.target.files?.[0] || null)}
             style={{ ...inputStyle, minWidth: 280 }}
           />
-          <button type="button" onClick={onImport} disabled={!file || importing} style={{ ...inputStyle, cursor: !file || importing ? 'not-allowed' : 'pointer', fontWeight: 700, borderColor: t.accent, opacity: !file || importing ? 0.7 : 1 }}>
+          <button type="button" onClick={onImport} disabled={!file || importing} style={{ ...inputStyle, cursor: !file || importing ? 'not-allowed' : 'pointer', fontWeight: 700, borderColor: t.accent, background: t.accent, color: t.surface, opacity: !file || importing ? 0.7 : 1 }}>
             {importing ? 'Importing...' : 'Import File'}
           </button>
         </div>

@@ -85,13 +85,13 @@ export default function InvoiceDetail() {
       {/* Warning banner for mock data */}
       <div
         style={{
-          backgroundColor: '#ffb300',
-          color: '#222',
+          backgroundColor: t.warning,
+          color: t.text,
           padding: '10px 16px',
           borderRadius: 6,
           marginBottom: 16,
           fontWeight: 600,
-          border: '1px solid #ff9800',
+          border: `1px solid ${t.warning}`,
         }}
       >
         Backend error, using mock data: Failed to fetch
@@ -121,8 +121,8 @@ export default function InvoiceDetail() {
         </div>
         <button
           style={{
-            background: '#1976d2',
-            color: '#fff',
+            background: t.accent,
+            color: t.surface,
             border: 'none',
             borderRadius: 4,
             padding: '7px 18px',
@@ -157,7 +157,7 @@ export default function InvoiceDetail() {
         </div>
         <div style={kpiStyle}>
           <div style={{ fontSize: 11, color: t.textSecondary }}>Benefit</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: t.positive }}>{formatCurrency(detail.benefitValue)}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.success }}>{formatCurrency(detail.benefitValue)}</div>
         </div>
         <div style={kpiStyle}>
           <div style={{ fontSize: 11, color: t.textSecondary }}>Rate Match</div>

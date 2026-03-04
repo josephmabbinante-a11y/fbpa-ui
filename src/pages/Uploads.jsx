@@ -131,7 +131,7 @@ export default function Uploads() {
     display: 'inline-block',
     padding: '8px 12px',
     backgroundColor: t.accent,
-    color: '#fff',
+    color: 'var(--surface-elevated)',
     textDecoration: 'none',
     borderRadius: 4,
     fontSize: '13px',
@@ -153,7 +153,7 @@ export default function Uploads() {
   const buttonStyle = {
     padding: '8px 16px',
     backgroundColor: t.accent,
-    color: '#fff',
+    color: 'var(--surface-elevated)',
     border: 'none',
     borderRadius: 4,
     fontSize: '13px',
@@ -282,7 +282,7 @@ export default function Uploads() {
               onChange={handleRcFileChange}
               style={{ fontSize: 14, color: t.text, marginBottom: 0, flex: 1 }}
             />
-            <button type="submit" disabled={rcLoading} style={{ padding: '10px 0', background: t.accent, color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer', minWidth: 100 }}>
+            <button type="submit" disabled={rcLoading} style={{ padding: '10px 0', background: t.accent, color: 'var(--surface-elevated)', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer', minWidth: 100 }}>
               {rcLoading ? 'Uploading...' : 'Upload'}
             </button>
           </form>

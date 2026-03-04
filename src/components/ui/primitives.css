@@ -25,14 +25,14 @@
 
 .ui-subtitle {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--color-muted-text);
 }
 
 .ui-alert {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--warning);
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(204, 204, 204, 0.12);
   color: var(--warning);
   font-size: 13px;
 }
