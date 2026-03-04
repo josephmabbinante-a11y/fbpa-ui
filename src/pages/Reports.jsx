@@ -60,7 +60,6 @@ function mergeReportsData(base, incoming) {
 
 export default function Reports() {
   const { theme } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
   const navigate = useNavigate();
   const [data, setData] = useState(mockReports);

@@ -6,7 +6,10 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 export default function DemoGuide() {
   const { demoMode, step, nextStep, prevStep, disableDemo } = useDemo();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
+  t.surface = t.surface || '#fff';
+  t.text = t.text || '#111827';
+  t.accent = t.accent || '#1D4ED8';
 
   if (!demoMode || !demoSteps[step]) return null;
   const { title, description } = demoSteps[step];

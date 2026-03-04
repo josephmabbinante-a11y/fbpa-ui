@@ -2,13 +2,28 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCarriers } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import AuctionPricingWidget from '../components/AuctionPricingWidget';
 
 // --- Carrier Intelligence Profile Dashboard ---
 export default function CarrierProfile() {
   const { carrier } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
+  const [consoleMessages, setConsoleMessages] = useState([]);
+
+  // Utility to log and show messages in the console panel
+  const logToConsole = (msg, type = 'info') => {
+    setConsoleMessages((prev) => [...prev, { msg, type, ts: new Date().toLocaleTimeString() }]);
+    // Optionally, also log to browser console
+    if (type === 'error') {
+      // eslint-disable-next-line no-console
+      console.error(msg);
+    } else {
+      // eslint-disable-next-line no-console
+      console.log(msg);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [carrierRecord, setCarrierRecord] = useState(null);
@@ -17,32 +32,41 @@ export default function CarrierProfile() {
     const loadCarrier = async () => {
       setLoading(true);
       setError('');
-      const result = await getCarriers({ limit: 5000 });
-      const carriers = Array.isArray(result?.carriers) ? result.carriers : [];
-      const normalizedParam = decodeURIComponent(String(carrier || '')).trim().toLowerCase();
-      const matched = carriers.find((entry) => (
-        String(entry?.id || '').toLowerCase() === normalizedParam
-        || String(entry?.mcNumber || '').toLowerCase() === normalizedParam
-        || String(entry?.name || '').toLowerCase() === normalizedParam
-      ));
-      if (!matched) {
-        setError('Carrier profile not found.');
+      try {
+        const result = await getCarriers({ limit: 5000 });
+        logToConsole('Fetched carriers from API', 'info');
+        const carriers = Array.isArray(result?.carriers) ? result.carriers : [];
+        const normalizedParam = decodeURIComponent(String(carrier || '')).trim().toLowerCase();
+        const matched = carriers.find((entry) => (
+          String(entry?.id || '').toLowerCase() === normalizedParam
+          || String(entry?.mcNumber || '').toLowerCase() === normalizedParam
+          || String(entry?.name || '').toLowerCase() === normalizedParam
+        ));
+        if (!matched) {
+          setError('Carrier profile not found.');
+          logToConsole('Carrier profile not found.', 'error');
+          setLoading(false);
+          return;
+        }
+        setCarrierRecord(matched);
+        logToConsole(`Loaded carrier: ${matched.name || matched.id}`, 'info');
         setLoading(false);
-        return;
+      } catch (err) {
+        setError('Error loading carrier data.');
+        logToConsole(`Error loading carrier data: ${err.message || err}`, 'error');
+        setLoading(false);
       }
-      setCarrierRecord(matched);
-      setLoading(false);
     };
     loadCarrier();
   }, [carrier]);
 
   if (loading) {
-    return <div style={{ fontSize: 12, color: t.textSecondary }}>Loading carrier profile...</div>;
+    return <div style={{ fontSize: 12, color: t.textSecondary, background: t.bg, padding: 16 }}>Loading carrier profile...</div>;
   }
   if (error || !carrierRecord) {
     return (
-      <div style={{ display: 'grid', gap: 8 }}>
-        <div style={{ fontSize: 12, color: t.error }}>{error || 'Carrier not found.'}</div>
+      <div style={{ display: 'grid', gap: 8, background: t.bg, color: t.text, padding: 16 }}>
+        <div style={{ fontSize: 12, color: t.error || '#ef4444', fontWeight: 700 }}>{error || 'Carrier not found.'}</div>
         <div>
           <button type="button" onClick={() => navigate('/carriers')} style={{ padding: '8px 16px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontWeight: 600, cursor: 'pointer' }}>Back to Carriers</button>
         </div>
@@ -59,7 +83,7 @@ export default function CarrierProfile() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18, minHeight: '100vh', background: t.bg, color: t.text }}>
       {/* CARRIER SCORE AT TOP (composite) */}
       <div style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
-        <div style={{ background: '#fff', color: '#222', borderRadius: 18, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', padding: '8px 32px', fontWeight: 800, fontSize: 22, border: '2px solid #10b981' }}>
+        <div style={{ background: t.surfaceStrong || t.surface, color: t.text, borderRadius: 18, boxShadow: `0 2px 12px 0 ${t.shadow || 'rgba(0,0,0,0.10)'}`, padding: '8px 32px', fontWeight: 800, fontSize: 22, border: `2px solid ${t.accent}` }}>
           Carrier Score: 88 / 100 – Reliable
         </div>
       </div>
@@ -73,7 +97,7 @@ export default function CarrierProfile() {
         {/* LEFT COLUMN (Operational & Compliance) */}
         <div style={{ flex: 2, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
           {/* Compliance Overview Card */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.06)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Compliance Overview</div>
             {/* Predictive compliance fields, health score, banners, etc. */}
             {(() => {
@@ -86,30 +110,30 @@ export default function CarrierProfile() {
               const daysUntilExp = Math.max(0, Math.round((expDate - today) / (1000 * 60 * 60 * 24)));
               const authorityAgeYears = ((today - authorityDate) / (1000 * 60 * 60 * 24 * 365)).toFixed(1);
               const expRisk = daysUntilExp < 30 ? 'High Risk' : daysUntilExp < 90 ? 'Medium Risk' : 'Low Risk';
-              const expColor = daysUntilExp < 30 ? '#ef4444' : daysUntilExp < 90 ? '#f59e42' : '#10b981';
+              const expColor = daysUntilExp < 30 ? t.error || '#ef4444' : daysUntilExp < 90 ? t.warning || '#f59e42' : t.success || '#10b981';
               const oosRate = 3.2; // Example static value
               return (
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 14 }}>
                   <span>Authority Status: <b>Active</b></span>
-                  <span>Authority Age: <b>{authorityAgeYears} years</b> <span style={{ color: '#10b981', fontWeight: 600 }}>(Stable)</span></span>
+                  <span>Authority Age: <b>{authorityAgeYears} years</b> <span style={{ color: t.success || '#10b981', fontWeight: 600 }}>(Stable)</span></span>
                   <span>Safety Rating: <b>Satisfactory</b></span>
                   <span>Cargo Insurance: <b>$1,000,000</b></span>
                   <span>Auto Liability: <b>$1,000,000</b></span>
                   <span>Insurance Expiration: <b>{daysUntilExp} days</b> <span style={{ color: expColor, fontWeight: 600 }}>({expRisk})</span></span>
-                  <span>OOS Rate: <b>{oosRate}%</b> <span style={{ color: oosRate < 5 ? '#10b981' : '#ef4444', fontWeight: 600 }}>{oosRate < 5 ? '(Below industry avg)' : '(High)'}</span></span>
+                  <span>OOS Rate: <b>{oosRate}%</b> <span style={{ color: oosRate < 5 ? t.success || '#10b981' : t.error || '#ef4444', fontWeight: 600 }}>{oosRate < 5 ? '(Below industry avg)' : '(High)'}</span></span>
                   <span>W-9: <b>✔</b></span>
                   <span>Agreement: <b>✔</b></span>
                   <span>COI Verified: <b>2026-03-01</b></span>
                 </div>
               );
             })()}
-            <div style={{ marginTop: 10, fontWeight: 600, color: '#10b981' }}>Compliance Health Score: 92 / 100</div>
+            <div style={{ marginTop: 10, fontWeight: 600, color: t.success || '#10b981' }}>Compliance Health Score: 92 / 100</div>
             {/* Example: Red banner if non-compliant */}
-            {/* <div style={{ marginTop: 12, background: '#ef4444', color: '#fff', padding: 10, borderRadius: 8, fontWeight: 700 }}>Carrier Non-Compliant – Dispatch Locked</div> */}
+            {/* <div style={{ marginTop: 12, background: t.error || '#ef4444', color: t.surfaceStrong || '#fff', padding: 10, borderRadius: 8, fontWeight: 700 }}>Carrier Non-Compliant – Dispatch Locked</div> */}
           </div>
 
           {/* Operational Profile Card */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.06)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Operational Profile</div>
             {/* ...equipment, lanes, certifications, tracking, performance indicators... */}
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 14 }}>
@@ -131,11 +155,11 @@ export default function CarrierProfile() {
           </div>
 
           {/* Load History Panel (Tabbed) */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.06)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Load History</div>
             {/* ...tabs for Active, Completed, Cancelled, Claims... */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              <button style={{ padding: '4px 14px', borderRadius: 6, background: t.accent, color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Active Loads</button>
+              <button style={{ padding: '4px 14px', borderRadius: 6, background: t.accent, color: t.surfaceStrong || '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Active Loads</button>
               <button style={{ padding: '4px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 600, cursor: 'pointer' }}>Completed</button>
               <button style={{ padding: '4px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 600, cursor: 'pointer' }}>Cancelled</button>
               <button style={{ padding: '4px 14px', borderRadius: 6, background: t.bgAlt, color: t.text, border: `1px solid ${t.accent}`, fontWeight: 600, cursor: 'pointer' }}>Claims</button>
@@ -145,7 +169,7 @@ export default function CarrierProfile() {
           </div>
 
           {/* Documents Vault */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.06)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Documents Vault</div>
             {/* ...upload/view docs, expiration tracking... */}
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 14 }}>
@@ -163,7 +187,7 @@ export default function CarrierProfile() {
         {/* RIGHT COLUMN (Financial & Risk) */}
         <div style={{ flex: 1, minWidth: 320, maxWidth: 420, display: 'flex', flexDirection: 'column', gap: 18, position: 'sticky', top: 90 }}>
           {/* Financial Snapshot */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.08)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Financial Snapshot</div>
             {/* ...financial metrics, payment terms, quick pay, factoring... */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
@@ -178,7 +202,7 @@ export default function CarrierProfile() {
           </div>
 
           {/* Risk & Intelligence Panel */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.08)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Risk & Intelligence</div>
             {/* ...risk score, risk bars, exposure, reliability... */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 14 }}>
@@ -192,10 +216,10 @@ export default function CarrierProfile() {
           </div>
 
           {/* Internal Notes & Flags */}
-          <div style={{ background: t.surface, borderRadius: 12, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.08)', padding: 20, border: `1px solid ${t.border}` }}>
+          <div style={{ background: t.surface, borderRadius: 12, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.08)'}`, padding: 20, border: `1px solid ${t.border}` }}>
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>Internal Notes & Flags</div>
             {/* ...red flags, notes, escalation tags... */}
-            <div style={{ color: '#ef4444', fontWeight: 700, marginBottom: 6 }}>Red Flag: Insurance Expiring Soon</div>
+            <div style={{ color: t.error || '#ef4444', fontWeight: 700, marginBottom: 6 }}>Red Flag: Insurance Expiring Soon</div>
             <div style={{ fontSize: 13, color: t.textSecondary, marginBottom: 8 }}>Internal notes visible to admins only.</div>
             <div style={{ fontSize: 13, color: t.textSecondary }}>Escalation: None</div>
           </div>
@@ -205,12 +229,23 @@ export default function CarrierProfile() {
       {/* STATUS ENGINE & WORKFLOW AUTOMATION HOOKS (future: settings, banners, disables) */}
       {/* ...status options, workflow rules, enforcement banners, etc. */}
 
-      {/* CARRIER SCORE AT TOP (composite) */}
-      <div style={{ position: 'fixed', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 20 }}>
-        <div style={{ background: '#fff', color: '#222', borderRadius: 18, boxShadow: '0 2px 12px 0 rgba(0,0,0,0.10)', padding: '8px 32px', fontWeight: 800, fontSize: 22, border: '2px solid #10b981' }}>
-          Carrier Score: 88 / 100 – Reliable
+      {/* THEME/CONSOLE PANEL */}
+      <div style={{ marginTop: 24, padding: 12, background: t.surfaceStrong || t.surface, color: t.text, borderRadius: 10, border: `1px solid ${t.border}`, boxShadow: `0 2px 8px 0 ${t.shadow || 'rgba(0,0,0,0.08)'}` }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Console Output</div>
+        <div style={{ maxHeight: 120, overflowY: 'auto', fontSize: 12, display: 'grid', gap: 4 }}>
+          {consoleMessages.length === 0 ? (
+            <span style={{ color: t.textSecondary }}>No messages yet.</span>
+          ) : (
+            consoleMessages.map((entry, idx) => (
+              <span key={idx} style={{ color: entry.type === 'error' ? (t.error || '#ef4444') : (t.textSecondary || '#333'), fontWeight: entry.type === 'error' ? 700 : 400 }}>
+                [{entry.ts}] {entry.type.toUpperCase()}: {entry.msg}
+              </span>
+            ))
+          )}
         </div>
       </div>
+
+      <AuctionPricingWidget />
     </div>
   );
 }

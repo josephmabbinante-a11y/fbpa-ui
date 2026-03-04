@@ -93,7 +93,6 @@ function toMarginPresentation(load) {
 export default function SearchLoads() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
   const [criteria, setCriteria] = useState(DEFAULT_CRITERIA);
   const [activeFields, setActiveFields] = useState(DEFAULT_ACTIVE_FIELDS);

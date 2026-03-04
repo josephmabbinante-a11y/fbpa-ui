@@ -7,7 +7,7 @@ import uploadHistory from '../mock/uploads';
 
 export default function ExceptionsUploads() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   return (
     <div className="page-shell section" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>

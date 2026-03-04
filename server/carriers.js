@@ -90,7 +90,7 @@ const seedMemoryCarriers = MOCK_MODE ? [
     invoiceCount: 39,
     createdAt: new Date('2026-01-03T00:00:00.000Z'),
     updatedAt: new Date('2026-01-03T00:00:00.000Z'),
-  },
+  }
 ];
 
 let memoryCarriers = MOCK_MODE ? [...seedMemoryCarriers] : [];

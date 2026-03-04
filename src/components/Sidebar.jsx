@@ -1,8 +1,7 @@
-
+import React, { useEffect, useState } from 'react';
 // --- Begin transplanted Sidebar from FBPA branch ---
-import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
 import { clearAccessToken } from '../utils/authToken';
 
@@ -47,9 +46,7 @@ export default function Sidebar() {
     setModePreference,
     setPalette,
     settings,
-    setAdvancedSetting,
   } = useTheme();
-  const t = themes[theme];
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -96,50 +93,50 @@ export default function Sidebar() {
         flexDirection: 'column',
         position: 'fixed',
         inset: '0 auto 0 0',
-        background: `linear-gradient(185deg, ${t.bgAlt}, ${t.surface})`,
-        borderRight: `1px solid ${t.border}`,
-        boxShadow: '18px 0 36px rgba(1, 5, 18, 0.45)',
+        background: 'linear-gradient(180deg, var(--bg-secondary) 80%, var(--surface) 100%)',
+        borderRight: '1px solid var(--border-strong)',
+        boxShadow: '0 8px 32px var(--sidebar-shadow, rgba(0,0,0,0.18))',
         zIndex: 100,
       }}
     >
-      <header
-        style={{
-          minHeight: 70,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: showLabels ? 'space-between' : 'center',
-          padding: showLabels ? '12px 14px' : '12px 8px',
-          borderBottom: `1px solid ${t.border}`,
-          background: 'linear-gradient(100deg, var(--banner-bg), var(--banner-tint))',
-          boxShadow: 'inset 0 -1px 0 var(--banner-accent), var(--banner-glow), var(--banner-glow-dynamic)',
-          gap: 8,
-        }}
-      >
-        {showLabels && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
-        <button
-          type="button"
-          onClick={() => {
-            if (isMobile) {
-              setShowMobileSidebar((v) => !v);
-            } else {
-              setCollapsed((c) => !c);
-            }
-          }}
-          className="neon-outline"
+        <header
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            border: `1px solid ${t.border}`,
-            backgroundColor: t.surfaceStrong,
-            color: t.textSecondary,
-            cursor: 'pointer',
+            minHeight: 70,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: showLabels ? 'space-between' : 'center',
+            padding: showLabels ? '12px 14px' : '12px 8px',
+            borderBottom: `1px solid ${theme.border}`,
+            background: 'var(--bg-secondary)',
+            boxShadow: 'inset 0 -1px 0 var(--banner-accent), var(--banner-glow), var(--banner-glow-dynamic)',
+            gap: 8,
           }}
-          title={isMobile ? (showMobileSidebar ? 'Close Menu' : 'Open Menu') : (collapsed ? 'Expand Sidebar' : 'Collapse Sidebar')}
         >
-          {isMobile ? (showMobileSidebar ? '×' : '≡') : collapsed ? '>' : '<'}
-        </button>
-      </header>
+          {showLabels && <img src={logo} alt="Opscale Audit IQ" style={{ height: 40, width: 'auto' }} />}
+          <button
+            type="button"
+            onClick={() => {
+              if (isMobile) {
+                setShowMobileSidebar((v) => !v);
+              } else {
+                setCollapsed((c) => !c);
+              }
+            }}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              border: `1px solid ${theme.border}`,
+              backgroundColor: 'var(--surface-elevated)',
+              color: theme.textSecondary,
+              cursor: 'pointer',
+            }}
+            title={isMobile ? (showMobileSidebar ? 'Close Menu' : 'Open Menu') : (collapsed ? 'Expand Sidebar' : 'Collapse Sidebar')}
+          >
+            {isMobile ? (showMobileSidebar ? '×' : '≡') : collapsed ? '>' : '<'}
+          </button>
+        </header>
+        {/* ...existing sidebar content... */}
 
       <nav
         style={{
@@ -161,9 +158,9 @@ export default function Sidebar() {
                   alignItems: 'center',
                   gap: 10,
                   borderRadius: 12,
-                  border: `1px solid ${t.border}`,
-                  background: 'transparent',
-                  color: t.textSecondary,
+                  border: `1px solid ${theme.border}`,
+                  background: 'var(--surface)',
+                  color: theme.textSecondary,
                   padding: collapsed ? '10px 8px' : '10px 12px',
                   fontSize: 13,
                   fontWeight: 600,
@@ -182,7 +179,8 @@ export default function Sidebar() {
                     justifyContent: 'center',
                     borderRadius: 8,
                     backgroundColor: 'rgba(255,255,255,0.05)',
-                    border: `1px solid ${t.border}`,
+                      backgroundColor: 'var(--surface)',
+                    border: `1px solid ${theme.border}`,
                     fontSize: 11,
                     letterSpacing: 0.4,
                   }}
@@ -203,11 +201,11 @@ export default function Sidebar() {
                       alignItems: 'center',
                       gap: 10,
                       borderRadius: 10,
-                      border: `1px solid ${isActive ? t.accent : t.border}`,
+                      border: `1px solid ${isActive ? theme.accent : theme.border}`,
                       background: isActive
                         ? `linear-gradient(140deg, rgba(24, 210, 255, 0.18), rgba(95, 140, 255, 0.14))`
                         : 'transparent',
-                      color: isActive ? t.text : t.textSecondary,
+                      color: isActive ? theme.text : theme.textSecondary,
                       padding: collapsed ? '8px 8px' : '8px 12px',
                       fontSize: 12,
                       fontWeight: 500,
@@ -224,7 +222,8 @@ export default function Sidebar() {
                         justifyContent: 'center',
                         borderRadius: 6,
                         backgroundColor: 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${t.border}`,
+                          backgroundColor: 'var(--surface)',
+                        border: `1px solid ${theme.border}`,
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -247,16 +246,17 @@ export default function Sidebar() {
                 alignItems: 'center',
                 gap: 10,
                 borderRadius: 12,
-                border: `1px solid ${isActive ? t.accent : t.border}`,
-                background: isActive
-                  ? `linear-gradient(140deg, rgba(24, 210, 255, 0.22), rgba(95, 140, 255, 0.18))`
-                  : 'transparent',
-                color: isActive ? t.text : t.textSecondary,
+                border: `1px solid ${isActive ? theme.accent : theme.border}`,
+                  background: isActive
+                    ? 'var(--surface-elevated)'
+                    : 'var(--surface)',
+                color: isActive ? theme.text : theme.textSecondary,
                 padding: collapsed ? '10px 8px' : '10px 12px',
                 fontSize: 13,
                 fontWeight: 600,
                 transition: 'all 180ms ease',
                 boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.04)' : 'none',
+                  boxShadow: isActive ? '0 2px 8px var(--accent-shadow, rgba(47,128,255,0.08))' : 'none',
               })}
             >
               <span
@@ -268,7 +268,7 @@ export default function Sidebar() {
                   justifyContent: 'center',
                   borderRadius: 8,
                   backgroundColor: 'rgba(255,255,255,0.05)',
-                  border: `1px solid ${t.border}`,
+                  border: `1px solid ${theme.border}`,
                   fontSize: 11,
                   letterSpacing: 0.4,
                 }}
@@ -281,9 +281,9 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <footer style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>
+      <footer style={{ padding: 10, borderTop: `1px solid ${theme.border}` }}>
         {showLabels && (
-          <div style={{ display: 'grid', gap: 8, marginBottom: 10, paddingBottom: 10, borderBottom: `1px solid ${t.border}` }}>
+          <div style={{ display: 'grid', gap: 8, marginBottom: 10, paddingBottom: 10, borderBottom: `1px solid ${theme.border}` }}>
             <button
               type="button"
               onClick={() => setShowThemePanel((value) => !value)}
@@ -295,7 +295,7 @@ export default function Sidebar() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                color: t.textSecondary,
+                color: theme.textSecondary,
                 fontSize: 11,
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -313,9 +313,9 @@ export default function Sidebar() {
                   style={{
                     minHeight: 32,
                     borderRadius: 8,
-                    border: `1px solid ${t.border}`,
-                    background: t.bgAlt,
-                    color: t.text,
+                    border: `1px solid ${theme.border}`,
+                    background: theme.bgAlt,
+                    color: theme.text,
                     padding: '6px 8px',
                     fontSize: 11,
                   }}
@@ -337,9 +337,9 @@ export default function Sidebar() {
                       onClick={() => setModePreference(option.id)}
                       style={{
                         borderRadius: 8,
-                        border: `1px solid ${modePreference === option.id ? t.accent : t.border}`,
-                        background: modePreference === option.id ? t.surfaceStrong : t.bgAlt,
-                        color: t.text,
+                        border: `1px solid ${modePreference === option.id ? theme.accent : theme.border}`,
+                        background: modePreference === option.id ? theme.surfaceStrong : theme.bgAlt,
+                        color: theme.text,
                         fontSize: 10,
                         fontWeight: 700,
                         padding: '6px 4px',
@@ -363,9 +363,9 @@ export default function Sidebar() {
                       onClick={() => setAdvancedSetting('fontScale', stage.key === 'subtle' ? 0.95 : stage.key === 'intense' ? 1.05 : 1)}
                       style={{
                         borderRadius: 8,
-                        border: `1px solid ${settings.fontScale === (stage.key === 'subtle' ? 0.95 : stage.key === 'intense' ? 1.05 : 1) ? t.accent : t.border}`,
-                        background: settings.fontScale === (stage.key === 'subtle' ? 0.95 : stage.key === 'intense' ? 1.05 : 1) ? t.surfaceStrong : t.bgAlt,
-                        color: t.text,
+                        border: `1px solid ${settings.fontScale === (stage.key === 'subtle' ? 0.95 : stage.key === 'intense' ? 1.05 : 1) ? theme.accent : theme.border}`,
+                        background: settings.fontScale === (stage.key === 'subtle' ? 0.95 : stage.key === 'intense' ? 1.05 : 1) ? theme.surfaceStrong : theme.bgAlt,
+                        color: theme.text,
                         fontSize: 10,
                         fontWeight: 700,
                         padding: '6px 4px',
@@ -378,7 +378,7 @@ export default function Sidebar() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: t.textSecondary }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: theme.textSecondary }}>
                     <span>Font heaviness</span>
                     <span>{Math.round(settings.fontWeight || 600)}</span>
                   </div>
@@ -393,7 +393,7 @@ export default function Sidebar() {
                 </div>
 
                 <div style={{ display: 'grid', gap: 4 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: t.textSecondary }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: theme.textSecondary }}>
                     <span>Page effects</span>
                     <span>{Math.round((settings.effectsStrength || 1) * 100)}%</span>
                   </div>
@@ -407,9 +407,9 @@ export default function Sidebar() {
                   />
                 </div>
 
-                <div style={{ fontSize: 10, color: t.textSecondary }}>Active mode: {themeMode}</div>
+                <div style={{ fontSize: 10, color: theme.textSecondary }}>Active mode: {themeMode}</div>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: t.textSecondary }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: theme.textSecondary }}>
                   <input
                     type="checkbox"
                     checked={Boolean(settings.scheduleEnabled)}
@@ -418,7 +418,7 @@ export default function Sidebar() {
                   Schedule dark (7pm–7am)
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: t.textSecondary }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: theme.textSecondary }}>
                   <input
                     type="checkbox"
                     checked={Boolean(settings.forceDarkDataPages)}
@@ -427,7 +427,7 @@ export default function Sidebar() {
                   Force dark on data-heavy pages
                 </label>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: t.textSecondary }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: theme.textSecondary }}>
                   <input
                     type="checkbox"
                     checked={Boolean(settings.reduceAnimationInDark)}
@@ -451,9 +451,9 @@ export default function Sidebar() {
             width: '100%',
             minHeight: 42,
             borderRadius: 12,
-            border: `1px solid ${t.border}`,
-            background: `linear-gradient(145deg, ${t.surfaceStrong}, ${t.surface})`,
-            color: t.textSecondary,
+            border: `1px solid ${theme.border}`,
+            background: `linear-gradient(145deg, ${theme.surfaceStrong}, ${theme.surface})`,
+            color: theme.textSecondary,
             cursor: 'pointer',
             fontSize: 13,
             fontWeight: 600,

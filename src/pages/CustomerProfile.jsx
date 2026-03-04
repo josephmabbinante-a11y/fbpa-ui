@@ -13,7 +13,7 @@ export default function CustomerProfile() {
   const { customerId } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState(null);

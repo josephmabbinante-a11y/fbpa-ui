@@ -20,7 +20,7 @@ function getBucketIndex(dueDate) {
 
 export default function AR() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);

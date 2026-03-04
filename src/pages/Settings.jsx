@@ -1717,7 +1717,6 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAd
 export default function Settings() {
   const { theme, themeMode, toggleTheme, setTheme, settings, setAdvancedSetting, availablePalettes } = useTheme();
   const { demoMode, enableDemo, disableDemo } = useDemo();
-  const { theme } = useTheme();
   const t = theme || {};
 
   const [activeSectionTitle, setActiveSectionTitle] = useState(adminSections[0].title);

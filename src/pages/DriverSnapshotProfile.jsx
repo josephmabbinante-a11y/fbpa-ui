@@ -22,7 +22,7 @@ function clamp(value, min, max) {
 
 export default function DriverSnapshotProfile() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [drivers, setDrivers] = useState([]);
   const [vehicles, setVehicles] = useState([]);

@@ -11,7 +11,7 @@ function toMoney(value) {
 
 export default function Customers() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const navigate = useNavigate();
 
   const [customers, setCustomers] = useState([]);

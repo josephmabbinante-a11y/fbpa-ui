@@ -48,7 +48,7 @@ function parseCsvPreview(csvText) {
 
 export default function CarrierBulkImport() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const navigate = useNavigate();
 
   const [file, setFile] = useState(null);

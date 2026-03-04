@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef,
 import { themePackages } from './themePackages';
 import { getThemeTokens } from './ThemeTokens';
 
-const ThemeContext = createContext();
+export const ThemeContext = createContext();
 const THEME_STORAGE_KEY = 'opscale_theme_state';
 const LEGACY_THEME_STORAGE_KEY = 'opscale_theme';
 const TRANSITION_CLASS = 'theme-transition';
@@ -438,6 +438,19 @@ function createThemeMode(paletteId, mode, base) {
 }
 
 const generatedThemes = PALETTES.reduce((acc, palette) => {
+  // Global fallback for theme attributes
+  function applyThemeFallbacks(theme) {
+    theme.surface = theme.surface || '#fff';
+    theme.bgAlt = theme.bgAlt || '#f8f8f8';
+    theme.textSecondary = theme.textSecondary || '#666';
+    theme.border = theme.border || '#ccc';
+    theme.success = theme.success || '#16A34A';
+    theme.warning = theme.warning || '#D97706';
+    theme.error = theme.error || '#DC2626';
+    theme.text = theme.text || '#111827';
+    theme.accent2 = theme.accent2 || '#888';
+    return theme;
+  }
   acc[`${palette.id}-light`] = createThemeMode(palette.id, 'light', palette.light);
   acc[`${palette.id}-dark`] = createThemeMode(palette.id, 'dark', palette.dark);
   return acc;

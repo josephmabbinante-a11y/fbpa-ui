@@ -100,7 +100,6 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const [searchParams, setSearchParams] = useSearchParams();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const { theme } = useTheme();
   const t = theme || {};
   const [loadSize, setLoadSize] = useState('full');
   const [goodsCondition, setGoodsCondition] = useState('new');

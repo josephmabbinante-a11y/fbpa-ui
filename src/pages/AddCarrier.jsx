@@ -5,7 +5,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function AddCarrier() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const navigate = useNavigate();
 
   const [saving, setSaving] = useState(false);

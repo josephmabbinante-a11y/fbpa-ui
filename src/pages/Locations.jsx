@@ -5,8 +5,9 @@ import { createLocation, listLocations } from '../api/locationsClient';
 
 export default function Locations() {
   const { theme } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
+  // Fallback for accent2
+  t.accent2 = t.accent2 || '#888';
   const navigate = useNavigate();
   const location = useLocation();
 

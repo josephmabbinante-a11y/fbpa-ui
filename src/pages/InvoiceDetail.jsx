@@ -15,7 +15,7 @@ export default function InvoiceDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const invoice = useMemo(() => mockInvoices.find((inv) => inv.id === id), [id]);
   const detail = invoiceDetails[id];

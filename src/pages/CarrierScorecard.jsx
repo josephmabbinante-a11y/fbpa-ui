@@ -60,7 +60,7 @@ export default function CarrierScorecard() {
   const { carrier } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const decodedCarrier = decodeURIComponent(carrier);
   const data = carrierPerformance.find((c) => c.carrier === decodedCarrier);

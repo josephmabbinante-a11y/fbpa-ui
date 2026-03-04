@@ -193,10 +193,10 @@ export default function Dashboard() {
 
   // --- Operational Command Center Layout ---
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, borderBottom: '2px solid #22304a', paddingBottom: 12 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: '#fff', letterSpacing: 0.2 }}>Operational Command Center</h1>
-        <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: '1px solid #22304a', background: '#181e2a', color: '#fff', marginLeft: 24 }}>
+    <div style={{ padding: 24, minHeight: '100vh', background: t.bg || t.surface }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, borderBottom: `2px solid ${t.border}`, paddingBottom: 12 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: t.text, letterSpacing: 0.2 }}>Operational Command Center</h1>
+        <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, marginLeft: 24 }}>
           <option value="shipper">Shipper</option>
           <option value="carrier">Carrier</option>
           <option value="broker">Broker</option>
@@ -207,7 +207,7 @@ export default function Dashboard() {
       <CollapsibleSection title="Key Performance Indicators" defaultOpen>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
           {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
-            <KPIWithTrend label="Total Invoices" value={data.summary?.totalInvoices || 0} delta={5} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" onClick={() => navigate('/invoices')} />
+            <KPIWithTrend label="Total Invoices" value={data.summary?.totalInvoices || 0} delta={5} trendData={data.trends?.invoiceTrend} trendColor={t.accent || '#0066cc'} onClick={() => navigate('/invoices')} />
           )}
           {variant === 'shipper' && dashboardPrefs.showExceptions && (
             <KPIWithTrend label="Exceptions" value={data.summary?.totalExceptions || 0} delta={-2} trendData={data.trends?.exceptionTrend} trendColor="#ef4444" onClick={() => navigate('/exceptions')} />
@@ -260,7 +260,7 @@ export default function Dashboard() {
               Source: {shipmentsSource === 'api' ? 'Live API' : 'Fallback data'}{shipmentsUpdatedAt ? ` • Updated ${shipmentsUpdatedAt.toLocaleTimeString()}` : ''}
             </div>
             <button
-              style={{ padding: '8px 18px', background: t.positive, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
+              style={{ padding: '8px 18px', background: t.positive, color: t.surfaceStrong || t.text, border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
               onClick={() => navigate('/loadcenter', { state: { source: 'dashboard', action: 'create-shipment' } })}
             >
               Add New Shipment
@@ -319,7 +319,7 @@ export default function Dashboard() {
         <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 12 }}>
           Access detailed analytics and exportable reports for finance, KPIs, and operational metrics.
         </div>
-        <button style={{ padding: '10px 18px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
+        <button style={{ padding: '10px 18px', background: t.accent, color: t.surfaceStrong || t.text, border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
           View Full Reports
         </button>
       </CollapsibleSection>

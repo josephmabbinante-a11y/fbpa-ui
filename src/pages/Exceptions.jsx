@@ -10,7 +10,12 @@ const ACTIONS = ['Review', 'Approve', 'Reject', 'Escalate'];
 
 export default function Exceptions() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
+  t.accent2 = t.accent2 || '#888';
+  t.textSecondary = t.textSecondary || '#666';
+  t.border = t.border || '#ccc';
+  t.surface = t.surface || '#fff';
+  t.bg = t.bg || '#f8f8f8';
 
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');

@@ -8,7 +8,6 @@ import logo from '../assets/opscale-logo.svg';
 
 export default function Uploads() {
   const { theme } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);

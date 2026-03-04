@@ -304,24 +304,28 @@ function Layout({ children }) {
 
   return (
     <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', color: t.text }}>
-      <main
-        style={{
-          flex: 1,
-          marginLeft: sidebarWidth,
-          transition: 'margin-left 220ms ease',
-          padding: '0 24px 24px 24px', // Ensure no top padding so page is at top
-        }}
-      >
+        <main
+          style={{
+            flex: 1,
+            marginLeft: sidebarWidth,
+            transition: 'margin-left 220ms ease',
+            padding: '0 32px 32px 32px', // Standardized page padding
+            background: 'var(--bg-primary)',
+            color: 'var(--text-primary)',
+          }}
+        >
         <section
           ref={pageRootRef}
           className="card-surface page-shell"
           data-layout-edit-mode={layoutEditMode ? 'true' : 'false'}
-          style={{
-            minHeight: 'calc(100vh - (var(--space-4) * 2))',
-            gridTemplateColumns: 'minmax(0, 1fr)',
-            backgroundColor: 'var(--page-glass)',
-            borderColor: t.border,
-          }}
+            style={{
+              minHeight: 'calc(100vh - 64px)',
+              gridTemplateColumns: 'minmax(0, 1fr)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--text-primary)',
+            }}
         >
           {children}
         </section>
@@ -412,21 +416,21 @@ function Layout({ children }) {
         )}
 
         <div
-          style={{
-            position: 'fixed',
-            right: 14,
-            bottom: 14,
-            zIndex: 1200,
-            display: 'grid',
-            gap: 6,
-            borderRadius: 10,
-            border: `1px solid ${t.border}`,
-            background: t.surface,
-            color: t.text,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.24)',
-            padding: 8,
-            minWidth: 220,
-          }}
+            style={{
+              position: 'fixed',
+              right: 14,
+              bottom: 14,
+              zIndex: 1200,
+              display: 'grid',
+              gap: 6,
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+              background: 'var(--surface-elevated)',
+              color: 'var(--text-primary)',
+              boxShadow: '0 8px 24px var(--modal-shadow, rgba(0,0,0,0.16))',
+              padding: '16px',
+              minWidth: 220,
+            }}
         >
           <button
             type="button"

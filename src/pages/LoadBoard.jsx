@@ -18,7 +18,6 @@ export default function LoadBoard() {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, settings, setAdvancedSetting } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
   const handledPrefillRef = useRef('');
   const [activeTab, setActiveTab] = useState('available');

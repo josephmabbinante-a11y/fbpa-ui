@@ -60,7 +60,7 @@ const laneData = [
 
 export default function LaneIntelligence() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const initialLane = parseLane(laneData[0]?.lane);
   const [originInput, setOriginInput] = useState(initialLane.origin);
   const [destinationInput, setDestinationInput] = useState(initialLane.destination);
