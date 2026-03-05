@@ -64,7 +64,7 @@ export default function RateConfirmationUpload() {
             )}
           </div>
         )}
-        <button type="submit" disabled={loading} style={{ padding: '10px 0', background: t.accent, color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
+        <button type="submit" disabled={loading} style={{ padding: '10px 0', background: t.accent, color: t.surface, border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
           {loading ? 'Uploading...' : 'Upload'}
         </button>
         {status && <div style={{ color: status.includes('success') ? t.positive : t.error, fontSize: 13 }}>{status}</div>}

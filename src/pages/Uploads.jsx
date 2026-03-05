@@ -145,7 +145,7 @@ export default function Uploads() {
     backgroundColor: t.surface,
     border: `1px solid ${t.border}`,
     borderRadius: 4,
-    color: t.text,
+    color: t.textPrimary,
     fontSize: '13px',
     marginBottom: 12,
   };
@@ -166,6 +166,8 @@ export default function Uploads() {
     width: '100%',
     borderCollapse: 'collapse',
     fontSize: '13px',
+    backgroundColor: t.surface,
+    color: t.textPrimary,
   };
 
   const thStyle = {
@@ -183,7 +185,8 @@ export default function Uploads() {
   const tdStyle = {
     padding: '8px 12px',
     borderBottom: `1px solid ${t.borderLight}`,
-    color: t.text,
+    backgroundColor: t.surface,
+    color: t.textPrimary,
   };
 
   return (

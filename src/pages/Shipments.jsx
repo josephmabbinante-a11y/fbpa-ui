@@ -25,7 +25,7 @@ export default function Shipments() {
     minHeight: 36,
     borderRadius: 8,
     border: `1px solid ${t.border}`,
-    background: t.bgAlt,
+    background: t.surface,
     color: t.textPrimary,
     padding: '8px 10px',
     fontSize: 12,
@@ -202,9 +202,9 @@ export default function Shipments() {
         </div>
 
         <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'auto' }}>
-          <table style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse', fontSize: '1rem' }}>
+          <table style={{ width: '100%', minWidth: 980, borderCollapse: 'collapse', fontSize: '1rem', background: t.surface, color: t.textPrimary }}>
             <thead>
-              <tr style={{ background: t.bgAlt }}>
+              <tr style={{ background: t.surface }}>
                 {['Load #', 'Customer', 'Carrier', 'Origin', 'Destination', 'Status', 'Revenue', 'Cost', 'Margin', 'Due Date'].map((head) => (
                   <th key={head} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 12, color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
                     {head}
@@ -214,7 +214,7 @@ export default function Shipments() {
             </thead>
             <tbody>
               {filteredRows.map((ship) => (
-                <tr key={ship.id} style={{ background: 'transparent' }}>
+                <tr key={ship.id} style={{ background: t.surface }}>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 700 }}>{ship.id}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.customer}</td>
                   <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{ship.carrier}</td>
@@ -231,7 +231,7 @@ export default function Shipments() {
               ))}
               {!filteredRows.length && (
                 <tr>
-                  <td colSpan={10} style={{ padding: '14px 12px', color: t.textSecondary }}>No shipments match this filter.</td>
+                  <td colSpan={10} style={{ padding: '14px 12px', color: t.textSecondary, background: t.surface }}>No shipments match this filter.</td>
                 </tr>
               )}
             </tbody>
