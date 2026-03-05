@@ -137,6 +137,7 @@ function AppRoutes() {
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/auction-board" element={<AuctionBoard />} />
+            <Route path="/exceptions-uploads" element={<ExceptionsUploads />} />
           </Routes>
         </Suspense>
       </Layout>

@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:4000',
+        target: process.env.VITE_API_URL || 'https://mongodb-production-744f.up.railway.app/',
         changeOrigin: true,
         secure: false,
       }

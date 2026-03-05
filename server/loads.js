@@ -1,8 +1,9 @@
+import express from 'express';
+const router = express.Router();
 // Simple test route for debugging
 router.get('/test', (req, res) => {
   res.json({ ok: true, message: 'Loads router is working.' });
 });
-import express from 'express';
 // import fs from 'fs';
 // import path from 'path';
 import { buildMileageLaneKey, estimateMileage } from './mileage.js';
@@ -226,9 +227,6 @@ function appendBotActivity(loadId, text, source = 'dispatch-bot-addon') {
   return entry;
 }
 
-function generateLoadId() {
-  return 'L-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
-}
 
 function normalizeTemplatePayload(payload = {}) {
   return {

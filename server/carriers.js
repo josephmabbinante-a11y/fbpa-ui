@@ -36,7 +36,7 @@ function decodeCsvBuffer(buffer) {
 // Centralized mock mode flag
 const MOCK_MODE = process.env.MOCK_MODE === 'true';
 
-const seedMemoryCarriers = MOCK_MODE ? [
+const seedMemoryCarriers = [
   {
     id: 'cr-memory-1',
     name: 'Prime Logistics',

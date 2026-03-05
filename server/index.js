@@ -50,7 +50,7 @@ import loadsRouter from './loads.js';
 import locationsRouter from './locations.js';
 import documentsRouter from './documents.js';
 import emailTemplatesRouter from './emailTemplates.js';
-import loadLifecycleRoutes from './loadLifecycleRoutes';
+import loadLifecycleRoutes from './loadLifecycleRoutes.js';
 
 import vehiclesRouter from './vehicles.js';
 import driversRouter from './drivers.js';
@@ -241,29 +241,29 @@ app.get('/health/saia', async (_req, res) => {
   return res.status(statusCode).json(health);
 });
 
-const users = [
-  { id: 'u-1', email: 'admin@opscale.ai', role: 'admin', password: 'password123' },
-];
+// Remove in-memory users array. Use MongoDB User model instead.
 
 const handleLogin = (req, res) => {
   const { email, password } = req.body || {};
-  const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
-  const user = users.find((u) => u.email === email && u.password === password);
-  const authedUser = user || (allowAny && email && password
-    ? { id: `u-${Date.now()}`, email, role: 'admin' }
-    : null);
-
-  if (!authedUser) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const accessToken = jwt.sign(
-    { sub: authedUser.id, email: authedUser.email, role: authedUser.role },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-
-  return res.json({
-    accessToken,
-    user: { id: authedUser.id, email: authedUser.email, role: authedUser.role },
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+  User.findOne({ email: email.toLowerCase() }).then(userDoc => {
+    if (!userDoc || userDoc.passwordHash !== password) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    const accessToken = jwt.sign(
+      { sub: userDoc._id, email: userDoc.email, role: userDoc.role },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+    return res.json({
+      accessToken,
+      user: { id: userDoc._id, email: userDoc.email, role: userDoc.role },
+      password: password // Optionally send password for display
+    });
+  }).catch(err => {
+    return res.status(500).json({ error: 'Login failed', details: err.message });
   });
 };
 
@@ -274,25 +274,27 @@ const handleRegister = (req, res) => {
   const { email, password, role, name } = req.body || {};
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
-
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
-  if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
-    return res.status(409).json({ error: 'User already exists' });
-  }
-
-  const user = {
-    id: `u-${Date.now()}`,
-    email: normalizedEmail,
-    name: String(name || '').trim() || null,
-    role: role === 'admin' ? 'admin' : 'user',
-    password: passwordText,
-  };
-  users.push(user);
-
-  return res.status(201).json({
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
+  User.findOne({ email: normalizedEmail }).then(existingUser => {
+    if (existingUser) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+    const newUser = new User({
+      email: normalizedEmail,
+      name: String(name || '').trim() || null,
+      role: role === 'admin' ? 'admin' : 'user',
+      passwordHash: passwordText,
+    });
+    return newUser.save().then(savedUser => {
+      return res.status(201).json({
+        user: { id: savedUser._id, email: savedUser.email, name: savedUser.name, role: savedUser.role },
+        password: passwordText // Optionally send password for display
+      });
+    });
+  }).catch(err => {
+    return res.status(500).json({ error: 'Registration failed', details: err.message });
   });
 };
 

@@ -33,6 +33,7 @@ const navItems = [
   { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic-tool' },
   { id: 'reports', label: 'Reports', icon: 'RP', path: '/reports' },
   { id: 'uploads', label: 'Uploads', icon: 'UP', path: '/uploads' },
+  { id: 'exceptions-uploads', label: 'Uploads Exceptions', icon: 'UE', path: '/exceptions-uploads' },
   { id: 'settings', label: 'Settings', icon: 'ST', path: '/settings' },
 ];
 
