@@ -264,8 +264,12 @@ const handleLogin = (req, res) => {
       if (!userDoc) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
-      // Use bcrypt to compare password
-      if (!bcrypt.compareSync(password, userDoc.passwordHash)) {
+      // Debug logging for password comparison
+      console.log('[DEBUG] Login password:', password);
+      console.log('[DEBUG] Stored hash:', userDoc.passwordHash);
+      const bcryptResult = bcrypt.compareSync(password, userDoc.passwordHash);
+      console.log('[DEBUG] Bcrypt comparison result:', bcryptResult);
+      if (!bcryptResult) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       if (!userDoc.verified) {
