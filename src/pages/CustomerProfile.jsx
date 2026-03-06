@@ -113,6 +113,7 @@ export default function CustomerProfile() {
       {error && <div style={{ fontSize: 12, color: t.error }}>{error}</div>}
 
       {!loading && detail && (
+        <div>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -131,11 +132,11 @@ export default function CustomerProfile() {
           >
             Contact Customer
           </button>
-              <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
-              <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
-              <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
-            </div>
-          </section>
+          <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
+          <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
+          <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
+        </div>
+      )}
 
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
             <div style={{ border: `1px solid ${t.border}`, borderRadius: 12, background: t.surface, padding: 12 }}>

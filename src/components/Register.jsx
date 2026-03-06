@@ -21,6 +21,8 @@ const Register = ({ onClose, onRegistered }) => {
     const res = await register({
       email: form.email,
       password: form.password,
+      name: form.name,
+      organization: form.organization,
     });
     if (res && !res.error) {
       setMessage("Registration successful.");
@@ -36,14 +38,13 @@ const Register = ({ onClose, onRegistered }) => {
   const cardStyle = {
     width: '100%',
     maxWidth: 420,
-    /* backgroundColor removed to allow CSS module to control background */
+    /* backgroundColor and color removed to allow CSS module to control background and text color */
     border: `1px solid ${t.border}`,
     borderRadius: 8,
     padding: 24,
     boxShadow: `0 10px 30px ${t.border}55`,
     margin: '0 auto',
     marginTop: 24,
-    color: t.text,
   };
   const inputStyle = {
     width: '100%',
