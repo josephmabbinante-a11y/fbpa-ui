@@ -304,7 +304,7 @@ const handleLogin = (req, res) => {
 };
 
 app.post('/auth/login', handleLogin);
-app.post('/api/auth/login', handleLogin);
+// app.post('/api/auth/login', handleLogin); // Deprecated, use /api/v1/auth/login
 
 const handleRegister = (req, res) => {
   const { email, password, role, name } = req.body || {};
