@@ -1,3 +1,31 @@
+// In-memory reset tokens (for demo; use DB or cache for production)
+const passwordResetTokens = {};
+
+// Forgot password route: send reset token
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'Email required' });
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const token = Math.random().toString(36).substring(2, 15);
+  passwordResetTokens[token] = user._id.toString();
+  // TODO: Send email with token link (simulate for now)
+  return res.json({ message: 'Password reset link sent', resetToken: token });
+});
+
+// Reset password route: set new password
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body || {};
+  if (!token || !newPassword) return res.status(400).json({ error: 'Token and new password required' });
+  const userId = passwordResetTokens[token];
+  if (!userId) return res.status(400).json({ error: 'Invalid or expired token' });
+  const user = await User.findById(userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  user.passwordHash = newPassword;
+  await user.save();
+  delete passwordResetTokens[token];
+  return res.json({ message: 'Password reset successful' });
+});
 
 // DEBUG: Startup and route mounting diagnostics
 console.log('[DEBUG] Running file: server/index.js');

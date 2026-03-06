@@ -42,10 +42,17 @@ const locationSchema = new mongoose.Schema({
 export const Load = mongoose.model('Load', loadSchema);
 export const Location = mongoose.model('Location', locationSchema);
 // User Schema
+// Free vs. Paid Features:
+// Free: Browse/search loads, basic registration, view load details
+// Paid: Advanced analytics, custom reports, integrations, bulk uploads, premium support
+
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   passwordHash: { type: String, required: true },
   role: { type: String, default: 'user' },
+  plan: { type: String, enum: ['free', 'premium'], default: 'free' },
+  verified: { type: Boolean, default: false },
+  verificationToken: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
