@@ -317,6 +317,12 @@ const handleRegister = (req, res) => {
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+  let passwordHash = '';
+  try {
+    passwordHash = hashPassword(passwordText);
+  } catch (err) {
+    return res.status(400).json({ error: 'Password hashing failed.' });
+  }
   // Password requirements
   const minLength = 8;
   const complexityRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=]{8,}$/;
@@ -330,14 +336,13 @@ const handleRegister = (req, res) => {
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
     }
-      const passwordHash = hashPassword(passwordText);
       console.log('[DEBUG] Register password:', passwordText);
       console.log('[DEBUG] Register passwordHash:', passwordHash);
       const newUser = new User({
         email: normalizedEmail,
         name: String(name || '').trim() || null,
         role: role === 'admin' ? 'admin' : 'user',
-        passwordHash,
+        passwordHash: passwordHash || '',
       });
     return newUser.save().then(savedUser => {
       return res.status(201).json({
