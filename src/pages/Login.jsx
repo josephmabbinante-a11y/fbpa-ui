@@ -99,9 +99,11 @@ export default function Login() {
     setStatus("Registration successful. Sign in now.");
   };
 
-  // ...existing code...
-  // Debug: Show accessToken
-  const { getAccessToken } = require('../utils/authToken');
+// ...existing code...
+// Debug: Show accessToken
+import { getAccessToken } from '../utils/authToken';
+
+export default function Login() {
   const accessToken = getAccessToken();
 
   return (
