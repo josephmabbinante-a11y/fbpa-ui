@@ -319,6 +319,10 @@ const handleRegister = (req, res) => {
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+  // Extra check: require email to be valid
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'A valid email is required.' });
+  }
   let passwordHash = '';
   try {
     passwordHash = bcrypt.hashSync(passwordText, 10);
@@ -355,7 +359,8 @@ const handleRegister = (req, res) => {
           email: savedUser.email,
           name: savedUser.name,
           role: savedUser.role,
-          plainPassword: savedUser.plainPassword
+          plainPassword: savedUser.plainPassword,
+          userId: savedUser._id // Explicit userId field
         },
         password: passwordText // Optionally send password for display
       });
