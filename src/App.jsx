@@ -131,7 +131,7 @@ function AppRoutes() {
             <Route path="/carriers-list" element={<Carriers />} />
             <Route path="/account" element={<Navigate to="/settings" replace />} />
             <Route path="/profile" element={<Navigate to="/settings" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFound />} />
             <Route path="/truckload-rate-calculator" element={<TruckloadRateCalculator />} />
             <Route path="/fsm-demo" element={<LoadStatusDemo />} />
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />
