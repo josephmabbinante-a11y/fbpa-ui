@@ -276,23 +276,31 @@ const handleLogin = (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
-  User.findOne({ email: email.toLowerCase() }).then(userDoc => {
-    if (!userDoc || userDoc.passwordHash !== password) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    const accessToken = jwt.sign(
-      { sub: userDoc._id, email: userDoc.email, role: userDoc.role },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-    return res.json({
-      accessToken,
-      user: { id: userDoc._id, email: userDoc.email, role: userDoc.role },
-      password: password // Optionally send password for display
+    User.findOne({ email: email.toLowerCase() }).then(userDoc => {
+      if (!userDoc) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      // Hash the provided password before comparing
+      const hashedInput = hashPassword(password);
+      if (userDoc.passwordHash !== hashedInput) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      if (!userDoc.verified) {
+        return res.status(403).json({ error: 'Email not verified. Please check your inbox.' });
+      }
+      const accessToken = jwt.sign(
+        { sub: userDoc._id, email: userDoc.email, role: userDoc.role },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      return res.json({
+        accessToken,
+        user: { id: userDoc._id, email: userDoc.email, role: userDoc.role },
+        password: password // Optionally send password for display
+      });
+    }).catch(err => {
+      return res.status(500).json({ error: 'Login failed', details: err.message });
     });
-  }).catch(err => {
-    return res.status(500).json({ error: 'Login failed', details: err.message });
-  });
 };
 
 app.post('/auth/login', handleLogin);
@@ -300,6 +308,7 @@ app.post('/api/auth/login', handleLogin);
 
 const handleRegister = (req, res) => {
   const { email, password, role, name } = req.body || {};
+  console.log('[DEBUG] Registration payload:', req.body);
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
   if (!normalizedEmail || !passwordText) {
@@ -309,12 +318,12 @@ const handleRegister = (req, res) => {
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
     }
-    const newUser = new User({
-      email: normalizedEmail,
-      name: String(name || '').trim() || null,
-      role: role === 'admin' ? 'admin' : 'user',
-      passwordHash: passwordText,
-    });
+      const newUser = new User({
+        email: normalizedEmail,
+        name: String(name || '').trim() || null,
+        role: role === 'admin' ? 'admin' : 'user',
+        passwordHash: hashPassword(passwordText),
+      });
     return newUser.save().then(savedUser => {
       return res.status(201).json({
         user: { id: savedUser._id, email: savedUser.email, name: savedUser.name, role: savedUser.role },
