@@ -317,9 +317,10 @@ const handleRegister = (req, res) => {
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+  const bcrypt = require('bcryptjs');
   let passwordHash = '';
   try {
-    passwordHash = hashPassword(passwordText);
+    passwordHash = bcrypt.hashSync(passwordText, 10);
   } catch (err) {
     return res.status(400).json({ error: 'Password hashing failed.' });
   }
