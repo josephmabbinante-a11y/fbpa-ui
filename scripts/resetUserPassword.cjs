@@ -4,6 +4,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+require('dotenv').config();
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fbpa-db';
 const email = 'debuguser@example.com'; // User email to reset
 const newPassword = 'Dbuser26$'; // New password to set
