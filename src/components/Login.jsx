@@ -9,17 +9,16 @@ const Login = () => {
     e.preventDefault();
     setMessage("");
     try {
-      const apiUrl = `${import.meta.env.VITE_API_BASE_URL || ''}/auth/login`;
-      const res = await fetch(apiUrl, {
-      const res = await fetch("/auth/login", {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+      const res = await fetch(`${baseUrl}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
       if (res.ok) {
         setMessage("Login successful!");
-        // Optionally store token: localStorage.setItem('token', data.token);
+        // Optionally store token: localStorage.setItem('token', data.accessToken);
       } else {
         setMessage(data.error || "Invalid email or password");
       }
@@ -32,11 +31,13 @@ const Login = () => {
     <div className="login-container">
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <label>Email
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+        <label>
+          Email
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         </label>
-        <label>Password
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+        <label>
+          Password
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
         <button type="submit">Sign In</button>
         {message && <div className="message">{message}</div>}

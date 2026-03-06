@@ -3,6 +3,16 @@
 import { useState } from 'react'
 import styles from './LoginForm.module.css'
 
+const readApiBase = () => {
+  if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/+$/, '')
+  }
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '')
+  }
+  return ''
+}
+
 export default function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -12,27 +22,45 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const payload = { email, password };
-      console.log('Login payload:', payload);
-      const res = await fetch(`${apiUrl}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
+    setMessage('')
 
-      if (res.ok) {
-        const data = await res.json()
-        setMessage('Login successful!')
-        localStorage.setItem('token', data.token)
-        // Redirect or handle successful login
-      } else {
-        const data = await res.json()
-        setMessage(data.error || 'Login failed')
+    try {
+      const apiBase = readApiBase()
+      const payload = { email, password }
+      const endpoints = ['/api/auth/login', '/auth/login']
+
+      let lastError = 'Login failed'
+      let didLogin = false
+
+      for (const endpoint of endpoints) {
+        const res = await fetch(`${apiBase}${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        const data = await res.json().catch(() => ({}))
+
+        if (res.ok) {
+          const accessToken = data.accessToken || data.token
+          if (accessToken) {
+            localStorage.setItem('accessToken', accessToken)
+            localStorage.setItem('token', accessToken)
+          }
+          setMessage('Login successful! Redirecting...')
+          window.location.assign('/dashboard')
+          didLogin = true
+          break
+        }
+
+        lastError = data.error || `Login failed (${res.status})`
+      }
+
+      if (!didLogin) {
+        setMessage(lastError)
       }
     } catch (error) {
-      setMessage('Error: ' + error.message)
+      setMessage(`Error: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -42,18 +70,18 @@ export default function LoginForm() {
     <div className={styles.container}>
       <h2>Opscale Portal</h2>
       <form onSubmit={handleSubmit}>
-        <input 
-          type="email" 
-          placeholder="Email" 
+        <input
+          type="email"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$"
           autoComplete="email"
         />
-        <input 
-          type="password" 
-          placeholder="Password" 
+        <input
+          type="password"
+          placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

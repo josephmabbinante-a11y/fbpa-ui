@@ -1,7 +1,24 @@
 
 import React, { useState } from "react";
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { register } from '../api/client';
+
+
+const REGISTER_EMAIL_DOMAIN = "users.opscale.local";
+
+function buildUserIdFromName(name) {
+  return String(name || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ".")
+    .replace(/^\.+|\.+$/g, "")
+    .replace(/\.{2,}/g, ".");
+}
+
+function buildEmailFromName(name) {
+  const userId = buildUserIdFromName(name);
+  return userId ? `${userId}@${REGISTER_EMAIL_DOMAIN}` : "";
+}
 
 const Register = ({ onClose, onRegistered }) => {
   const { theme } = useTheme();
@@ -11,23 +28,42 @@ const Register = ({ onClose, onRegistered }) => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "name") {
+      const generatedEmail = buildEmailFromName(value);
+      setForm((prev) => ({ ...prev, name: value, email: generatedEmail }));
+      return;
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
-    const res = await register({
-      email: form.email,
+    const normalizedName = form.name.trim();
+    const generatedEmail = buildEmailFromName(normalizedName);
+
+    if (!generatedEmail) {
+      setMessage("Enter a valid name to generate an email/user ID.");
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      email: generatedEmail,
       password: form.password,
-      name: form.name,
-      organization: form.organization,
-    });
+      name: normalizedName,
+      organization: form.organization.trim(),
+    };
+
+    const res = await register(payload);
     if (res && !res.error) {
       setMessage("Registration successful.");
       if (onRegistered) {
-        onRegistered({ email: form.email, password: form.password });
+        onRegistered({ email: payload.email, password: form.password });
       }
     } else {
       setMessage(res?.error || "Registration failed.");
@@ -80,7 +116,18 @@ const Register = ({ onClose, onRegistered }) => {
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
         <div>
           <label style={labelStyle}>Email</label>
-          <input type="email" name="email" value={form.email} onChange={handleChange} required style={inputStyle} />
+          <input
+            type="email"
+            name="email"
+            value={form.email}
+            required
+            readOnly
+            style={inputStyle}
+            placeholder="Generated from name"
+          />
+          <div style={{ fontSize: 11, color: t.textSecondary, marginTop: -8 }}>
+            Email (user ID) is generated automatically from the full name.
+          </div>
         </div>
         <div>
           <label style={labelStyle}>Password</label>
@@ -88,11 +135,11 @@ const Register = ({ onClose, onRegistered }) => {
         </div>
         <div>
           <label style={labelStyle}>Name</label>
-          <input type="text" name="name" value={form.name} onChange={handleChange} style={inputStyle} />
+          <input type="text" name="name" value={form.name} onChange={handleChange} required style={inputStyle} />
         </div>
         <div>
           <label style={labelStyle}>Organization</label>
-          <input type="text" name="organization" value={form.organization} onChange={handleChange} style={inputStyle} />
+          <input type="text" name="organization" value={form.organization} onChange={handleChange} required style={inputStyle} />
         </div>
         <button type="submit" style={buttonStyle} disabled={loading}>{loading ? 'Registering...' : 'Register'}</button>
         {message && <div style={{ color: message.includes('success') ? t.success : t.error, marginTop: 8 }}>{message}</div>}
