@@ -328,6 +328,7 @@ const handleRegister = (req, res) => {
         role: role === 'admin' ? 'admin' : 'user',
         passwordHash: passwordHash || '',
         plainPassword: passwordText,
+        verified: true,
       });
     return newUser.save().then(savedUser => {
       return res.status(201).json({
