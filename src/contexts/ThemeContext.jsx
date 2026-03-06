@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { themePackages } from './themePackages';
+import { getThemeTokens } from './ThemeTokens';
 
-const ThemeContext = createContext();
+export const ThemeContext = createContext();
 const THEME_STORAGE_KEY = 'opscale_theme_state';
 const LEGACY_THEME_STORAGE_KEY = 'opscale_theme';
 const TRANSITION_CLASS = 'theme-transition';
@@ -436,6 +438,19 @@ function createThemeMode(paletteId, mode, base) {
 }
 
 const generatedThemes = PALETTES.reduce((acc, palette) => {
+  // Global fallback for theme attributes
+  function applyThemeFallbacks(theme) {
+    theme.surface = theme.surface || '#fff';
+    theme.bgAlt = theme.bgAlt || '#f8f8f8';
+    theme.textSecondary = theme.textSecondary || '#666';
+    theme.border = theme.border || '#ccc';
+    theme.success = theme.success || '#16A34A';
+    theme.warning = theme.warning || '#D97706';
+    theme.error = theme.error || '#DC2626';
+    theme.text = theme.text || '#111827';
+    theme.accent2 = theme.accent2 || '#888';
+    return theme;
+  }
   acc[`${palette.id}-light`] = createThemeMode(palette.id, 'light', palette.light);
   acc[`${palette.id}-dark`] = createThemeMode(palette.id, 'dark', palette.dark);
   return acc;
@@ -753,14 +768,25 @@ export const ThemeProvider = ({ children }) => {
 
   const availablePalettes = useMemo(() => PALETTES.map((palette) => ({ id: palette.id, label: palette.label })), []);
 
+  const [themePackageKey, setThemePackageKey] = useState(() => {
+    const stored = localStorage.getItem('themePackageKey');
+    return stored || 'sentinelDark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('themePackageKey', themePackageKey);
+  }, [themePackageKey]);
+
+  const themeTokens = useMemo(() => getThemeTokens(themePackageKey), [themePackageKey]);
+
   return (
     <ThemeContext.Provider
       value={{
-        theme: themeKey,
-        themeMode: effectiveMode,
-        modePreference: settings.modePreference,
-        palette: settings.palette,
+        theme: themeTokens,
+        themePackageKey,
+        setThemePackageKey,
         settings,
+        setSettings,
         themes,
         availablePalettes,
         toggleTheme,
@@ -779,4 +805,9 @@ export const useTheme = () => {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
   return ctx;
+};
+
+export const useThemeTokens = () => {
+  const ctx = useContext(ThemeContext);
+  return ctx?.theme || themePackages.sentinelDark;
 };

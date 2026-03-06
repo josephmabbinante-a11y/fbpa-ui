@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const FALLBACK_QUEUE = [
   { id: 'veh-103', unitNumber: 'T-103', driverName: 'John Smith', nextServiceMiles: -120, status: 'breakdown' },
@@ -15,7 +15,7 @@ function formatMoney(value) {
 
 export default function MaintenanceQueueProfile() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);

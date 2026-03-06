@@ -1,6 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+// Top-level error boundary component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    // Log error if needed
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return <div style={{ color: 'red', padding: 24 }}><b>Something went wrong:</b> {this.state.error?.message || 'Unknown error.'}</div>;
+    }
+    return this.props.children;
+  }
+}
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import {
   createCarrier,
@@ -67,13 +88,19 @@ const mockFmcsaCarriers = [
   { companyName: 'FASTLANE FREIGHT CO', mcNumber: 'MC112450', usdotNumber: '401204', phone: '(312) 555-0173', email: 'team@fastlanefreight.com', address: 'Chicago, IL' },
 ];
 
+function safeString(val) {
+  if (val == null) return '';
+  if (typeof val === 'object') return JSON.stringify(val);
+  return String(val);
+}
+
 function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
   const navigate = useNavigate();
   const { loadId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const t = theme || {};
   const [loadSize, setLoadSize] = useState('full');
   const [goodsCondition, setGoodsCondition] = useState('new');
   const [carrierSearchSource, setCarrierSearchSource] = useState('internal');
@@ -296,95 +323,127 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const progress = getLoadProgress(loadCheckpoints);
   const progressBarColor = getProgressBarColor(progress, loadCheckpoints);
 
+  // Defensive checks for key props
+  const safeLoadSnapshot = loadSnapshot || {};
+  const safeStopsData = Array.isArray(stopsData) ? stopsData : [];
+
   return (
-    <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
-      {/* Sticky Load Header */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-        {/* StickyLoadHeader with live color logic */}
-        <StickyLoadHeader
-          loadNumber={loadSnapshot?.number || '123456'}
-          status={loadSnapshot?.status || 'Open'}
-          customer={loadSnapshot?.customer || 'Acme Corp'}
-          totalMiles={loadSnapshot?.totalMiles || 1200}
-          sellRate={loadSnapshot?.sellRate || 5000}
-          buyRate={loadSnapshot?.buyRate || 4300}
-          grossMargin={(loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)}
-          marginPct={((loadSnapshot?.sellRate || 5000) - (loadSnapshot?.buyRate || 4300)) / (loadSnapshot?.sellRate || 5000) * 100}
-          riskIndicator={loadSnapshot?.riskIndicator || 'Medium'}
-        />
-        {/* Thin Progress Bar UI */}
-        <div
-          style={{
-            width: '100%',
-            height: 6,
-            borderRadius: 3,
-            background: '#ecf0f1',
-            marginTop: 6,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-          title={`Progress: ${progress.percent}%`}
-        >
+    <ErrorBoundary>
+      <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
+        {/* Sticky Load Header */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+          {/* StickyLoadHeader with live color logic */}
+          {typeof StickyLoadHeader === 'function' ? (
+            <StickyLoadHeader
+              loadNumber={safeString(safeLoadSnapshot.number || '123456')}
+              status={safeString(safeLoadSnapshot.status || 'Open')}
+              customer={safeString(safeLoadSnapshot.customer || 'Acme Corp')}
+              totalMiles={safeString(safeLoadSnapshot.totalMiles || 1200)}
+              sellRate={safeString(safeLoadSnapshot.sellRate || 5000)}
+              buyRate={safeString(safeLoadSnapshot.buyRate || 4300)}
+              grossMargin={safeString((safeLoadSnapshot.sellRate || 5000) - (safeLoadSnapshot.buyRate || 4300))}
+              marginPct={safeString(((safeLoadSnapshot.sellRate || 5000) - (safeLoadSnapshot.buyRate || 4300)) / (safeLoadSnapshot.sellRate || 5000) * 100)}
+              riskIndicator={safeString(safeLoadSnapshot.riskIndicator || 'Medium')}
+            />
+          ) : (
+            <div style={{ color: 'red' }}>StickyLoadHeader component missing</div>
+          )}
+          {/* Thin Progress Bar UI */}
           <div
             style={{
-              width: `${progress.percent}%`,
-              height: '100%',
-              background: progressBarColor,
-              transition: 'width 0.3s',
+              width: '100%',
+              height: 6,
+              borderRadius: 3,
+              background: '#ecf0f1',
+              marginTop: 6,
+              position: 'relative',
+              overflow: 'hidden',
             }}
-          />
-          {/* Progress percent and status */}
-          <span
-            style={{
-              position: 'absolute',
-              right: 8,
-              top: -18,
-              fontSize: 12,
-              fontWeight: 600,
-              color: progressBarColor,
-              background: '#fff',
-              padding: '2px 6px',
-              borderRadius: 6,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-            }}
+            title={`Progress: ${progress.percent}%`}
           >
-            {progress.percent}%
-          </span>
+            <div
+              style={{
+                width: `${progress.percent}%`,
+                height: '100%',
+                background: progressBarColor,
+                transition: 'width 0.3s',
+              }}
+            />
+            {/* Progress percent and status */}
+            <span
+              style={{
+                position: 'absolute',
+                right: 8,
+                top: -18,
+                fontSize: 12,
+                fontWeight: 600,
+                color: progressBarColor,
+                background: '#fff',
+                padding: '2px 6px',
+                borderRadius: 6,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              }}
+            >
+              {progress.percent}%
+            </span>
+          </div>
         </div>
+        {/* Expandable Checklist Drawer */}
+        {typeof ChecklistDrawer === 'function' ? (
+          <ChecklistDrawer checkpoints={loadCheckpoints || {}} />
+        ) : (
+          <div style={{ color: 'red' }}>ChecklistDrawer component missing</div>
+        )}
+
+        <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
+          {typeof CustomerSection === 'function' ? (
+            <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
+          ) : (
+            <div style={{ color: 'red' }}>CustomerSection component missing</div>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Stops" complete={stopsSectionComplete} defaultOpen={true}>
+          {typeof StopsSection === 'function' ? (
+            <StopsSection onComplete={() => setStopsSectionComplete(true)} setStopsData={setStopsData} />
+          ) : (
+            <div style={{ color: 'red' }}>StopsSection component missing</div>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Lane Intelligence" complete={laneIntelligenceComplete} defaultOpen={true}>
+          {typeof LaneIntelligencePanel === 'function' ? (
+            <LaneIntelligencePanel stops={safeStopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
+          ) : (
+            <div style={{ color: 'red' }}>LaneIntelligencePanel component missing</div>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
+          {typeof CarrierSection === 'function' ? (
+            <CarrierSection enabled={laneIntelligenceComplete} onComplete={() => setCarrierSectionComplete(true)} />
+          ) : (
+            <div style={{ color: 'red' }}>CarrierSection component missing</div>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
+          {typeof FinancialSection === 'function' ? (
+            <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData || {}} onComplete={() => setFinancialSectionComplete(true)} />
+          ) : (
+            <div style={{ color: 'red' }}>FinancialSection component missing</div>
+          )}
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
+          <div>Documents Section Placeholder</div>
+        </CollapsibleSection>
+
+        <CollapsibleSection title="Activity Log" complete={false} defaultOpen={true}>
+          <div>Activity Log Panel Placeholder</div>
+        </CollapsibleSection>
       </div>
-      {/* Expandable Checklist Drawer */}
-      <ChecklistDrawer checkpoints={loadCheckpoints} />
-
-      <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
-        <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Stops" complete={stopsSectionComplete} defaultOpen={true}>
-        <StopsSection onComplete={() => setStopsSectionComplete(true)} setStopsData={setStopsData} />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Lane Intelligence" complete={laneIntelligenceComplete} defaultOpen={true}>
-        <LaneIntelligencePanel stops={stopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
-        <CarrierSection enabled={laneIntelligenceComplete} onComplete={() => setCarrierSectionComplete(true)} />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
-        <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData} onComplete={() => setFinancialSectionComplete(true)} />
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
-        {/* TODO: Implement DocumentsSection, readiness score, checklist, dispatch actions */}
-        <div>Documents Section Placeholder</div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Activity Log" complete={false} defaultOpen={true}>
-        {/* TODO: Implement ActivityLogPanel, chronological feed */}
-        <div>Activity Log Panel Placeholder</div>
-      </CollapsibleSection>
-    </div>
+    </ErrorBoundary>
   );
   // ...existing code...
 
@@ -1022,7 +1081,7 @@ function searchCarriers({ includeFmcsa, mockFmcsaCarriers, query, internalResult
         borderRadius: 14,
       }}
     >
-      <header style={{ display: 'grid', gap: 10 }}>
+      <header style={{ display: 'grid', gap: 4, minHeight: -52, padding: '0 4px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <h1 style={{ margin: 0, fontSize: 26, lineHeight: 1.2 }}>{pageTitle}</h1>
           <button

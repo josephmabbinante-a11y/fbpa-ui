@@ -8,7 +8,7 @@ export default function ExceptionDrilldown() {
   const { id } = useParams(); // id = exception id
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   // Find exception and related invoice
   const exception = mockExceptions.find(e => String(e.id) === String(id));

@@ -22,7 +22,7 @@ export default function CarriersPerformance() {
   const [formError, setFormError] = useState('');
   const [importStatus, setImportStatus] = useState('');
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const data = carrierPerformance;
 

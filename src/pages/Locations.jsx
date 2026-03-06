@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { createLocation, listLocations } from '../api/locationsClient';
 
 export default function Locations() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
+  // Fallback for accent2
+  t.accent2 = t.accent2 || '#888';
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -151,7 +153,7 @@ export default function Locations() {
         }}
       >
         <header style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4, flexWrap: 'wrap', minHeight: -52 }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 value={query}

@@ -2,7 +2,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function CompactKPI({ label, value, delta = null, format = 'number', color = 'neutral' }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
 
   const colorMap = {
     neutral: t.textSecondary,

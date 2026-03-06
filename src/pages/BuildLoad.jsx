@@ -33,7 +33,8 @@ function Panel({ title, subtitle, children, t }) {
 export default function BuildLoad() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
+  t.accent2 = t.accent2 || '#888';
   const [search, setSearch] = useState('');
   const [templatesData, setTemplatesData] = useState(templatesSeed);
   const [loadingTemplates, setLoadingTemplates] = useState(false);

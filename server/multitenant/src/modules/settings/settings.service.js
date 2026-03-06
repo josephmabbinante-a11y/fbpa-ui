@@ -1,11 +1,11 @@
-import { TenantSettings } from './settings.model.js';
+import { query } from '../../config/database.js';
 import { AppError } from '../../utils/errorHandler.js';
 import { logAdminActivity } from '../admin/admin.service.js';
 
 export async function getSettings(tenantId) {
-  const settings = await TenantSettings.findOne({ tenant_id: tenantId });
-  if (!settings) throw new AppError('Settings not found', 404, 'NOT_FOUND');
-  return settings;
+  const result = await query('SELECT * FROM tenant_settings WHERE tenant_id = $1', [tenantId]);
+  if (!result.rows[0]) throw new AppError('Settings not found', 404, 'NOT_FOUND');
+  return result.rows[0];
 }
 
 export async function updateSettings(tenantId, data, actorUserId) {
@@ -23,11 +23,12 @@ export async function updateSettings(tenantId, data, actorUserId) {
   sets.push('updated_at = NOW()');
   values.push(tenantId);
 
-  const settings = await TenantSettings.findOne({ tenant_id: tenantId });
-  if (!settings) throw new AppError('Settings not found', 404, 'NOT_FOUND');
-  Object.assign(settings, data);
-  await settings.save();
+  const result = await query(
+    `UPDATE tenant_settings SET ${sets.join(', ')} WHERE tenant_id = $${i} RETURNING *`,
+    values
+  );
+  if (!result.rows[0]) throw new AppError('Settings not found', 404, 'NOT_FOUND');
 
   await logAdminActivity({ adminUserId: actorUserId, tenantId, action: 'UPDATE_SETTINGS', entity: 'tenant_settings', entityId: tenantId });
-  return settings;
+  return result.rows[0];
 }

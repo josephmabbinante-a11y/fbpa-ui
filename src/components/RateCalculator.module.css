@@ -1,10 +1,8 @@
 .container {
   min-height: 100vh;
   background:
-    linear-gradient(165deg, var(--bg) 0%, var(--bg-mid) 50%, var(--bg-deep) 100%),
-    radial-gradient(880px 520px at 86% -10%, rgba(var(--aura-primary), 0.14), transparent 60%),
-    radial-gradient(820px 480px at -10% 108%, rgba(var(--aura-secondary), 0.12), transparent 64%);
-  color: var(--text);
+    linear-gradient(165deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--surface-strong) 100%);
+  color: var(--color-text);
   font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
   display: flex;
   flex-direction: column;

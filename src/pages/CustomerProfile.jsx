@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import ContactCustomerModal from '../components/ContactCustomerModal';
 import { getCustomerAging, getCustomerDetail, sendCustomerMessage } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 function toMoney(value) {
   return `$${Number(value || 0).toLocaleString()}`;
@@ -13,7 +13,7 @@ export default function CustomerProfile() {
   const { customerId } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState(null);
@@ -98,7 +98,7 @@ export default function CustomerProfile() {
             borderRadius: 8,
             border: `1px solid ${t.accent}`,
             background: t.bgAlt,
-            color: t.text,
+            color: t.textPrimary,
             padding: '8px 10px',
             fontSize: 12,
             cursor: detail ? 'pointer' : 'not-allowed',
@@ -114,29 +114,29 @@ export default function CustomerProfile() {
 
       {!loading && detail && (
         <>
-          <section
+          <div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            disabled={!detail}
             style={{
-              border: `1px solid ${t.border}`,
-              borderRadius: 12,
-              background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`,
-              padding: 12,
-              display: 'grid',
-              gap: 10,
+              minHeight: 36,
+              borderRadius: 8,
+              border: `1px solid ${t.accent}`,
+              background: t.accent,
+              color: t.surface,
+              padding: '8px 10px',
+              fontSize: 12,
+              cursor: detail ? 'pointer' : 'not-allowed',
+              fontWeight: 700,
             }}
           >
-            <div style={{ fontSize: 20, fontWeight: 700 }}>{detail.name || 'Customer'}</div>
-            <div style={{ fontSize: 12, color: t.textSecondary }}>
-              {(detail.contact || 'No contact')} • {(detail.email || 'No email')} • {(detail.phone || 'No phone')}
-            </div>
-            {detail.address && <div style={{ fontSize: 12, color: t.textSecondary }}>{detail.address}</div>}
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
-              <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
-              <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
-              <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
-            </div>
-          </section>
-
+            Contact Customer
+          </button>
+          <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
+          <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
+          <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
+          </div>
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
             <div style={{ border: `1px solid ${t.border}`, borderRadius: 12, background: t.surface, padding: 12 }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Audit Statistics</div>

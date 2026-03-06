@@ -377,36 +377,32 @@ function CommandMetricCard({ title, value, subtitle, tone, active, onClick, them
       type="button"
       onClick={onClick}
       style={{
-        border: `1px solid ${active ? toneColor(themeObj, tone) : themeObj.border}`,
+        border: `1px solid var(--border)`,
         boxSizing: 'border-box',
-        borderRadius: 12,
-        background: active
-          ? `linear-gradient(160deg, ${themeObj.surfaceStrong}, ${themeObj.surface})`
-          : `linear-gradient(160deg, ${themeObj.surface}, ${themeObj.surfaceStrong})`,
-        color: themeObj.text,
+        borderRadius: 'var(--radius)',
+        background: active ? 'var(--surface-elevated)' : 'var(--surface)',
+        color: 'var(--text-primary)',
         padding: 16,
         textAlign: 'left',
         cursor: 'pointer',
         outline: 'none',
-        boxShadow: active
-          ? `0 0 0 1px ${toneColor(themeObj, tone)} inset`
-          : `0 0 0 1px rgba(0,0,0,0) inset`,
+        boxShadow: active ? '0 4px 16px var(--accent-shadow, rgba(47,128,255,0.08))' : 'none',
         transition: 'border-color 140ms ease, box-shadow 140ms ease, background 140ms ease',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ fontSize: 12, color: themeObj.textSecondary }}>{title}</div>
-        <span style={{ width: 9, height: 9, borderRadius: 99, background: toneColor(themeObj, tone), border: `1px solid ${themeObj.border}` }} />
+        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{title}</div>
+        <span style={{ width: 9, height: 9, borderRadius: 99, background: `var(--${tone})`, border: '1px solid var(--border)' }} />
       </div>
       <div style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.1, marginTop: 8 }}>{value}</div>
-      <div style={{ marginTop: 10, fontSize: 12, color: toneColor(themeObj, tone), fontWeight: 700 }}>{subtitle}</div>
+      <div style={{ marginTop: 10, fontSize: 12, color: `var(--${tone})`, fontWeight: 700 }}>{subtitle}</div>
     </button>
   );
 }
 
 function ProgressBar({ value, color, t }) {
   return (
-    <div style={{ height: 8, borderRadius: 999, background: t.bgAlt, border: `1px solid ${t.border}`, overflow: 'hidden' }}>
+    <div style={{ height: 8, borderRadius: 999, background: 'var(--surface)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
       <div style={{ height: '100%', width: `${clamp(Number(value || 0), 0, 100)}%`, background: color }} />
     </div>
   );
@@ -414,7 +410,15 @@ function ProgressBar({ value, color, t }) {
 
 export default function FleetDashboard() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
+  t.surface = t.surface || '#fff';
+  t.bgAlt = t.bgAlt || '#f8f8f8';
+  t.textSecondary = t.textSecondary || '#666';
+  t.border = t.border || '#ccc';
+  t.success = t.success || '#16A34A';
+  t.warning = t.warning || '#D97706';
+  t.error = t.error || '#DC2626';
+  t.text = t.text || '#111827';
   const navigate = useNavigate();
   const { vehicles, setVehicles, drivers, loading, source, lastUpdated } = useFleetCommandData();
 

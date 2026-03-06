@@ -1,9 +1,59 @@
 import mongoose from 'mongoose';
+
+// Load Schema
+const loadSchema = new mongoose.Schema({
+  id: { type: String, unique: true, required: true },
+  status: { type: String, required: true },
+  customer: { id: String, name: String },
+  carrier: { id: String, name: String, assigned: Boolean },
+  origin: { city: String, state: String },
+  destination: { city: String, state: String },
+  equipment: String,
+  miles: Number,
+  revenue: Number,
+  carrierCost: Number,
+  margin: Number,
+  marginPct: Number,
+  targetMarginPct: Number,
+  pickupAt: String,
+  deliveryAt: String,
+  dispatcher: { id: String, name: String },
+  updatedAt: String,
+  statusHistory: [mongoose.Schema.Types.Mixed],
+  createdAt: { type: Date, default: Date.now },
+  updatedAtDb: { type: Date, default: Date.now },
+});
+
+// Location Schema
+const locationSchema = new mongoose.Schema({
+  id: { type: String, unique: true, required: true },
+  name: { type: String, required: true },
+  address: String,
+  locationTypes: String,
+  locationCodes: String,
+  savingsRate: String,
+  primaryContact: String,
+  primaryPhone: String,
+  branch: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+export const Load = mongoose.model('Load', loadSchema);
+export const Location = mongoose.model('Location', locationSchema);
 // User Schema
+// Free vs. Paid Features:
+// Free: Browse/search loads, basic registration, view load details
+// Paid: Advanced analytics, custom reports, integrations, bulk uploads, premium support
+
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
-  password: { type: String, required: true },
+  passwordHash: { type: String, required: true },
+  plainPassword: { type: String },
   role: { type: String, default: 'user' },
+  plan: { type: String, enum: ['free', 'premium'], default: 'free' },
+  verified: { type: Boolean, default: false },
+  verificationToken: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -82,7 +132,12 @@ const invoiceSchema = new mongoose.Schema({
   paymentTerms: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-});
+  });
+
+  // Add indexes to optimize queries
+  invoiceSchema.index({ customerId: 1 });
+  invoiceSchema.index({ type: 1 });
+  invoiceSchema.index({ status: 1 });
 
 // Exception Schema
 const exceptionSchema = new mongoose.Schema({

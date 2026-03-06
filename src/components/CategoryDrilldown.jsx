@@ -27,7 +27,7 @@ const formatPercent = (value) => `${asNumber(value).toFixed(1)}%`;
 
 export default function CategoryDrilldown({ data }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const categories = useMemo(
     () => (Array.isArray(data) ? data.filter((item) => item && typeof item.category === 'string') : []),
     [data]

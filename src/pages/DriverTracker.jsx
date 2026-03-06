@@ -23,7 +23,7 @@ function toMapUrl(position) {
 
 export default function DriverTracker() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [credits, setCredits] = useState(0);
   const [phone, setPhone] = useState('4079347639');

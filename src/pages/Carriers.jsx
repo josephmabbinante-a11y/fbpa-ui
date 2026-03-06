@@ -59,7 +59,7 @@ function readPercentMetric(carrier, keys, fallback = null) {
 
 export default function Carriers() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const navigate = useNavigate();
   const location = useLocation();
 

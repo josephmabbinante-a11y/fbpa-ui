@@ -60,7 +60,7 @@ const laneData = [
 
 export default function LaneIntelligence() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const initialLane = parseLane(laneData[0]?.lane);
   const [originInput, setOriginInput] = useState(initialLane.origin);
   const [destinationInput, setDestinationInput] = useState(initialLane.destination);
@@ -73,7 +73,14 @@ export default function LaneIntelligence() {
   };
 
   const headerStyle = {
-    marginBottom: 32,
+    marginBottom: 24,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: -52,
+    padding: '0 4px',
+    borderBottom: `1px solid ${t.border}`,
+    background: t.bgAlt,
   };
 
   const titleStyle = {

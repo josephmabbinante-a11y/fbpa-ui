@@ -7,7 +7,8 @@ import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
-import dashboardEnhanced from '../mock/dashboardEnhanced';
+import { useMemo } from 'react';
+import mockDashboardEnhanced from '../mock/dashboardEnhanced';
 import mockShipments from '../mock/shipments';
 import { listLoads } from '../api/loadsClient';
 
@@ -51,8 +52,12 @@ function readDashboardVariant() {
   }
 }
 
-function mergeDashboardData(incoming) {
-  if (!incoming || typeof incoming !== 'object') return dashboardEnhanced;
+function mergeDashboardData(incoming, demoMode = false) {
+  // Only use mock data as fallback if demoMode is enabled
+  const fallback = demoMode ? mockDashboardEnhanced : {
+    summary: {}, trends: {}, exceptionBreakdown: [], savingsByCarrier: [], recentActivity: []
+  };
+  if (!incoming || typeof incoming !== 'object') return fallback;
   const hasUsableSeries = (series) =>
     Array.isArray(series) &&
     series.length > 0 &&
@@ -70,7 +75,7 @@ function mergeDashboardData(incoming) {
     Array.isArray(items) &&
     items.length > 0 &&
     items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
-  const fallbackTrends = dashboardEnhanced.trends || {};
+  const fallbackTrends = fallback.trends || {};
   const incomingTrends = incoming.trends || {};
   const mergedTrends = {};
   Object.keys(fallbackTrends).forEach((key) => {
@@ -78,23 +83,23 @@ function mergeDashboardData(incoming) {
     mergedTrends[key] = hasUsableSeries(nextSeries) ? nextSeries : fallbackTrends[key];
   });
   return {
-    ...dashboardEnhanced,
+    ...fallback,
     ...incoming,
-    summary: { ...dashboardEnhanced.summary, ...(incoming.summary || {}) },
+    summary: { ...fallback.summary, ...(incoming.summary || {}) },
     trends: mergedTrends,
     exceptionBreakdown: hasUsableBreakdown(incoming.exceptionBreakdown)
       ? incoming.exceptionBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : fallback.exceptionBreakdown,
     claimsBreakdown: hasUsableBreakdown(incoming.claimsBreakdown)
       ? incoming.claimsBreakdown
-      : dashboardEnhanced.exceptionBreakdown,
+      : fallback.exceptionBreakdown,
     savingsByCarrier: hasUsableSavings(incoming.savingsByCarrier)
       ? incoming.savingsByCarrier
-      : dashboardEnhanced.savingsByCarrier,
+      : fallback.savingsByCarrier,
     volumeByLane: hasUsableSavings(incoming.volumeByLane)
       ? incoming.volumeByLane
-      : dashboardEnhanced.savingsByCarrier,
-    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : dashboardEnhanced.recentActivity,
+      : fallback.savingsByCarrier,
+    recentActivity: incoming.recentActivity?.length ? incoming.recentActivity : fallback.recentActivity,
   };
 }
 
@@ -102,13 +107,18 @@ function mergeDashboardData(incoming) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
-  const [data, setData] = useState(() => dashboardEnhanced);
+  const t = theme || {};
+  // Use demoMode from context or fallback to env
+  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: import.meta.env.VITE_MOCK_MODE === 'true' };
+  // Default dashboard data: only use mock data if demoMode
+  const defaultDashboardData = useMemo(() => demoMode ? mockDashboardEnhanced : {
+    summary: {}, trends: {}, exceptionBreakdown: [], savingsByCarrier: [], recentActivity: []
+  }, [demoMode]);
+  const [data, setData] = useState(() => defaultDashboardData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dashboardPrefs, setDashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
-  const { demoMode } = typeof useDemo === 'function' ? useDemo() : { demoMode: false };
   const [todayShipments, setTodayShipments] = useState(() => Array.isArray(mockShipments) ? mockShipments : []);
   const [shipmentsSource, setShipmentsSource] = useState('fallback');
   const [shipmentsUpdatedAt, setShipmentsUpdatedAt] = useState(null);
@@ -183,28 +193,21 @@ export default function Dashboard() {
 
   // --- Operational Command Center Layout ---
   return (
-    <div style={{ padding: 24, minHeight: '100vh', background: 'linear-gradient(135deg,#181e2a 0%,#232b3e 100%)' }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, justifyContent: 'space-between' }}>
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: '#fff', letterSpacing: 0.2 }}>Operational Command Center</h1>
-            <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.borderLight}`, background: t.bgAlt, color: t.text, marginTop: 12 }}>
-              <option value="shipper">Shipper</option>
-              <option value="carrier">Carrier</option>
-              <option value="broker">Broker</option>
-            </select>
-            <div style={{ fontSize: 13, color: t.textSecondary, marginTop: 12, marginBottom: 2 }}>
-              Manage shipments, monitor daily operations, and analyze financial & KPI performance in real time.
-            </div>
-          </div>
-        </div>
-      </div>
+    <div style={{ padding: 24, minHeight: '100vh', background: t.bg || t.surface }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, borderBottom: `2px solid ${t.border}`, paddingBottom: 12 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, color: t.text, letterSpacing: 0.2 }}>Operational Command Center</h1>
+        <select value={variant} onChange={e => setVariant(e.target.value)} style={{ fontSize: 15, padding: '4px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, marginLeft: 24 }}>
+          <option value="shipper">Shipper</option>
+          <option value="carrier">Carrier</option>
+          <option value="broker">Broker</option>
+        </select>
+      </header>
 
       {/* KPI Section */}
       <CollapsibleSection title="Key Performance Indicators" defaultOpen>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', marginBottom: 24 }}>
           {variant === 'shipper' && dashboardPrefs.showTotalInvoices && (
-            <KPIWithTrend label="Total Invoices" value={data.summary?.totalInvoices || 0} delta={5} trendData={data.trends?.invoiceTrend} trendColor="#0066cc" onClick={() => navigate('/invoices')} />
+            <KPIWithTrend label="Total Invoices" value={data.summary?.totalInvoices || 0} delta={5} trendData={data.trends?.invoiceTrend} trendColor={t.accent || '#0066cc'} onClick={() => navigate('/invoices')} />
           )}
           {variant === 'shipper' && dashboardPrefs.showExceptions && (
             <KPIWithTrend label="Exceptions" value={data.summary?.totalExceptions || 0} delta={-2} trendData={data.trends?.exceptionTrend} trendColor="#ef4444" onClick={() => navigate('/exceptions')} />
@@ -257,7 +260,7 @@ export default function Dashboard() {
               Source: {shipmentsSource === 'api' ? 'Live API' : 'Fallback data'}{shipmentsUpdatedAt ? ` • Updated ${shipmentsUpdatedAt.toLocaleTimeString()}` : ''}
             </div>
             <button
-              style={{ padding: '8px 18px', background: t.positive, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
+              style={{ padding: '8px 18px', background: t.positive, color: t.surfaceStrong || t.text, border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
               onClick={() => navigate('/loadcenter', { state: { source: 'dashboard', action: 'create-shipment' } })}
             >
               Add New Shipment
@@ -316,7 +319,7 @@ export default function Dashboard() {
         <div style={{ fontSize: 14, color: t.textSecondary, marginBottom: 12 }}>
           Access detailed analytics and exportable reports for finance, KPIs, and operational metrics.
         </div>
-        <button style={{ padding: '10px 18px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
+        <button style={{ padding: '10px 18px', background: t.accent, color: t.surfaceStrong || t.text, border: 'none', borderRadius: 6, fontWeight: 600, fontSize: 14, cursor: 'pointer' }} onClick={() => navigate('/reports')}>
           View Full Reports
         </button>
       </CollapsibleSection>

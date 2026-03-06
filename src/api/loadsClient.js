@@ -7,27 +7,24 @@ import {
 } from '../utils/loadLifecycle';
 import { emitWorkflowEvent } from '../utils/workflowAutomationEngine';
 
+
 const RAW_API_URL = import.meta.env.VITE_API_URL;
-const API_URL = import.meta.env.PROD
-  ? ''
-  : (RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '');
+const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/+$/, '') : '';
 
 function apiUrl(path) {
   return `${API_URL}${path}`;
 }
 
 function isMockMode() {
-  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
-  try {
-    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
-  } catch {
-    return false;
-  }
+  // Only enable mock mode if VITE_MOCK_MODE or demoMode is true
+  return import.meta.env.VITE_MOCK_MODE === 'true' ||
+    (typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true');
 }
 
 let forceMockLoadsFromNetwork = false;
 
 function shouldUseMockLoads() {
+  // Only use mock loads if mock mode is enabled
   return isMockMode() || forceMockLoadsFromNetwork;
 }
 
@@ -191,7 +188,7 @@ function createRandomizedMockLoads(count = 240) {
   return generated;
 }
 
-const mockLoads = createRandomizedMockLoads();
+const mockLoads = shouldUseMockLoads() ? createRandomizedMockLoads() : [];
 const mockLoadTemplates = [];
 
 async function safeFetch(path, options) {
@@ -290,10 +287,12 @@ function normalizeApiListResponse(response = {}) {
 function normalizeApiDetailResponse(response = {}) {
   const load = normalizeApiLoad(response.load);
   const normalizedStatus = normalizeLoadStatus(load?.status);
+  // Always ensure controls is present
+  const controls = response.controls || load?.controls || deriveControlsForStatus(normalizedStatus);
   return {
     ...response,
-    load,
-    controls: response.controls || deriveControlsForStatus(normalizedStatus),
+    load: { ...load, controls },
+    controls,
     loadStatusHistory: normalizeStatusHistoryEntries(response.loadStatusHistory || load?.statusHistory || []),
   };
 }

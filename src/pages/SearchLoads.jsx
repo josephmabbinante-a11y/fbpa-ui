@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createLoad, deleteLoad, dispatchLoad, listLoads, restoreLoad, sendToBidNetwork, updateLoad, voidLoad } from '../api/loadsClient';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { formatLoadStatusLabel, normalizeLoadStatus } from '../utils/loadLifecycle';
 
 const DEFAULT_CRITERIA = {
@@ -93,7 +93,7 @@ function toMarginPresentation(load) {
 export default function SearchLoads() {
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [criteria, setCriteria] = useState(DEFAULT_CRITERIA);
   const [activeFields, setActiveFields] = useState(DEFAULT_ACTIVE_FIELDS);
   const [fieldToAdd, setFieldToAdd] = useState('customerName');

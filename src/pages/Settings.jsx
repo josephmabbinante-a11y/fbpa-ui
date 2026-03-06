@@ -19,7 +19,7 @@ import {
   updateEmailTemplate,
   updateUser,
 } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { clearAccessToken } from '../utils/authToken';
 
@@ -167,8 +167,8 @@ function OperatorEmailTemplatesPanel({ t }) {
     padding: '8px 10px',
     borderRadius: 6,
     border: `1px solid ${t.border}`,
-    background: t.bgAlt,
-    color: t.text,
+    background: t.surface,
+    color: t.textPrimary,
     fontSize: 13,
     fontFamily: 'inherit',
     width: '100%',
@@ -1717,7 +1717,7 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAd
 export default function Settings() {
   const { theme, themeMode, toggleTheme, setTheme, settings, setAdvancedSetting, availablePalettes } = useTheme();
   const { demoMode, enableDemo, disableDemo } = useDemo();
-  const t = themes[theme];
+  const t = theme || {};
 
   const [activeSectionTitle, setActiveSectionTitle] = useState(adminSections[0].title);
   const activeSection = useMemo(

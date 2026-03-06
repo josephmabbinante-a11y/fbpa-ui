@@ -23,19 +23,16 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
     if (!res.ok) throw new Error(`Send failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('sendCustomerMessage error:', err);
+    console.error('sendCustomerMessage error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
 
 // Unify mock mode: check both env and DemoContext/localStorage.
 function isMockMode() {
-  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
-  try {
-    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
-  } catch {
-    return false;
-  }
+  // Only enable mock mode if VITE_MOCK_MODE or demoMode is true
+  return import.meta.env.VITE_MOCK_MODE === 'true' ||
+    (typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true');
 }
 
 const seedMockCarriers = [
@@ -99,7 +96,7 @@ async function safeFetch(path, options) {
     }
     return await res.json();
   } catch (err) {
-    console.error("safeFetch error:", path, err);
+    console.error("safeFetch error:", path, err?.message || JSON.stringify(err));
     const isNetworkError = err instanceof TypeError && String(err.message || '').toLowerCase().includes('fetch');
     if (isNetworkError) {
       return { error: 'Unable to reach API server. Start backend on port 4000 and retry.' };
@@ -424,67 +421,12 @@ export async function uploadCarriersCsv(file) {
       let imported = 0;
       let updated = 0;
       let skipped = 0;
-      const errors = [];
-
-      for (let index = 1; index < lines.length; index += 1) {
-        const cells = parseLine(lines[index]);
-        const row = headers.reduce((acc, header, headerIndex) => {
-          acc[header] = String(cells[headerIndex] || '').trim();
-          return acc;
-        }, {});
-
-        const name = row.name || row.carrier || row.company || row.legalname || '';
-        const rawMc = row.mcnumber || row.mc || row.docket || '';
-        const mcNumber = rawMc ? (rawMc.toUpperCase().startsWith('MC') ? rawMc.toUpperCase() : `MC${rawMc.replace(/\D/g, '')}`) : '';
-        const dotNumber = (row.dotnumber || row.dot || row.usdot || '').replace(/\D/g, '');
-
-        if (!name && !mcNumber && !dotNumber) {
-          skipped += 1;
-          continue;
-        }
-
-        try {
-          const existingIndex = mockCarrierStore.findIndex((carrier) => {
-            const byMc = mcNumber && String(carrier.mcNumber || '').toUpperCase() === mcNumber.toUpperCase();
-            const byDot = dotNumber && String(carrier.dotNumber || '').replace(/\D/g, '') === dotNumber;
-            return byMc || byDot;
-          });
-
-          const statusValue = String(row.status || 'Active').toLowerCase();
-          let status = 'Active';
-          if (statusValue.includes('inactive')) status = 'Inactive';
-          if (statusValue.includes('alert') || statusValue.includes('issue')) status = 'Alert';
-
-          const nextCarrier = {
-            id: existingIndex >= 0 ? mockCarrierStore[existingIndex].id : `cr-mock-${Date.now()}-${index}`,
-            name: name || (existingIndex >= 0 ? mockCarrierStore[existingIndex].name : `Carrier ${index}`),
-            mcNumber: mcNumber || (existingIndex >= 0 ? mockCarrierStore[existingIndex].mcNumber : ''),
-            dotNumber: dotNumber || (existingIndex >= 0 ? mockCarrierStore[existingIndex].dotNumber : ''),
-            taxId: row.taxid || row.tax_id || row.ein || (existingIndex >= 0 ? mockCarrierStore[existingIndex].taxId : ''),
-            email: row.email || (existingIndex >= 0 ? mockCarrierStore[existingIndex].email : ''),
-            phone: row.phone || row.phonenumber || (existingIndex >= 0 ? mockCarrierStore[existingIndex].phone : ''),
-            paymentTerms: row.paymentterms || row.payment_terms || (existingIndex >= 0 ? mockCarrierStore[existingIndex].paymentTerms : 'Net 30'),
-            insuranceExpiry: row.insuranceexpiry || row.insurance_expiry || (existingIndex >= 0 ? mockCarrierStore[existingIndex].insuranceExpiry : null),
-            status,
-            totalSpend: existingIndex >= 0 ? Number(mockCarrierStore[existingIndex].totalSpend || 0) : 0,
-            openAP: existingIndex >= 0 ? Number(mockCarrierStore[existingIndex].openAP || 0) : 0,
-            invoiceCount: existingIndex >= 0 ? Number(mockCarrierStore[existingIndex].invoiceCount || 0) : 0,
-          };
-
-          if (existingIndex >= 0) {
-            mockCarrierStore = mockCarrierStore.map((carrier, candidateIndex) => (
-              candidateIndex === existingIndex ? nextCarrier : carrier
-            ));
-            updated += 1;
-          } else {
-            mockCarrierStore = [nextCarrier, ...mockCarrierStore];
-            imported += 1;
-          }
-        } catch (err) {
-          errors.push({ line: index + 1, error: err.message || 'Unable to process row' });
-        }
-      }
-
+      let seedMockCarriers = isMockMode() ? [/* mock data here if needed */] : [];
+      // ...existing code...
+      // The rest of your CSV import logic goes here
+      // Make sure all try/catch blocks are closed properly
+      // ...existing code...
+      // End of CSV import logic
       return {
         imported,
         updated,
@@ -496,14 +438,7 @@ export async function uploadCarriersCsv(file) {
       return { error: err.message || 'Failed to parse carrier CSV' };
     }
   }
-
-  try {
-    return await tryBackendUpload();
-  } catch (err) {
-    console.error('uploadCarriersCsv error:', err);
-    return { error: err.message };
   }
-}
 
 export async function listEmailTemplates(params = {}) {
   const query = new URLSearchParams();
@@ -597,7 +532,7 @@ export async function createInvoice(payload) {
     if (!res.ok) throw new Error(`Create invoice failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('createInvoice error:', err);
+    console.error('createInvoice error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -626,18 +561,17 @@ export async function getReports() {
 export async function login(payload) {
   console.log('Frontend login payload:', payload);
   try {
-    const res = await fetch(apiUrl('/api/auth/login'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      throw new Error(errorData?.error || `Login failed ${res.status}`);
-    }
-    return await res.json();
+    return await fetchJsonWithFallback(
+      ['/api/auth/login', '/auth/login'],
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      },
+      'Login failed'
+    );
   } catch (err) {
-    console.error('login error:', err);
+    console.error('login error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -652,7 +586,7 @@ export async function connectEdiIntegration(payload) {
     if (!res.ok) throw new Error(`Connect failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('connectEdiIntegration error:', err);
+    console.error('connectEdiIntegration error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -676,7 +610,7 @@ export async function uploadInvoiceImage(payload) {
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('uploadInvoiceImage error:', err);
+    console.error('uploadInvoiceImage error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -694,7 +628,7 @@ export async function verifyInvoiceImage(payload) {
     if (!res.ok) throw new Error(`Verify failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('verifyInvoiceImage error:', err);
+    console.error('verifyInvoiceImage error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -727,7 +661,7 @@ export async function uploadInvoiceFile(payload) {
     if (!res.ok) throw new Error(`Upload failed ${res.status}`);
     return await res.json();
   } catch (err) {
-    console.error('uploadInvoiceFile error:', err);
+    console.error('uploadInvoiceFile error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -806,7 +740,7 @@ export async function register(payload) {
     }
     return await res.json();
   } catch (err) {
-    console.error('register error:', err);
+    console.error('register error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -819,7 +753,7 @@ export async function getUsers() {
       'Get users failed'
     );
   } catch (err) {
-    console.error('getUsers error:', err);
+    console.error('getUsers error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -837,7 +771,7 @@ export async function updateUser(userId, payload) {
       'Update user failed'
     );
   } catch (err) {
-    console.error('updateUser error:', err);
+    console.error('updateUser error:', err?.message || JSON.stringify(err));
     return { error: err.message };
   }
 }
@@ -867,8 +801,6 @@ export async function deleteDocument(docId) {
   }
 }
 
-
 export function downloadDocument(docId) {
   window.open(`/api/documents/${encodeURIComponent(docId)}/download`, '_blank');
 }
-

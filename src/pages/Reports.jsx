@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api/client';
 import mockReports from '../mock/reports';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
@@ -60,7 +60,7 @@ function mergeReportsData(base, incoming) {
 
 export default function Reports() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const navigate = useNavigate();
   const [data, setData] = useState(mockReports);
   const [loading, setLoading] = useState(false); // Always false to force UI

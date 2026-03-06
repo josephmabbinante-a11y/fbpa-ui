@@ -4,45 +4,41 @@
   font-family: 'Space Grotesk', system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.45;
   font-weight: 600;
-  --bg: #0c1220;
-  --color-bg: #0c1220;
-  --bg-alt: #111a2c;
-  --text: #e7ecf7;
-  --color-text: #e7ecf7;
-  --text-secondary: #9aa8c3;
-  --border: #243149;
-  --color-border: #243149;
-  --surface: #161f33;
-  --color-surface: #161f33;
-  --surface-strong: #1a2740;
-  --bg-mid: #0e1628;
-  --bg-deep: #0a1220;
-  --aura-primary: 94, 200, 255;
-  --aura-secondary: 139, 125, 255;
-  --page-glass: rgba(16, 24, 40, 0.5);
-  --accent: #5ec8ff;
-  --color-accent: #5ec8ff;
-  --accent-2: #8b7dff;
-  --success: #4ecb9c;
-  --warning: #f0b35f;
-  --error: #f1727a;
-  --glow: 94, 200, 255;
-  --banner-bg: linear-gradient(110deg, #0A1630 0%, #10213E 100%);
-  --banner-accent: rgba(59, 130, 246, 0.3);
-  --banner-glow: 0 0 18px rgba(59, 130, 246, 0.15);
-  --banner-tint: rgba(59, 130, 246, 0.14);
-  --banner-glow-dynamic: 0 0 12px rgba(59, 130, 246, 0.1);
-  --table-header-tint: rgba(59, 130, 246, 0.1);
-  --chart-primary: #5ec8ff;
-  --chart-secondary: #8b7dff;
-  --chart-tertiary: #4ecb9c;
-  --header-emphasis: #1e3a8a;
-  --header-tint: rgba(59, 130, 246, 0.06);
-  --header-tint-strong: rgba(59, 130, 246, 0.09);
-  --critical-header: #92400e;
-  --critical-value: #b45309;
-  --critical-field-bg: rgba(245, 158, 11, 0.1);
-  --critical-field-border: rgba(180, 83, 9, 0.34);
+  /* Executive Black Monochromatic Theme */
+  --color-black: #111111;
+  --color-dark-gray: #222222;
+  --color-gray: #444444;
+  --color-medium-gray: #888888;
+  --color-light-gray: #CCCCCC;
+  --color-white: #F5F5F5;
+  --color-primary: var(--color-black);
+  --color-secondary: var(--color-dark-gray);
+  --color-accent: var(--color-gray);
+  --color-text: var(--color-white);
+  --color-muted-text: var(--color-light-gray);
+  --border: var(--color-gray);
+  --surface: var(--color-secondary);
+  --surface-strong: var(--color-gray);
+  --success: var(--color-medium-gray);
+  --warning: var(--color-light-gray);
+  --error: var(--color-gray);
+  --glow: 68, 68, 68;
+  --banner-bg: linear-gradient(110deg, #111111 0%, #222222 100%);
+  --banner-accent: rgba(68, 68, 68, 0.3);
+  --banner-glow: 0 0 18px rgba(68, 68, 68, 0.15);
+  --banner-tint: rgba(68, 68, 68, 0.14);
+  --banner-glow-dynamic: 0 0 12px rgba(68, 68, 68, 0.1);
+  --table-header-tint: rgba(68, 68, 68, 0.1);
+  --chart-primary: #444444;
+  --chart-secondary: #888888;
+  --chart-tertiary: #CCCCCC;
+  --header-emphasis: #222222;
+  --header-tint: rgba(68, 68, 68, 0.06);
+  --header-tint-strong: rgba(68, 68, 68, 0.09);
+  --critical-header: #222222;
+  --critical-value: #444444;
+  --critical-field-bg: rgba(68, 68, 68, 0.1);
+  --critical-field-border: rgba(68, 68, 68, 0.34);
   --section-label-size: 12px;
   --section-label-weight: 700;
   --section-label-tracking: 0.3px;
@@ -93,8 +89,8 @@ body {
   font-weight: var(--app-font-weight);
   color: var(--color-text);
   font-family: var(--font-ui);
-  background-color: var(--color-bg);
-  background: linear-gradient(165deg, var(--bg) 0%, var(--bg-mid) 48%, var(--bg-deep) 100%);
+  background-color: var(--color-primary);
+  background: linear-gradient(165deg, var(--color-primary) 0%, var(--color-secondary) 48%, var(--surface-strong) 100%);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -202,7 +198,7 @@ button::after {
 
 .app-shell {
   min-height: 100vh;
-  color: var(--text);
+  color: var(--color-text);
   filter: saturate(calc(0.86 + 0.28 * var(--effects-strength))) contrast(calc(0.96 + 0.08 * var(--effects-strength)));
 }
 
@@ -353,7 +349,7 @@ p,
 .card-footer {
   margin-top: var(--space-4);
   font-size: 0.95rem;
-  color: var(--text-secondary);
+  color: var(--color-muted-text);
 }
 
 .app-shell table tbody tr {

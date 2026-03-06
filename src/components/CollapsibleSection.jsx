@@ -3,10 +3,10 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function CollapsibleSection({ title, children, complete = false, defaultOpen = true }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
-    <section style={{ border: `1px solid ${t.accent}`, borderRadius: 12, marginBottom: 16, background: complete ? '#e6ffe6' : t.surface }}>
+    <section style={{ border: `1px solid ${t.accent || "#6366f1"}`, borderRadius: 12, marginBottom: 16, background: complete ? '#e6ffe6' : t.surface }}>
       <header
         style={{
           display: 'flex',
@@ -15,7 +15,7 @@ export default function CollapsibleSection({ title, children, complete = false, 
           padding: '10px 16px',
           cursor: 'pointer',
           background: complete ? '#e6ffe6' : t.surface,
-          borderBottom: `1px solid ${t.accent}`,
+          borderBottom: `1px solid ${t.accent || "#6366f1"}`,
         }}
         onClick={() => setIsOpen((v) => !v)}
       >

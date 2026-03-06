@@ -18,7 +18,7 @@ function tone(themeObj, key) {
 
 export default function AssetManagement() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);

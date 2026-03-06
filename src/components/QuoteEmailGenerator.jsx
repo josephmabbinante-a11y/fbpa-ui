@@ -15,7 +15,7 @@ const usdFormatter = new Intl.NumberFormat('en-US', {
 
 export default function QuoteEmailGenerator() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
 
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');

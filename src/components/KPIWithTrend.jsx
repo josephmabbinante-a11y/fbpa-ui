@@ -10,7 +10,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
  */
 export default function KPIWithTrend({ label, value, delta, format, trendData, trendColor = '#0066cc', onClick }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [isHovered, setIsHovered] = useState(false);
 
   return (

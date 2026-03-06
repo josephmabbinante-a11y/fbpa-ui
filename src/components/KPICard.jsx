@@ -10,14 +10,22 @@ import {
 
 export default function KPICard({ title, value, trend, unit = '' }) {
   return (
-    <div style={{ border: '1px solid #ddd', padding: 16, borderRadius: 4 }}>
-      <div style={{ fontSize: 12, color: '#666' }}>{title}</div>
+    <div style={{
+      border: '1px solid var(--border)',
+      background: 'var(--surface-elevated)',
+      padding: 16,
+      borderRadius: 'var(--radius)',
+      color: 'var(--text-primary)',
+      boxShadow: '0 4px 16px var(--card-shadow, rgba(0,0,0,0.08))',
+    }}>
+      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{title}</div>
       <div
         style={{
           fontSize: 24,
           fontWeight: 'bold',
           marginTop: 4,
           marginBottom: 8,
+          color: 'var(--text-primary)',
         }}
       >
         {title === 'Total Savings'
@@ -34,25 +42,26 @@ export default function KPICard({ title, value, trend, unit = '' }) {
             >
               <defs>
                 <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                  <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="day" hide />
               <YAxis hide />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: 'var(--surface)',
                   border: 'none',
                   borderRadius: 2,
                   fontSize: 11,
+                  color: 'var(--text-primary)',
                 }}
               />
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#8884d8"
-                strokeWidth={1}
+                stroke="var(--accent)"
+                strokeWidth={2}
                 fillOpacity={1}
                 fill="url(#colorTrend)"
               />

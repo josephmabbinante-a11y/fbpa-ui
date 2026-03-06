@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 function buildMongoUri() {
-  const explicitUri = String(process.env.MONGODB_URI || '').trim();
+  const explicitUri = String(process.env.MONGODB_URI).trim();
   if (explicitUri) return explicitUri;
 
   const user = process.env.MONGODB_USER;
