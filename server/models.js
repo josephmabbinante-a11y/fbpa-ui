@@ -131,7 +131,12 @@ const invoiceSchema = new mongoose.Schema({
   paymentTerms: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
-});
+  });
+
+  // Add indexes to optimize queries
+  invoiceSchema.index({ customerId: 1 });
+  invoiceSchema.index({ type: 1 });
+  invoiceSchema.index({ status: 1 });
 
 // Exception Schema
 const exceptionSchema = new mongoose.Schema({
