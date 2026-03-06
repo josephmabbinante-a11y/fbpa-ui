@@ -272,9 +272,11 @@ app.get('/health/saia', async (_req, res) => {
 // Remove in-memory users array. Use MongoDB User model instead.
 
 const handleLogin = (req, res) => {
+  console.log('[DEBUG] Login req.body:', req.body);
   const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required' });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  if (!normalizedEmail || !password || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'Valid email and password are required' });
   }
     User.findOne({ email: email.toLowerCase() }).then(userDoc => {
       if (!userDoc) {
@@ -307,6 +309,7 @@ app.post('/auth/login', handleLogin);
 // app.post('/api/auth/login', handleLogin); // Deprecated, use /api/v1/auth/login
 
 const handleRegister = (req, res) => {
+  console.log('[DEBUG] Register req.body:', req.body);
   const { email, password, role, name } = req.body || {};
   console.log('[DEBUG] Registration payload:', req.body);
   const normalizedEmail = String(email || '').trim().toLowerCase();
@@ -327,11 +330,14 @@ const handleRegister = (req, res) => {
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
     }
+      const passwordHash = hashPassword(passwordText);
+      console.log('[DEBUG] Register password:', passwordText);
+      console.log('[DEBUG] Register passwordHash:', passwordHash);
       const newUser = new User({
         email: normalizedEmail,
         name: String(name || '').trim() || null,
         role: role === 'admin' ? 'admin' : 'user',
-        passwordHash: hashPassword(passwordText),
+        passwordHash,
       });
     return newUser.save().then(savedUser => {
       return res.status(201).json({

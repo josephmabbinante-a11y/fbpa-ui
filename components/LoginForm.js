@@ -12,13 +12,14 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
-    
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
-      const res = await fetch(`${apiUrl}/v1/auth/login`, {
+      const payload = { email, password };
+      console.log('Login payload:', payload);
+      const res = await fetch(`${apiUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(payload)
       })
 
       if (res.ok) {
@@ -47,6 +48,8 @@ export default function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          pattern="^[^@\s]+@[^@\s]+\.[^@\s]+$"
+          autoComplete="email"
         />
         <input 
           type="password" 
@@ -54,6 +57,8 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          minLength={8}
+          autoComplete="current-password"
         />
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Signing in...' : 'Sign In'}

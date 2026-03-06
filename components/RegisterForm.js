@@ -16,10 +16,12 @@ export default function RegisterForm() {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
+      const payload = { email, password, name };
+      console.log('Register payload:', payload);
       const res = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name })
+        body: JSON.stringify(payload)
       })
 
       if (res.ok) {
