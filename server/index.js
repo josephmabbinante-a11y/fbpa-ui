@@ -312,8 +312,9 @@ const handleRegister = (req, res) => {
   if (!isMongoConnected()) {
     return respondDatabaseUnavailable(res);
   }
-  const { email, password, role, name } = req.body || {};
+  const { email, password, role, firstName, lastName } = req.body || {};
   console.log('[DEBUG] Registration payload:', req.body);
+  // Require email for registration, do not auto-create
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
   if (!normalizedEmail || !passwordText) {
@@ -323,6 +324,8 @@ const handleRegister = (req, res) => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
     return res.status(400).json({ error: 'A valid email is required.' });
   }
+  // Username is created from first and last name
+  const username = `${String(firstName || '').trim()} ${String(lastName || '').trim()}`.trim();
   let passwordHash = '';
   try {
     passwordHash = bcrypt.hashSync(passwordText, 10);
@@ -344,27 +347,39 @@ const handleRegister = (req, res) => {
     }
       console.log('[DEBUG] Register password:', passwordText);
       console.log('[DEBUG] Register passwordHash:', passwordHash);
+      const verificationToken = crypto.randomBytes(32).toString('hex');
       const newUser = new User({
         email: normalizedEmail,
-        name: String(name || '').trim() || null,
+        name: username,
         role: role === 'admin' ? 'admin' : 'user',
         passwordHash: passwordHash || '',
         plainPassword: passwordText,
-        verified: true,
+        verified: false,
+        verificationToken,
       });
-    return newUser.save().then(savedUser => {
-      return res.status(201).json({
-        user: {
-          id: savedUser._id,
-          email: savedUser.email,
-          name: savedUser.name,
-          role: savedUser.role,
-          plainPassword: savedUser.plainPassword,
-          userId: savedUser._id // Explicit userId field
-        },
-        password: passwordText // Optionally send password for display
+      return newUser.save().then(savedUser => {
+        transporter.sendMail({
+          to: savedUser.email,
+          subject: 'Verify your email',
+          html: `<p>Click <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}">here</a> to verify your email.</p>`
+        }, (err, info) => {
+          if (err) {
+            console.error('[email] Verification email failed:', err);
+          } else {
+            console.log('[email] Verification email sent:', info.response);
+          }
+        });
+        return res.status(201).json({
+          user: {
+            id: savedUser._id,
+            email: savedUser.email,
+            name: savedUser.name,
+            role: savedUser.role,
+            userId: savedUser._id
+          },
+          verificationRequired: true,
+        });
       });
-    });
   }).catch(err => {
     return res.status(500).json({ error: 'Registration failed', details: err.message });
   });

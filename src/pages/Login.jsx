@@ -79,12 +79,16 @@ export default function Login() {
     setStatus(null);
     setLoading(true);
     const res = await login({ email, password });
+    console.log('Login API response:', res);
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      setAccessToken(res.accessToken);
+      const tokenSet = setAccessToken(res.accessToken);
+      console.log('Token stored:', tokenSet, 'Token:', res.accessToken);
       navigate("/dashboard");
+      console.log('Navigated to /dashboard');
     } else {
       setStatus(res && res.error ? res.error : "Invalid email or password");
+      console.log('Login failed:', res);
     }
   };
 
