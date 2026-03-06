@@ -450,6 +450,29 @@ app.get('/auth/users', handleListUsers);
 app.patch('/api/auth/users/:id', handleUpdateUser);
 app.patch('/auth/users/:id', handleUpdateUser);
 
+// Email verification endpoint
+app.get('/api/auth/verify-email', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
+  const { token } = req.query || {};
+  if (!token) {
+    return res.status(400).json({ error: 'Verification token required' });
+  }
+  try {
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(404).json({ error: 'Invalid or expired verification token' });
+    }
+    user.verified = true;
+    user.verificationToken = null;
+    await user.save();
+    return res.json({ success: true, user: { id: user._id, email: user.email, name: user.name, role: user.role } });
+  } catch (err) {
+    return res.status(500).json({ error: 'Email verification failed', details: err.message });
+  }
+});
+
 app.post('/api/auth/forgot-password', async (req, res) => {
   if (!isMongoConnected()) {
     return respondDatabaseUnavailable(res);

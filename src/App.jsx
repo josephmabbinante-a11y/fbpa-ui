@@ -73,11 +73,14 @@ function AppRoutes() {
   const isLogin = location.pathname === '/login' || location.pathname === '/login/';
   const isAuthed = Boolean(getAccessToken());
 
-  if (isLogin) {
+
+  if (isLogin || location.pathname.startsWith('/verify-email')) {
+    const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
     return (
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
         </Routes>
       </Suspense>
     );
