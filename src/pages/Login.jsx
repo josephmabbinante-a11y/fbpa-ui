@@ -99,6 +99,11 @@ export default function Login() {
     setStatus("Registration successful. Sign in now.");
   };
 
+  // ...existing code...
+  // Debug: Show accessToken
+  const { getAccessToken } = require('../utils/authToken');
+  const accessToken = getAccessToken();
+
   return (
     <div className="auth-shell">
       <div className="auth-wrap">
@@ -163,6 +168,12 @@ export default function Login() {
           {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
           {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
           {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
+
+          {/* Debug token display */}
+          <div style={{ marginTop: 24, fontSize: 12, color: 'var(--text-secondary)' }}>
+            <strong>[DEBUG] accessToken:</strong>
+            <pre style={{ wordBreak: 'break-all', background: '#f6f6f6', padding: 8, borderRadius: 4 }}>{accessToken || 'No token found'}</pre>
+          </div>
         </div>
       </div>
     </div>
