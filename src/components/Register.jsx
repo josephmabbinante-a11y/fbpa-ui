@@ -36,7 +36,7 @@ const Register = ({ onClose, onRegistered }) => {
   const cardStyle = {
     width: '100%',
     maxWidth: 420,
-    backgroundColor: t.surface,
+    /* backgroundColor removed to allow CSS module to control background */
     border: `1px solid ${t.border}`,
     borderRadius: 8,
     padding: 24,
@@ -50,8 +50,7 @@ const Register = ({ onClose, onRegistered }) => {
     padding: '10px 12px',
     borderRadius: 6,
     border: `1px solid ${t.border}`,
-    backgroundColor: t.bgAlt,
-    color: t.text,
+    /* backgroundColor and color removed to allow CSS module to control */
     fontSize: 13,
     boxSizing: 'border-box',
     marginBottom: 12,
@@ -61,8 +60,7 @@ const Register = ({ onClose, onRegistered }) => {
     padding: '10px 14px',
     borderRadius: 6,
     border: 'none',
-    backgroundColor: t.accent,
-    color: '#fff',
+    /* backgroundColor and color removed to allow CSS module to control */
     fontSize: 13,
     fontWeight: 600,
     cursor: 'pointer',
@@ -70,7 +68,7 @@ const Register = ({ onClose, onRegistered }) => {
   };
   const labelStyle = {
     fontSize: 12,
-    color: t.textSecondary,
+    /* color removed to allow CSS module to control */
     display: 'block',
     marginBottom: 6,
   };

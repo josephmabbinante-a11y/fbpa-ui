@@ -29,7 +29,6 @@ export default function ReportDetail() {
   const { reportId } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
   const data = mockReports;
 

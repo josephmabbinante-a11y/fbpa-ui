@@ -7,6 +7,8 @@ export default function RegisterForm() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
+  const [organization, setOrganization] = useState('')
+  const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -16,7 +18,7 @@ export default function RegisterForm() {
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
-      const payload = { email, password, name };
+      const payload = { email, password, name, organization, phone };
       console.log('Register payload:', payload);
       const res = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
@@ -29,6 +31,8 @@ export default function RegisterForm() {
         setEmail('')
         setPassword('')
         setName('')
+        setOrganization('')
+        setPhone('')
       } else {
         const data = await res.json()
         setMessage(data.error || 'Registration failed')
@@ -49,6 +53,7 @@ export default function RegisterForm() {
           placeholder="Full Name" 
           value={name}
           onChange={(e) => setName(e.target.value)}
+          className={styles.input}
         />
         <input 
           type="email" 
@@ -56,6 +61,7 @@ export default function RegisterForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          className={styles.input}
         />
         <input 
           type="password" 
@@ -63,6 +69,23 @@ export default function RegisterForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          className={styles.input}
+        />
+        <input 
+          type="text" 
+          placeholder="Organization" 
+          value={organization}
+          onChange={(e) => setOrganization(e.target.value)}
+          required
+          className={styles.input}
+        />
+        <input 
+          type="tel" 
+          placeholder="Phone Number" 
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required
+          className={styles.input}
         />
         <button type="submit" disabled={isLoading}>
           {isLoading ? 'Registering...' : 'Register'}
