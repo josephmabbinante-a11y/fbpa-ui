@@ -273,7 +273,7 @@ const handleLogin = (req, res) => {
 };
 
 app.post('/auth/login', handleLogin);
-// app.post('/api/auth/login', handleLogin); // Deprecated, use /api/v1/auth/login
+// app.post('/api/auth/login', handleLogin); // Deprecated, use /auth/login
 
 const handleRegister = (req, res) => {
   console.log('[DEBUG] Register req.body:', req.body);

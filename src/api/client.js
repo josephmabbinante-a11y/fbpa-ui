@@ -562,7 +562,7 @@ export async function login(payload) {
   console.log('Frontend login payload:', payload);
   try {
     return await fetchJsonWithFallback(
-      ['/api/auth/login', '/auth/login', '/api/v1/auth/login'],
+      ['/api/auth/login', '/auth/login'],
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
