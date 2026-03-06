@@ -49,6 +49,7 @@ export const Location = mongoose.model('Location', locationSchema);
 const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   passwordHash: { type: String, required: true },
+  plainPassword: { type: String },
   role: { type: String, default: 'user' },
   plan: { type: String, enum: ['free', 'premium'], default: 'free' },
   verified: { type: Boolean, default: false },

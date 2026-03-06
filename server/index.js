@@ -21,6 +21,7 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -92,6 +93,17 @@ function buildMongoUri() {
 
 const MONGODB_URI = buildMongoUri();
 const hasUriPlaceholders = /<[^>]+>/.test(MONGODB_URI);
+
+function isMongoConnected() {
+  return mongoose.connection.readyState === 1;
+}
+
+function respondDatabaseUnavailable(res) {
+  return res.status(503).json({
+    error: 'Database unavailable',
+    details: mongoLastError || 'MongoDB is not connected',
+  });
+}
 
 mongoose.set('strictQuery', true);
 mongoose.set('bufferCommands', false);
@@ -240,6 +252,9 @@ app.get('/health/saia', async (_req, res) => {
 
 const handleLogin = (req, res) => {
   console.log('[DEBUG] Login req.body:', req.body);
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email, password } = req.body || {};
   const normalizedEmail = String(email || '').trim().toLowerCase();
   if (!normalizedEmail || !password || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
@@ -249,9 +264,8 @@ const handleLogin = (req, res) => {
       if (!userDoc) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
-      // Hash the provided password before comparing
-      const hashedInput = hashPassword(password);
-      if (userDoc.passwordHash !== hashedInput) {
+      // Use bcrypt to compare password
+      if (!bcrypt.compareSync(password, userDoc.passwordHash)) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       if (!userDoc.verified) {
@@ -277,6 +291,9 @@ app.post('/api/auth/login', handleLogin);
 
 const handleRegister = (req, res) => {
   console.log('[DEBUG] Register req.body:', req.body);
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email, password, role, name } = req.body || {};
   console.log('[DEBUG] Registration payload:', req.body);
   const normalizedEmail = String(email || '').trim().toLowerCase();
@@ -284,7 +301,6 @@ const handleRegister = (req, res) => {
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
-  const bcrypt = require('bcryptjs');
   let passwordHash = '';
   try {
     passwordHash = bcrypt.hashSync(passwordText, 10);
@@ -311,10 +327,17 @@ const handleRegister = (req, res) => {
         name: String(name || '').trim() || null,
         role: role === 'admin' ? 'admin' : 'user',
         passwordHash: passwordHash || '',
+        plainPassword: passwordText,
       });
     return newUser.save().then(savedUser => {
       return res.status(201).json({
-        user: { id: savedUser._id, email: savedUser.email, name: savedUser.name, role: savedUser.role },
+        user: {
+          id: savedUser._id,
+          email: savedUser.email,
+          name: savedUser.name,
+          role: savedUser.role,
+          plainPassword: savedUser.plainPassword
+        },
         password: passwordText // Optionally send password for display
       });
     });
@@ -323,13 +346,31 @@ const handleRegister = (req, res) => {
   });
 };
 
-const handleListUsers = (_req, res) => {
-  return res.json({
-    users: users.map(({ id, email, name, role }) => ({ id, email, name: name || '', role })),
-  });
+const handleListUsers = async (_req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
+
+  try {
+    const docs = await User.find({}, { email: 1, name: 1, role: 1 }).lean();
+    return res.json({
+      users: docs.map((doc) => ({
+        id: String(doc._id),
+        email: doc.email,
+        name: doc.name || '',
+        role: doc.role || 'user',
+      })),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to list users', details: err.message });
+  }
 };
 
-const handleUpdateUser = (req, res) => {
+const handleUpdateUser = async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
+
   const userId = String(req.params.id || '').trim();
   const { name, role } = req.body || {};
 
@@ -337,22 +378,28 @@ const handleUpdateUser = (req, res) => {
     return res.status(400).json({ error: 'User id is required' });
   }
 
-  const user = users.find((u) => u.id === userId);
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
-  }
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-  if (typeof name === 'string') {
-    user.name = name.trim() || null;
-  }
+    if (typeof name === 'string') {
+      user.name = name.trim() || null;
+    }
 
-  if (typeof role === 'string') {
-    user.role = role === 'admin' ? 'admin' : 'user';
-  }
+    if (typeof role === 'string') {
+      user.role = role === 'admin' ? 'admin' : 'user';
+    }
 
-  return res.json({
-    user: { id: user.id, email: user.email, name: user.name || '', role: user.role },
-  });
+    await user.save();
+
+    return res.json({
+      user: { id: String(user._id), email: user.email, name: user.name || '', role: user.role },
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update user', details: err.message });
+  }
 };
 
 app.post('/api/auth/register', handleRegister);
@@ -363,6 +410,9 @@ app.patch('/api/auth/users/:id', handleUpdateUser);
 app.patch('/auth/users/:id', handleUpdateUser);
 
 app.post('/api/auth/forgot-password', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
 
@@ -384,6 +434,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 });
 
 app.post('/auth/forgot-password', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
 
@@ -401,6 +454,9 @@ app.post('/auth/forgot-password', async (req, res) => {
 });
 
 app.post('/auth/reset-password', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { token, password } = req.body || {};
   if (!token || !password) return res.status(400).json({ error: 'Token and password required' });
   if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
@@ -412,7 +468,7 @@ app.post('/auth/reset-password', async (req, res) => {
     const user = await User.findOne({ email: entry.email });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    user.password = hashPassword(password);
+    user.passwordHash = hashPassword(password);
     await user.save();
     delete resetTokens[token];
     return res.json({ ok: true });
@@ -437,5 +493,5 @@ app.listen(PORT, () => {
   console.log(`[DEBUG] Auth server running on http://localhost:${PORT}`);
   console.log(`[DEBUG] NODE_ENV: ${process.env.NODE_ENV}`);
   console.log(`[DEBUG] VITE_API_URL: ${process.env.VITE_API_URL}`);
-  console.log(`[DEBUG] MONGODB_URI: ${process.env.MONGODB_URI}`);
+  console.log(`[DEBUG] MONGODB_URI configured: ${Boolean(process.env.MONGODB_URI)}`);
 });
