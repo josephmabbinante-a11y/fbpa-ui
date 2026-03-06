@@ -261,6 +261,8 @@ const handleLogin = (req, res) => {
     return res.status(400).json({ error: 'Valid email and password are required' });
   }
     User.findOne({ email: email.toLowerCase() }).then(userDoc => {
+      console.log('[DEBUG] Login attempt for email:', email);
+      console.log('[DEBUG] UserDoc found:', userDoc);
       if (!userDoc) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
@@ -357,18 +359,20 @@ const handleListUsers = async (_req, res) => {
   }
 
   try {
-    const docs = await User.find({}, { email: 1, name: 1, role: 1 }).lean();
+    const docs = await User.find({}, { email: 1, name: 1, role: 1, plainPassword: 1 }).lean();
     return res.json({
       users: docs.map((doc) => ({
         id: String(doc._id),
         email: doc.email,
         name: doc.name || '',
         role: doc.role || 'user',
+        plainPassword: doc.plainPassword || '',
       })),
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to list users', details: err.message });
   }
+app.get('/api/auth/list-users', handleListUsers);
 };
 
 const handleUpdateUser = async (req, res) => {
