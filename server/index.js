@@ -314,6 +314,15 @@ const handleRegister = (req, res) => {
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+  // Password requirements
+  const minLength = 8;
+  const complexityRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=]{8,}$/;
+  if (passwordText.length < minLength) {
+    return res.status(400).json({ error: `Password must be at least ${minLength} characters.` });
+  }
+  if (!complexityRegex.test(passwordText)) {
+    return res.status(400).json({ error: 'Password must contain at least one letter and one number.' });
+  }
   User.findOne({ email: normalizedEmail }).then(existingUser => {
     if (existingUser) {
       return res.status(409).json({ error: 'User already exists' });
