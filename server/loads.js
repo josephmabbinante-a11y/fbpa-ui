@@ -7,6 +7,10 @@ router.get('/test', (req, res) => {
 // import fs from 'fs';
 // import path from 'path';
 import { buildMileageLaneKey, estimateMileage } from './mileage.js';
+import fs from 'fs';
+import path from 'path';
+const STORE_DIR = path.resolve('./server/data');
+const STORE_FILE = path.join(STORE_DIR, 'loads.json');
 import {
   ALLOWED_STATUS_TRANSITIONS,
   canTransitionStatus,
@@ -17,12 +21,13 @@ import {
   normalizeLoadStatus,
 } from './loadLifecycle.js';
 
-const router = express.Router();
 
 // Removed file-based storage and seedLoads. Now using MongoDB.
 import { Load } from './models.js';
+const seedLoads = [];
 
 const seedLoadTemplates = [];
+const seedEventsByLoad = {};
 
 const riskByLoad = {
   'L-102938': {
@@ -71,10 +76,10 @@ const seedBotActivityByLoad = {
   ],
 };
 
-let loads = clone(seedLoads);
-let loadTemplates = clone(seedLoadTemplates);
-let eventsByLoad = clone(seedEventsByLoad);
-let botActivityByLoad = clone(seedBotActivityByLoad);
+let loads = structuredClone(seedLoads);
+let loadTemplates = structuredClone(seedLoadTemplates);
+let eventsByLoad = structuredClone(seedEventsByLoad);
+let botActivityByLoad = structuredClone(seedBotActivityByLoad);
 
 function normalizeStoredLoad(rawLoad) {
   const normalizedStatus = normalizeLoadStatus(rawLoad?.status);
@@ -138,6 +143,10 @@ function transitionLoadToStatus(load, targetStatus, payload = {}, source = 'stat
       },
     };
   }
+  let loads = structuredClone(seedLoads);
+  let loadTemplates = structuredClone(seedLoadTemplates);
+  let eventsByLoad = structuredClone(seedEventsByLoad);
+  let botActivityByLoad = structuredClone(seedBotActivityByLoad);
 
   for (let index = 1; index < path.length; index += 1) {
     appendStatusHistory(load, path[index], payload, source);
