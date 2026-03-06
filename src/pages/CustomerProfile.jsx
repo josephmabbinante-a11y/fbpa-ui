@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import ContactCustomerModal from '../components/ContactCustomerModal';
 import { getCustomerAging, getCustomerDetail, sendCustomerMessage } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 function toMoney(value) {
   return `$${Number(value || 0).toLocaleString()}`;
@@ -113,7 +113,8 @@ export default function CustomerProfile() {
       {error && <div style={{ fontSize: 12, color: t.error }}>{error}</div>}
 
       {!loading && detail && (
-        <div>
+        <>
+          <div>
           <button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -135,9 +136,7 @@ export default function CustomerProfile() {
           <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
           <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
           <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
-        </div>
-      )}
-
+          </div>
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
             <div style={{ border: `1px solid ${t.border}`, borderRadius: 12, background: t.surface, padding: 12 }}>
               <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Audit Statistics</div>

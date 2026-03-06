@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { quoteSaiaAuction, getSaiaAuctionCircuit } from '../api/auctionClient';
-import { Zap, RefreshCw } from 'lucide-react';
+import { FaBolt, FaSyncAlt } from 'react-icons/fa';
 
 export default function AuctionPricingWidget() {
   const [circuit, setCircuit] = useState(null);
@@ -22,7 +22,7 @@ export default function AuctionPricingWidget() {
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl mt-8">
       <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <Zap className="w-4 h-4 text-yellow-400" /> Auction Pricing
+        <FaBolt className="w-4 h-4 text-yellow-400" /> Auction Pricing
       </h3>
       <div className="mb-4">
         <strong className="text-indigo-400">Circuit State:</strong>
@@ -44,7 +44,7 @@ export default function AuctionPricingWidget() {
           }}
         />
         <button onClick={handleQuote} disabled={loading} className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-500 flex items-center gap-2">
-          {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+          {loading ? <FaSyncAlt className="w-4 h-4 animate-spin" /> : <FaBolt className="w-4 h-4" />}
           {loading ? 'Quoting...' : 'Quote Auction'}
         </button>
       </div>
