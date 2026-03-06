@@ -44,7 +44,7 @@ export default function TrendLineChart({ data, dataKey, title, color = '#8884d8'
         {title}
       </h3>
       <div style={{ height: 280, width: '100%' }}>
-        <ResponsiveContainer width="100%" height="100%" debounce={60}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
           <LineChart data={normalizedData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#3a3a3a" />
             <XAxis dataKey="__x" fontSize={12} stroke="#9a9a9a" />

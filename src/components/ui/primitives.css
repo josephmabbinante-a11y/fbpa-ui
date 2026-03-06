@@ -9,6 +9,10 @@
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--header-tint), transparent 72%);
+  box-shadow: inset 0 -1px 0 var(--banner-tint);
 }
 
 .ui-title {
@@ -21,14 +25,14 @@
 
 .ui-subtitle {
   font-size: 13px;
-  color: var(--text-secondary);
+  color: var(--color-muted-text);
 }
 
 .ui-alert {
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--warning);
-  background: rgba(245, 158, 11, 0.12);
+  background: rgba(204, 204, 204, 0.12);
   color: var(--warning);
   font-size: 13px;
 }
@@ -55,7 +59,7 @@
 .ui-card {
   border-radius: 14px;
   border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.008));
+  background: var(--surface);
   padding: 14px;
 }
 
@@ -79,13 +83,14 @@
 
 .ui-button {
   border: 1px solid rgba(var(--glow), 0.55);
-  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  background: var(--accent);
   color: #fff;
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 6px calc(8px + 10px * var(--effects-strength)) rgba(var(--glow), calc(0.1 + 0.15 * var(--effects-strength)));
 }
 
 .ui-button:disabled {
@@ -123,7 +128,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-secondary);
-  background: var(--surface);
+  background: linear-gradient(90deg, var(--table-header-tint), var(--surface));
   border-bottom: 1px solid var(--border);
 }
 

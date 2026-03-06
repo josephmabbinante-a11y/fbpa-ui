@@ -8,7 +8,7 @@ import logo from '../assets/opscale-logo.svg';
  */
 export default function AuditDrillDown({ auditMetrics }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [expandedSection, setExpandedSection] = useState(null);
 
   if (!auditMetrics) return null;

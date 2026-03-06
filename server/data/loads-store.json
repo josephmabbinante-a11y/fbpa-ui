@@ -1,0 +1,1082 @@
+{
+  "loads": [
+    {
+      "id": "L-788665",
+      "status": "DRAFT",
+      "customer": {
+        "id": null,
+        "name": "Not set"
+      },
+      "carrier": {
+        "id": null,
+        "name": "Pending",
+        "assigned": false
+      },
+      "origin": {
+        "city": "Not set",
+        "state": ""
+      },
+      "destination": {
+        "city": "Not set",
+        "state": ""
+      },
+      "equipment": "van",
+      "miles": 25,
+      "revenue": 0,
+      "carrierCost": 0,
+      "margin": 0,
+      "marginPct": 0,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T05:52:01.286Z",
+      "deliveryAt": "2026-03-04T07:52:01.286Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-03T03:52:01.287Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "statusHistory": [
+        {
+          "id": "ST-1772509921287-982",
+          "fromStatus": "DRAFT",
+          "toStatus": "DRAFT",
+          "status": "DRAFT",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T03:52:01.287Z"
+        }
+      ],
+      "mileage": {
+        "miles": 25,
+        "method": "estimated",
+        "confidence": 0.4,
+        "laneKey": "not set|-not set|-van",
+        "resolvedAt": "2026-03-03T03:52:01.289Z"
+      }
+    },
+    {
+      "id": "L-728222",
+      "status": "DRAFT",
+      "customer": {
+        "id": null,
+        "name": "Not set"
+      },
+      "carrier": {
+        "id": null,
+        "name": "Pending",
+        "assigned": false
+      },
+      "origin": {
+        "city": "Not set",
+        "state": ""
+      },
+      "destination": {
+        "city": "Not set",
+        "state": ""
+      },
+      "equipment": "van",
+      "miles": 25,
+      "revenue": 0,
+      "carrierCost": 0,
+      "margin": 0,
+      "marginPct": 0,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T02:47:14.114Z",
+      "deliveryAt": "2026-03-04T04:47:14.114Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-03T00:47:14.114Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 25,
+        "method": "estimated",
+        "confidence": 0.4,
+        "laneKey": "not set|-not set|-van",
+        "resolvedAt": "2026-03-03T00:47:14.115Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-853",
+          "fromStatus": "DRAFT",
+          "toStatus": "DRAFT",
+          "status": "DRAFT",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-492002",
+      "status": "DRAFT",
+      "customer": {
+        "id": null,
+        "name": "Not set"
+      },
+      "carrier": {
+        "id": null,
+        "name": "Pending",
+        "assigned": false
+      },
+      "origin": {
+        "city": "Not set",
+        "state": ""
+      },
+      "destination": {
+        "city": "Not set",
+        "state": ""
+      },
+      "equipment": "van",
+      "miles": 25,
+      "revenue": 0,
+      "carrierCost": 0,
+      "margin": 0,
+      "marginPct": 0,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T02:18:10.760Z",
+      "deliveryAt": "2026-03-04T04:18:10.760Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-03T00:18:10.760Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 25,
+        "method": "estimated",
+        "confidence": 0.4,
+        "laneKey": "not set|-not set|-van",
+        "resolvedAt": "2026-03-03T00:18:10.760Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-625",
+          "fromStatus": "DRAFT",
+          "toStatus": "DRAFT",
+          "status": "DRAFT",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-375136",
+      "status": "DRAFT",
+      "customer": {
+        "id": null,
+        "name": "Not set"
+      },
+      "carrier": {
+        "id": null,
+        "name": "Pending",
+        "assigned": false
+      },
+      "origin": {
+        "city": "Not set",
+        "state": ""
+      },
+      "destination": {
+        "city": "Not set",
+        "state": ""
+      },
+      "equipment": "van",
+      "miles": 25,
+      "revenue": 0,
+      "carrierCost": 0,
+      "margin": 0,
+      "marginPct": 0,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T02:11:08.070Z",
+      "deliveryAt": "2026-03-04T04:11:08.070Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-03T00:11:08.070Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 25,
+        "method": "estimated",
+        "confidence": 0.4,
+        "laneKey": "not set|-not set|-van",
+        "resolvedAt": "2026-03-03T00:11:08.070Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-764",
+          "fromStatus": "DRAFT",
+          "toStatus": "DRAFT",
+          "status": "DRAFT",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-147593",
+      "status": "DRAFT",
+      "customer": {
+        "id": null,
+        "name": "Not set"
+      },
+      "carrier": {
+        "id": null,
+        "name": "Pending",
+        "assigned": false
+      },
+      "origin": {
+        "city": "Not set",
+        "state": ""
+      },
+      "destination": {
+        "city": "Not set",
+        "state": ""
+      },
+      "equipment": "van",
+      "miles": 25,
+      "revenue": 0,
+      "carrierCost": 0,
+      "margin": 0,
+      "marginPct": 0,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T02:10:17.762Z",
+      "deliveryAt": "2026-03-04T04:10:17.762Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-03T00:10:17.763Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 25,
+        "method": "estimated",
+        "confidence": 0.4,
+        "laneKey": "not set|-not set|-van",
+        "resolvedAt": "2026-03-03T00:10:17.764Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-465",
+          "fromStatus": "DRAFT",
+          "toStatus": "DRAFT",
+          "status": "DRAFT",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-550796",
+      "status": "DRAFT",
+      "customer": {
+        "id": null,
+        "name": "Not set"
+      },
+      "carrier": {
+        "id": null,
+        "name": "Pending",
+        "assigned": false
+      },
+      "origin": {
+        "city": "Not set",
+        "state": ""
+      },
+      "destination": {
+        "city": "Not set",
+        "state": ""
+      },
+      "equipment": "van",
+      "miles": 25,
+      "revenue": 0,
+      "carrierCost": 0,
+      "margin": 0,
+      "marginPct": 0,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T01:19:24.649Z",
+      "deliveryAt": "2026-03-04T03:19:24.649Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T23:19:24.652Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 25,
+        "method": "estimated",
+        "confidence": 0.4,
+        "laneKey": "not set|-not set|-van",
+        "resolvedAt": "2026-03-02T23:19:24.654Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-421",
+          "fromStatus": "DRAFT",
+          "toStatus": "DRAFT",
+          "status": "DRAFT",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-304119",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 2"
+      },
+      "carrier": {
+        "id": "CR-T102",
+        "name": "Transit Carrier 2",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Dallas",
+        "state": "TX"
+      },
+      "destination": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "equipment": "van",
+      "miles": 900,
+      "revenue": 4100,
+      "carrierCost": 3040,
+      "margin": 1060,
+      "marginPct": 25.9,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T02:03:46.608Z",
+      "deliveryAt": "2026-03-02T22:03:46.616Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T22:03:46.617Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 900,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "dallas|tx-atlanta|ga-van",
+        "resolvedAt": "2026-03-02T22:03:46.610Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-286",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-627445",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 1"
+      },
+      "carrier": {
+        "id": "CR-T101",
+        "name": "Transit Carrier 1",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Phoenix",
+        "state": "AZ"
+      },
+      "destination": {
+        "city": "Salt Lake City",
+        "state": "UT"
+      },
+      "equipment": "reefer",
+      "miles": 775,
+      "revenue": 3650,
+      "carrierCost": 2720,
+      "margin": 930,
+      "marginPct": 25.5,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T01:03:46.591Z",
+      "deliveryAt": "2026-03-02T22:03:46.604Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T22:03:46.605Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 775,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "phoenix|az-salt lake city|ut-reefer",
+        "resolvedAt": "2026-03-02T22:03:46.597Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-431",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-497098",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 5"
+      },
+      "carrier": {
+        "id": "CR-T105",
+        "name": "Transit Carrier 5",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Phoenix",
+        "state": "AZ"
+      },
+      "destination": {
+        "city": "Salt Lake City",
+        "state": "UT"
+      },
+      "equipment": "reefer",
+      "miles": 1275,
+      "revenue": 5450,
+      "carrierCost": 4000,
+      "margin": 1450,
+      "marginPct": 26.6,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T05:02:00.000Z",
+      "deliveryAt": "2026-03-02T22:02:00.000Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T23:54:48.178Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 1275,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "phoenix|az-salt lake city|ut-reefer",
+        "resolvedAt": "2026-03-02T22:02:44.705Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-757",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-901856",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 4"
+      },
+      "carrier": {
+        "id": "CR-T104",
+        "name": "Transit Carrier 4",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Dallas",
+        "state": "TX"
+      },
+      "destination": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "equipment": "van",
+      "miles": 1150,
+      "revenue": 5000,
+      "carrierCost": 3680,
+      "margin": 1320,
+      "marginPct": 26.4,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T04:02:44.696Z",
+      "deliveryAt": "2026-03-02T22:02:44.700Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T22:02:44.701Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 1150,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "dallas|tx-atlanta|ga-van",
+        "resolvedAt": "2026-03-02T22:02:44.696Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-699",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-201831",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 3"
+      },
+      "carrier": {
+        "id": "CR-T103",
+        "name": "Transit Carrier 3",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Phoenix",
+        "state": "AZ"
+      },
+      "destination": {
+        "city": "Salt Lake City",
+        "state": "UT"
+      },
+      "equipment": "reefer",
+      "miles": 1025,
+      "revenue": 4550,
+      "carrierCost": 3360,
+      "margin": 1190,
+      "marginPct": 26.2,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T03:02:00.000Z",
+      "deliveryAt": "2026-03-02T22:02:00.000Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-03T03:50:05.922Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 1025,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "phoenix|az-salt lake city|ut-reefer",
+        "resolvedAt": "2026-03-02T22:02:44.688Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-639",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-373342",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 2"
+      },
+      "carrier": {
+        "id": "CR-T102",
+        "name": "Transit Carrier 2",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Dallas",
+        "state": "TX"
+      },
+      "destination": {
+        "city": "Atlanta",
+        "state": "GA"
+      },
+      "equipment": "van",
+      "miles": 900,
+      "revenue": 4100,
+      "carrierCost": 3040,
+      "margin": 1060,
+      "marginPct": 25.9,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T02:02:44.676Z",
+      "deliveryAt": "2026-03-02T22:02:44.682Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T22:02:44.683Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 900,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "dallas|tx-atlanta|ga-van",
+        "resolvedAt": "2026-03-02T22:02:44.677Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-674",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    },
+    {
+      "id": "L-865507",
+      "status": "DELIVERED",
+      "customer": {
+        "id": null,
+        "name": "Transit Test Customer 1"
+      },
+      "carrier": {
+        "id": "CR-T101",
+        "name": "Transit Carrier 1",
+        "assigned": true
+      },
+      "origin": {
+        "city": "Phoenix",
+        "state": "AZ"
+      },
+      "destination": {
+        "city": "Salt Lake City",
+        "state": "UT"
+      },
+      "equipment": "reefer",
+      "miles": 775,
+      "revenue": 3650,
+      "carrierCost": 2720,
+      "margin": 930,
+      "marginPct": 25.5,
+      "targetMarginPct": 12,
+      "pickupAt": "2026-03-03T01:02:44.658Z",
+      "deliveryAt": "2026-03-02T22:02:44.671Z",
+      "dispatcher": {
+        "id": "U-9",
+        "name": "Alex Smith"
+      },
+      "updatedAt": "2026-03-02T22:02:44.673Z",
+      "templateId": null,
+      "templateName": "Manual Load",
+      "mileage": {
+        "miles": 775,
+        "method": "route-based",
+        "confidence": 1,
+        "laneKey": "phoenix|az-salt lake city|ut-reefer",
+        "resolvedAt": "2026-03-02T22:02:44.664Z"
+      },
+      "statusHistory": [
+        {
+          "id": "ST-1772503352954-32",
+          "fromStatus": "DELIVERED",
+          "toStatus": "DELIVERED",
+          "status": "DELIVERED",
+          "userId": "system",
+          "reason": "Load initialized",
+          "source": "load-bootstrap",
+          "createdAt": "2026-03-03T02:02:32.954Z"
+        }
+      ]
+    }
+  ],
+  "loadTemplates": [],
+  "eventsByLoad": {
+    "L-865507": [
+      {
+        "id": "EV-1772488964673",
+        "loadId": "L-865507",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.673Z"
+      },
+      {
+        "id": "EV-1772488964669",
+        "loadId": "L-865507",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 1",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.669Z"
+      },
+      {
+        "id": "EV-1772488964664",
+        "loadId": "L-865507",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.664Z"
+      }
+    ],
+    "L-373342": [
+      {
+        "id": "EV-1772488964683",
+        "loadId": "L-373342",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.683Z"
+      },
+      {
+        "id": "EV-1772488964680",
+        "loadId": "L-373342",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 2",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.680Z"
+      },
+      {
+        "id": "EV-1772488964677",
+        "loadId": "L-373342",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.677Z"
+      }
+    ],
+    "L-201831": [
+      {
+        "id": "EV-1772509805922",
+        "loadId": "L-201831",
+        "type": "load_updated",
+        "message": "Load fields updated from command center",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-03T03:50:05.922Z"
+      },
+      {
+        "id": "EV-1772488964693",
+        "loadId": "L-201831",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.693Z"
+      },
+      {
+        "id": "EV-1772488964691",
+        "loadId": "L-201831",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 3",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.691Z"
+      },
+      {
+        "id": "EV-1772488964688",
+        "loadId": "L-201831",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.688Z"
+      }
+    ],
+    "L-901856": [
+      {
+        "id": "EV-1772488964701",
+        "loadId": "L-901856",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.701Z"
+      },
+      {
+        "id": "EV-1772488964698",
+        "loadId": "L-901856",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 4",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.698Z"
+      },
+      {
+        "id": "EV-1772488964696",
+        "loadId": "L-901856",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.696Z"
+      }
+    ],
+    "L-497098": [
+      {
+        "id": "EV-1772495688178",
+        "loadId": "L-497098",
+        "type": "load_updated",
+        "message": "Load fields updated from command center",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T23:54:48.178Z"
+      },
+      {
+        "id": "EV-1772488964709",
+        "loadId": "L-497098",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.709Z"
+      },
+      {
+        "id": "EV-1772488964707",
+        "loadId": "L-497098",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 5",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.707Z"
+      },
+      {
+        "id": "EV-1772488964705",
+        "loadId": "L-497098",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:02:44.705Z"
+      }
+    ],
+    "L-627445": [
+      {
+        "id": "EV-1772489026605",
+        "loadId": "L-627445",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:03:46.605Z"
+      },
+      {
+        "id": "EV-1772489026602",
+        "loadId": "L-627445",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 1",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:03:46.602Z"
+      },
+      {
+        "id": "EV-1772489026597",
+        "loadId": "L-627445",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:03:46.597Z"
+      }
+    ],
+    "L-304119": [
+      {
+        "id": "EV-1772489026617",
+        "loadId": "L-304119",
+        "type": "load_delivered",
+        "message": "Load marked as delivered",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:03:46.617Z"
+      },
+      {
+        "id": "EV-1772489026614",
+        "loadId": "L-304119",
+        "type": "load_dispatched",
+        "message": "Load dispatched to carrier Transit Carrier 2",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:03:46.614Z"
+      },
+      {
+        "id": "EV-1772489026610",
+        "loadId": "L-304119",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T22:03:46.610Z"
+      }
+    ],
+    "L-550796": [
+      {
+        "id": "EV-1772493564654",
+        "loadId": "L-550796",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-02T23:19:24.654Z"
+      }
+    ],
+    "L-147593": [
+      {
+        "id": "EV-1772496617765",
+        "loadId": "L-147593",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-03T00:10:17.765Z"
+      }
+    ],
+    "L-375136": [
+      {
+        "id": "EV-1772496668070",
+        "loadId": "L-375136",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-03T00:11:08.070Z"
+      }
+    ],
+    "L-492002": [
+      {
+        "id": "EV-1772497090760",
+        "loadId": "L-492002",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-03T00:18:10.760Z"
+      }
+    ],
+    "L-728222": [
+      {
+        "id": "EV-1772498834115",
+        "loadId": "L-728222",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-03T00:47:14.115Z"
+      }
+    ],
+    "L-788665": [
+      {
+        "id": "EV-1772509921289",
+        "loadId": "L-788665",
+        "type": "load_created",
+        "message": "Manual load created",
+        "actor": {
+          "id": "U-system",
+          "name": "System"
+        },
+        "createdAt": "2026-03-03T03:52:01.289Z"
+      }
+    ]
+  },
+  "botActivityByLoad": {},
+  "updatedAt": "2026-03-03T03:52:01.289Z"
+}

@@ -31,7 +31,7 @@ function ShippingStatusPage({ orders, onBack }) {
   return (
     <div style={{ padding: 16 }}>
       <h3>Order Shipping Status Tracking</h3>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: '1rem' }}>
         <thead>
           <tr>
             <th>Order ID</th>
@@ -58,7 +58,7 @@ function WarehouseTrackingPage({ orders, onBack }) {
   return (
     <div style={{ padding: 16 }}>
       <h3>In-Warehouse Shipment Readiness</h3>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: '1rem' }}>
         <thead>
           <tr>
             <th>Order ID</th>
@@ -104,7 +104,7 @@ export default function OrderManagement() {
           In-Warehouse Tracking
         </button>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 24, fontSize: '1rem' }}>
         <thead>
           <tr>
             <th>Order ID</th>

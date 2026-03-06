@@ -12,6 +12,7 @@ export default function ExceptionsUploads() {
   const t = themes[theme];
   const chartData = demoMode && Array.isArray(mockExceptions?.trend) ? mockExceptions.trend : [];
   const historyItems = demoMode && Array.isArray(uploadHistory) ? uploadHistory : [];
+  const t = theme;
 
   return (
     <div className="page-shell section" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>

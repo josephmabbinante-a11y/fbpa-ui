@@ -53,3 +53,35 @@ curl -X POST http://localhost:4000/auth/forgot-password \
 ```
 
 ---
+
+## Saia Rate Quote API Integration
+
+
+## Saia Rate Quote API Integration (Auction Board)
+
+**Auction Board endpoints:**
+- `POST /auction/saia/quote` — normalized Saia quote for auction board
+- `GET /auction/saia/circuit` — Saia circuit breaker state for auction board
+
+**Legacy endpoints (for reference):**
+- `POST /api/rate-logic/saia/quote` for normalized Saia quote + pricing inputs
+- `GET /api/rate-logic/health/saia` and `GET /health/saia` for carrier health monitoring
+- `GET /api/rate-logic/saia/logs` for audit log retrieval
+
+**Integration location:**
+- All Saia quoting logic for the auction board is now under `server/multitenant/services/carriers/saia/` and wired via `server/multitenant/src/modules/auction/`.
+
+
+Required environment variables (never hardcode):
+- `SAIA_RATE_QUOTE_URL`
+- `SAIA_SUBSCRIPTION_KEY`
+- `SAIA_ACCOUNT_NUMBER`
+- `SAIA_API_USERNAME` (if required by your Saia tenant)
+- `SAIA_API_PASSWORD` (if required by your Saia tenant)
+- `SAIA_TIMEOUT_MS` (recommended 5000–8000, default 7000)
+
+Security guidance:
+- Store credentials in encrypted environment variables.
+- Use a secrets manager in production (Azure Key Vault, AWS Secrets Manager, etc.).
+- Do not expose subscription keys, account credentials, or raw carrier responses to frontend users.
+

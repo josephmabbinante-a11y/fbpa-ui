@@ -6,7 +6,7 @@ const FALLBACK_PALETTE = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0099cc']
 
 const ExceptionBreakdownChart = memo(function ExceptionBreakdownChart({ data, onClick }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [isHovered, setIsHovered] = useState(false);
 
   const normalizedData = useMemo(
@@ -34,7 +34,7 @@ const ExceptionBreakdownChart = memo(function ExceptionBreakdownChart({ data, on
         height: 360,
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: isHovered ? t.bgAlt : t.surface,
+        background: `radial-gradient(120px 90px at 15% 12%, rgba(var(--glow), 0.18), transparent 70%), radial-gradient(140px 100px at 84% 80%, rgba(var(--glow), 0.12), transparent 72%), ${isHovered ? t.bgAlt : t.surface}`,
         border: `1px solid ${isHovered ? '#ef4444' : t.border}`,
         borderRadius: 4,
         padding: 16,
@@ -48,7 +48,7 @@ const ExceptionBreakdownChart = memo(function ExceptionBreakdownChart({ data, on
 
       <div style={{ flex: 1 }}>
         {normalizedData.length ? (
-          <ResponsiveContainer width="100%" height="100%" debounce={60}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
             <PieChart>
               <Pie
                 data={normalizedData}

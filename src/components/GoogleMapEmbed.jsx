@@ -3,7 +3,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function GoogleMapEmbed({ origin, destination, height = 200 }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   const src = useMemo(() => {

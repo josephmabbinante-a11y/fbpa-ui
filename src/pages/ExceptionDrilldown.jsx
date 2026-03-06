@@ -27,6 +27,7 @@ export default function ExceptionDrilldown() {
   const t = themes[theme];
   const { data: rawExceptions } = useApi(() => getExceptions(), demoMode ? mockExceptions : null, [demoMode]);
   const { data: rawInvoices } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
+  const t = theme;
 
   // Find exception and related invoice
   const exceptions = extractExceptions(rawExceptions);

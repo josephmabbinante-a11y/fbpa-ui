@@ -4,7 +4,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 const SavingsByCarrierChart = memo(function SavingsByCarrierChart({ data, onClick }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [isHovered, setIsHovered] = useState(false);
 
   const chartData = useMemo(
@@ -32,7 +32,7 @@ const SavingsByCarrierChart = memo(function SavingsByCarrierChart({ data, onClic
       style={{
         width: '100%',
         height: 360,
-        backgroundColor: isHovered ? t.bgAlt : t.surface,
+        background: `radial-gradient(130px 90px at 18% 14%, rgba(var(--glow), 0.16), transparent 72%), radial-gradient(120px 90px at 82% 78%, rgba(var(--glow), 0.12), transparent 72%), ${isHovered ? t.bgAlt : t.surface}`,
         border: `1px solid ${isHovered ? t.accent : t.border}`,
         borderRadius: 4,
         padding: 16,
@@ -50,6 +50,12 @@ const SavingsByCarrierChart = memo(function SavingsByCarrierChart({ data, onClic
         {chartData.length ? (
           <ResponsiveContainer width="100%" height="100%" debounce={60}>
             <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100 }}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 100 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
               <XAxis type="number" tick={{ fill: t.textSecondary, fontSize: 11 }} tickFormatter={(value) => `$${(Number(value) / 1000).toFixed(1)}k`} />
               <YAxis dataKey="carrier" type="category" tick={{ fill: t.textSecondary, fontSize: 11 }} width={95} />

@@ -3,6 +3,11 @@ import { uploadInvoiceFile } from '../api/client';
 import uploadHistory from '../mock/uploads';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
+import React, { useState } from 'react';
+import { uploadInvoiceFile } from '../api/client';
+import uploadHistory from '../mock/uploads';
+import { useTheme } from '../contexts/ThemeContext';
+import DocumentManagementPanel from './DocumentManagementPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
 
@@ -10,6 +15,7 @@ export default function Uploads() {
   const { theme } = useTheme();
   const { demoMode } = useDemo();
   const t = themes[theme];
+  const t = theme || {};
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
   const [uploadResult, setUploadResult] = useState(null);
@@ -103,6 +109,11 @@ export default function Uploads() {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 4,
+    minHeight: -52,
+    padding: '0 4px',
+    borderBottom: `1px solid ${t.border}`,
+    background: t.bgAlt,
   };
 
   const titleStyle = {
@@ -131,7 +142,7 @@ export default function Uploads() {
     display: 'inline-block',
     padding: '8px 12px',
     backgroundColor: t.accent,
-    color: '#fff',
+    color: 'var(--surface-elevated)',
     textDecoration: 'none',
     borderRadius: 4,
     fontSize: '13px',
@@ -145,7 +156,7 @@ export default function Uploads() {
     backgroundColor: t.surface,
     border: `1px solid ${t.border}`,
     borderRadius: 4,
-    color: t.text,
+    color: t.textPrimary,
     fontSize: '13px',
     marginBottom: 12,
   };
@@ -153,7 +164,7 @@ export default function Uploads() {
   const buttonStyle = {
     padding: '8px 16px',
     backgroundColor: t.accent,
-    color: '#fff',
+    color: 'var(--surface-elevated)',
     border: 'none',
     borderRadius: 4,
     fontSize: '13px',
@@ -166,6 +177,8 @@ export default function Uploads() {
     width: '100%',
     borderCollapse: 'collapse',
     fontSize: '13px',
+    backgroundColor: t.surface,
+    color: t.textPrimary,
   };
 
   const thStyle = {
@@ -183,11 +196,19 @@ export default function Uploads() {
   const tdStyle = {
     padding: '8px 12px',
     borderBottom: `1px solid ${t.borderLight}`,
-    color: t.text,
+    backgroundColor: t.surface,
+    color: t.textPrimary,
   };
 
   return (
     <div style={containerStyle}>
+      {/* Document Management & Search Panel */}
+      <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.bgAlt, marginBottom: 24, padding: 16 }}>
+        <DocumentManagementPanel t={t} />
+      </div>
+
+
+
       <div style={headerStyle}>
         <h1 style={titleStyle}>Uploads</h1>
         {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Uploading...</span>}
@@ -275,7 +296,7 @@ export default function Uploads() {
               onChange={handleRcFileChange}
               style={{ fontSize: 14, color: t.text, marginBottom: 0, flex: 1 }}
             />
-            <button type="submit" disabled={rcLoading} style={{ padding: '10px 0', background: t.accent, color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer', minWidth: 100 }}>
+            <button type="submit" disabled={rcLoading} style={{ padding: '10px 0', background: t.accent, color: 'var(--surface-elevated)', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer', minWidth: 100 }}>
               {rcLoading ? 'Uploading...' : 'Upload'}
             </button>
           </form>
@@ -295,7 +316,7 @@ export default function Uploads() {
 
       {/* Upload History */}
       <CollapsibleSection title={`Upload History (${history.length})`} defaultOpen={true} id="upload-history">
-        <table style={tableStyle}>
+        <table style={{...tableStyle, fontSize: '1rem'}}>
           <thead>
             <tr>
               <th style={thStyle}>File Name</th>

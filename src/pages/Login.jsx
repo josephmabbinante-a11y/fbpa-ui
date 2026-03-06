@@ -110,10 +110,26 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
             <InputField label="Email">
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="ui-input" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                className="ui-input"
+                autoComplete="email"
+                required
+              />
             </InputField>
             <InputField label="Password">
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" className="ui-input" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="********"
+                className="ui-input"
+                autoComplete="current-password"
+                required
+              />
             </InputField>
             <PrimaryButton type="submit" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}

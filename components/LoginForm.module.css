@@ -1,16 +1,40 @@
+:root {
+  --container-bg: linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%);
+  --container-border: #bdbdbd;
+  --container-shadow: rgba(189, 189, 189, 0.22);
+  --container-text: #444;
+  --input-border: #bdbdbd;
+  --input-bg: #f5f5f5;
+  --input-text: #444;
+  --input-shadow: rgba(189, 189, 189, 0.07);
+  --button-bg: #bdbdbd;
+  --button-text: #444;
+  --button-hover-bg: #9e9e9e;
+  --message-text: #444;
+}
 .container {
-  background: #23272F;
-  border-radius: 16px;
-  padding: 2em;
-  max-width: 400px;
+  background: var(--container-bg) !important;
+  border-radius: 12px;
+  padding: 2.5em 2em;
+  max-width: 420px;
   width: 100%;
-  text-align: center;
-  color: white;
+  text-align: left;
+  color: var(--container-text);
+  box-shadow: 0 4px 24px var(--container-shadow);
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+  font-size: 1.15em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
 }
 
 .container h2 {
-  margin-bottom: 1.5em;
+  margin-bottom: 1.2em;
   font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--container-text);
+  display: block;
 }
 
 .container form {
@@ -20,28 +44,35 @@
 }
 
 .container input {
-  padding: 0.7em;
+  padding: 0.75em 1em;
   border-radius: 8px;
-  border: 1px solid #444;
-  background: #18191A;
-  color: white;
-  font-size: 1em;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  font-size: 1.05em;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+  font-weight: 400;
+  box-shadow: 0 1px 4px var(--input-shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 0.8em;
 }
 
 .container button {
-  padding: 0.9em;
-  background: #1877F2;
-  color: white;
+  padding: 0.9em 1em;
+  background: var(--button-bg);
+  color: var(--button-text);
   border: none;
   border-radius: 8px;
-  font-size: 1em;
+  font-size: 1.05em;
+  font-family: 'Inter', 'Segoe UI', 'Roboto', 'Arial', sans-serif;
   font-weight: 600;
   cursor: pointer;
+  margin-top: 1em;
   transition: background 0.2s;
 }
 
 .container button:hover:not(:disabled) {
-  background: #145db2;
+  background: var(--button-hover-bg);
 }
 
 .container button:disabled {
@@ -51,5 +82,5 @@
 
 .message {
   margin-top: 1em;
-  color: #ff4d4f;
+  color: var(--message-text);
 }

@@ -27,12 +27,32 @@ export default function ShipperOverviewAssets({
   onOpenInvoices,
   onOpenExceptions,
   onOpenReports,
+  onOpenActivity,
 }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const prefs = { ...DEFAULT_VISIBILITY, ...(visibility || {}) };
 
   if (!data) return null;
+
+  const handleActivityOpen = (activity) => {
+    if (typeof onOpenActivity === 'function') {
+      onOpenActivity(activity);
+      return;
+    }
+    const type = String(activity?.type || '').toLowerCase();
+    if (type === 'upload' && typeof onOpenInvoices === 'function') {
+      onOpenInvoices();
+      return;
+    }
+    if (type === 'exception' && typeof onOpenExceptions === 'function') {
+      onOpenExceptions();
+      return;
+    }
+    if (typeof onOpenInvoices === 'function') {
+      onOpenInvoices();
+    }
+  };
 
   return (
     <>
@@ -106,7 +126,12 @@ export default function ShipperOverviewAssets({
             </thead>
             <tbody>
               {(data.recentActivity || []).slice(0, 5).map((activity) => (
-                <tr key={activity.id}>
+                <tr
+                  key={activity.id}
+                  onClick={() => handleActivityOpen(activity)}
+                  style={{ cursor: 'pointer' }}
+                  title="Open related view"
+                >
                   <td style={{ padding: 8 }}>{activity.type}</td>
                   <td style={{ padding: 8 }}>{activity.invoiceNumber || activity.fileName}</td>
                   <td style={{ padding: 8 }}>{formatActivityAmount(activity)}</td>

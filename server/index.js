@@ -1,3 +1,18 @@
+// In-memory reset tokens (for demo; use DB or cache for production)
+// In-memory reset tokens (for demo; use DB or cache for production)
+const passwordResetTokens = {};
+
+// DEBUG: Startup and route mounting diagnostics
+console.log('[DEBUG] Running file: server/index.js');
+process.on('uncaughtException', (err) => {
+  console.error('[DEBUG] Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[DEBUG] Unhandled Rejection:', reason);
+});
+
+
+
 /* global process */
 import crypto from 'crypto';
 import express from 'express';
@@ -6,8 +21,13 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import path from 'path';
+import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
+import path from 'path';
+
+// Log all route mounts and keep a list (after app is defined)
+let mountedRoutes = [];
+let originalUse;
 import { User } from './models.js';
 
 import customersRouter from './customers.js';
@@ -21,10 +41,17 @@ import reportsRouter from './reports.js';
 import uploadsRouter from './uploads.js';
 import invoiceImagesRouter from './invoiceImages.js';
 import ediRouter from './edi.js';
+import loadsRouter from './loads.js';
+import locationsRouter from './locations.js';
+import documentsRouter from './documents.js';
+import emailTemplatesRouter from './emailTemplates.js';
+import loadLifecycleRoutes from './loadLifecycleRoutes.js';
 
 import vehiclesRouter from './vehicles.js';
 import driversRouter from './drivers.js';
 import tripsRouter from './trips.js';
+import trackerRouter from './tracker.js';
+import { getSaiaHealthStatus } from './services/carriers/saia/saiaRateService.js';
 
 dotenv.config();
 
@@ -66,6 +93,17 @@ function buildMongoUri() {
 
 const MONGODB_URI = buildMongoUri();
 const hasUriPlaceholders = /<[^>]+>/.test(MONGODB_URI);
+
+function isMongoConnected() {
+  return mongoose.connection.readyState === 1;
+}
+
+function respondDatabaseUnavailable(res) {
+  return res.status(503).json({
+    error: 'Database unavailable',
+    details: mongoLastError || 'MongoDB is not connected',
+  });
+}
 
 mongoose.set('strictQuery', true);
 mongoose.set('bufferCommands', false);
@@ -120,7 +158,14 @@ const defaultAllowedOrigins = [
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-e3wffttsx-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-ui-git-fbpa-josephmabbinante-a11ys-projects.vercel.app',
-  /^https:\/\/.*\.vercel\.app$/,
+  'https://fbpa-dgt9p9xe9-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-pqhb5nod7-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-cxhcpym98-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-96un8xi2g-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-a744vgv53-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-3o2xyfwkj-josephmabbinante-a11ys-projects.vercel.app',
+  'https://fbpa-jkqd3brbc-josephmabbinante-a11ys-projects.vercel.app',
+  /^https:\/\/.*\.vercel\.app$/
 ];
 
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
@@ -158,7 +203,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
+app.use('/api', loadLifecycleRoutes);
 
 app.use('/api/customers', customersRouter);
 app.use('/api/carriers', carriersRouter);
@@ -171,78 +216,166 @@ app.use('/api/reports', reportsRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/invoice-images', invoiceImagesRouter);
 app.use('/api/edi', ediRouter);
+app.use('/api/loads', loadsRouter);
+app.use('/api/locations', locationsRouter);
+// Mount document management endpoints before the main documentsRouter to avoid shadowing
+app.get('/api/documents', documentsRouter);
+app.delete('/api/documents/:id', documentsRouter);
+app.get('/api/documents/:id/download', documentsRouter);
+app.use('/api/documents', documentsRouter);
+app.use('/api/email-templates', emailTemplatesRouter);
 
 // Fleet data routers
 app.use('/api/vehicles', vehiclesRouter);
 app.use('/api/drivers', driversRouter);
 app.use('/api/trips', tripsRouter);
+app.use('/api/tracker', trackerRouter);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+  res.json({ status: 'ok', dbStatus });
 });
 
-const users = [
-  { id: 'u-1', email: 'admin@opscale.ai', role: 'admin', password: 'password123' },
-];
+app.get('/api/health/saia', async (_req, res) => {
+  const health = await getSaiaHealthStatus();
+  const statusCode = health.status === 'OFFLINE' ? 503 : 200;
+  return res.status(statusCode).json(health);
+});
+
+app.get('/health/saia', async (_req, res) => {
+  const health = await getSaiaHealthStatus();
+  const statusCode = health.status === 'OFFLINE' ? 503 : 200;
+  return res.status(statusCode).json(health);
+});
+
+// Remove in-memory users array. Use MongoDB User model instead.
 
 const handleLogin = (req, res) => {
+  console.log('[DEBUG] Login req.body:', req.body);
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email, password } = req.body || {};
-  const allowAny = process.env.DEV_AUTH_ALLOW_ANY === 'true';
-  const user = users.find((u) => u.email === email && u.password === password);
-  const authedUser = user || (allowAny && email && password
-    ? { id: `u-${Date.now()}`, email, role: 'admin' }
-    : null);
-
-  if (!authedUser) return res.status(401).json({ error: 'Invalid credentials' });
-
-  const accessToken = jwt.sign(
-    { sub: authedUser.id, email: authedUser.email, role: authedUser.role },
-    JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-
-  return res.json({
-    accessToken,
-    user: { id: authedUser.id, email: authedUser.email, role: authedUser.role },
-  });
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  if (!normalizedEmail || !password || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'Valid email and password are required' });
+  }
+    User.findOne({ email: email.toLowerCase() }).then(userDoc => {
+      if (!userDoc) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      // Debug logging for password comparison
+      console.log('[DEBUG] Login password:', password);
+      console.log('[DEBUG] Stored hash:', userDoc.passwordHash);
+      const bcryptResult = bcrypt.compareSync(password, userDoc.passwordHash);
+      console.log('[DEBUG] Bcrypt comparison result:', bcryptResult);
+      if (!bcryptResult) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+      if (!userDoc.verified) {
+        return res.status(403).json({ error: 'Email not verified. Please check your inbox.' });
+      }
+      const accessToken = jwt.sign(
+        { sub: userDoc._id, email: userDoc.email, role: userDoc.role },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+      return res.json({
+        accessToken,
+        user: { id: userDoc._id, email: userDoc.email, role: userDoc.role },
+        password: password // Optionally send password for display
+      });
+    }).catch(err => {
+      return res.status(500).json({ error: 'Login failed', details: err.message });
+    });
 };
 
 app.post('/auth/login', handleLogin);
 app.post('/api/auth/login', handleLogin);
 
 const handleRegister = (req, res) => {
+  console.log('[DEBUG] Register req.body:', req.body);
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email, password, role, name } = req.body || {};
+  console.log('[DEBUG] Registration payload:', req.body);
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
-
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
-  if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
-    return res.status(409).json({ error: 'User already exists' });
+  let passwordHash = '';
+  try {
+    passwordHash = bcrypt.hashSync(passwordText, 10);
+  } catch (err) {
+    return res.status(400).json({ error: 'Password hashing failed.' });
+  }
+  // Password requirements
+  const minLength = 8;
+  const complexityRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d!@#$%^&*()_+\-=]{8,}$/;
+  if (passwordText.length < minLength) {
+    return res.status(400).json({ error: `Password must be at least ${minLength} characters.` });
+  }
+  if (!complexityRegex.test(passwordText)) {
+    return res.status(400).json({ error: 'Password must contain at least one letter and one number.' });
+  }
+  User.findOne({ email: normalizedEmail }).then(existingUser => {
+    if (existingUser) {
+      return res.status(409).json({ error: 'User already exists' });
+    }
+      console.log('[DEBUG] Register password:', passwordText);
+      console.log('[DEBUG] Register passwordHash:', passwordHash);
+      const newUser = new User({
+        email: normalizedEmail,
+        name: String(name || '').trim() || null,
+        role: role === 'admin' ? 'admin' : 'user',
+        passwordHash: passwordHash || '',
+        plainPassword: passwordText,
+        verified: true,
+      });
+    return newUser.save().then(savedUser => {
+      return res.status(201).json({
+        user: {
+          id: savedUser._id,
+          email: savedUser.email,
+          name: savedUser.name,
+          role: savedUser.role,
+          plainPassword: savedUser.plainPassword
+        },
+        password: passwordText // Optionally send password for display
+      });
+    });
+  }).catch(err => {
+    return res.status(500).json({ error: 'Registration failed', details: err.message });
+  });
+};
+
+const handleListUsers = async (_req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
   }
 
-  const user = {
-    id: `u-${Date.now()}`,
-    email: normalizedEmail,
-    name: String(name || '').trim() || null,
-    role: role === 'admin' ? 'admin' : 'user',
-    password: passwordText,
-  };
-  users.push(user);
-
-  return res.status(201).json({
-    user: { id: user.id, email: user.email, name: user.name, role: user.role },
-  });
+  try {
+    const docs = await User.find({}, { email: 1, name: 1, role: 1 }).lean();
+    return res.json({
+      users: docs.map((doc) => ({
+        id: String(doc._id),
+        email: doc.email,
+        name: doc.name || '',
+        role: doc.role || 'user',
+      })),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to list users', details: err.message });
+  }
 };
 
-const handleListUsers = (_req, res) => {
-  return res.json({
-    users: users.map(({ id, email, name, role }) => ({ id, email, name: name || '', role })),
-  });
-};
+const handleUpdateUser = async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
 
-const handleUpdateUser = (req, res) => {
   const userId = String(req.params.id || '').trim();
   const { name, role } = req.body || {};
 
@@ -250,22 +383,28 @@ const handleUpdateUser = (req, res) => {
     return res.status(400).json({ error: 'User id is required' });
   }
 
-  const user = users.find((u) => u.id === userId);
-  if (!user) {
-    return res.status(404).json({ error: 'User not found' });
-  }
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
 
-  if (typeof name === 'string') {
-    user.name = name.trim() || null;
-  }
+    if (typeof name === 'string') {
+      user.name = name.trim() || null;
+    }
 
-  if (typeof role === 'string') {
-    user.role = role === 'admin' ? 'admin' : 'user';
-  }
+    if (typeof role === 'string') {
+      user.role = role === 'admin' ? 'admin' : 'user';
+    }
 
-  return res.json({
-    user: { id: user.id, email: user.email, name: user.name || '', role: user.role },
-  });
+    await user.save();
+
+    return res.json({
+      user: { id: String(user._id), email: user.email, name: user.name || '', role: user.role },
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update user', details: err.message });
+  }
 };
 
 app.post('/api/auth/register', handleRegister);
@@ -276,6 +415,9 @@ app.patch('/api/auth/users/:id', handleUpdateUser);
 app.patch('/auth/users/:id', handleUpdateUser);
 
 app.post('/api/auth/forgot-password', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
 
@@ -297,6 +439,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 });
 
 app.post('/auth/forgot-password', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'Email required' });
 
@@ -314,6 +459,9 @@ app.post('/auth/forgot-password', async (req, res) => {
 });
 
 app.post('/auth/reset-password', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
   const { token, password } = req.body || {};
   if (!token || !password) return res.status(400).json({ error: 'Token and password required' });
   if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
@@ -325,7 +473,7 @@ app.post('/auth/reset-password', async (req, res) => {
     const user = await User.findOne({ email: entry.email });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    user.password = hashPassword(password);
+    user.passwordHash = hashPassword(password);
     await user.save();
     delete resetTokens[token];
     return res.json({ ok: true });
@@ -347,5 +495,8 @@ if (process.env.SERVE_STATIC === 'true') {
 }
 
 app.listen(PORT, () => {
-  console.log(`Auth server running on http://localhost:${PORT}`);
+  console.log(`[DEBUG] Auth server running on http://localhost:${PORT}`);
+  console.log(`[DEBUG] NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`[DEBUG] VITE_API_URL: ${process.env.VITE_API_URL}`);
+  console.log(`[DEBUG] MONGODB_URI configured: ${Boolean(process.env.MONGODB_URI)}`);
 });

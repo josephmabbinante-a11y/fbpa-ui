@@ -27,6 +27,14 @@ export default function SparklineChart({ data, color = '#0066cc', height = 40 })
   return (
     <div style={{ width: '100%', height, marginTop: 8 }}>
       <ResponsiveContainer width="100%" height="100%" debounce={60}>
+    <div
+      style={{
+        width: '100%',
+        height: height,
+        marginTop: 8,
+      }}
+    >
+      <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
         <AreaChart data={normalizedData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">

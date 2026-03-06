@@ -8,6 +8,7 @@ import customersRouter from './customers.js';
 import carriersRouter from './carriers.js';
 import invoicesRouter from './invoices.js';
 import exceptionsRouter from './exceptions.js';
+import { getSaiaHealthStatus } from './services/carriers/saia/saiaRateService.js';
 // ...existing code...
 
 dotenv.config();
@@ -49,6 +50,12 @@ app.use('/api/exceptions', exceptionsRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+app.get('/health/saia', async (_req, res) => {
+  const health = await getSaiaHealthStatus();
+  const statusCode = health.status === 'OFFLINE' ? 503 : 200;
+  return res.status(statusCode).json(health);
 });
 
 app.listen(PORT, () => {

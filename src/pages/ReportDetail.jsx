@@ -17,6 +17,7 @@ import {
 import { getReports } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
+import { useTheme } from '../contexts/ThemeContext';
 import mockReports from '../mock/reports';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
@@ -94,6 +95,8 @@ export default function ReportDetail() {
   const t = themes[theme];
   const { data: rawData } = useApi(getReports, demoMode ? mockReports : null, [demoMode]);
   const data = useMemo(() => mergeReportsData(demoMode ? mockReports : EMPTY_REPORTS, rawData), [demoMode, rawData]);
+  const t = theme || {};
+  const data = mockReports;
 
   const reportMap = useMemo(
     () => ({
@@ -217,7 +220,7 @@ export default function ReportDetail() {
       {reportId === 'monthly' && (
         <>
           <div style={cardStyle}>
-            <table style={tableStyle}>
+            <table style={{...tableStyle, fontSize: '1rem'}}>
               <thead>
                 <tr>
                   <th style={thStyle}>Month</th>
@@ -241,7 +244,7 @@ export default function ReportDetail() {
 
           <div style={cardStyle}>
             <div style={{ height: 280 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                 <LineChart data={data.monthlySummary} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                   <XAxis dataKey="month" stroke={t.textSecondary} fontSize={11} />
@@ -269,7 +272,7 @@ export default function ReportDetail() {
       {reportId === 'status' && (
         <>
           <div style={cardStyle}>
-            <table style={tableStyle}>
+            <table style={{...tableStyle, fontSize: '1rem'}}>
               <thead>
                 <tr>
                   <th style={thStyle}>Status</th>
@@ -290,7 +293,7 @@ export default function ReportDetail() {
           </div>
           <div style={cardStyle}>
             <div style={{ height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                 <PieChart>
                   <Pie data={data.statusDistribution} dataKey="count" nameKey="status" innerRadius={50} outerRadius={90} paddingAngle={2}>
                     {data.statusDistribution.map((entry, index) => (
@@ -317,7 +320,7 @@ export default function ReportDetail() {
       {reportId === 'exceptions' && (
         <>
           <div style={cardStyle}>
-            <table style={tableStyle}>
+            <table style={{...tableStyle, fontSize: '1rem'}}>
               <thead>
                 <tr>
                   <th style={thStyle}>Reason</th>
@@ -338,7 +341,7 @@ export default function ReportDetail() {
           </div>
           <div style={cardStyle}>
             <div style={{ height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                 <BarChart data={data.exceptionBreakdown} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                   <XAxis dataKey="reason" stroke={t.textSecondary} fontSize={10} />
@@ -363,7 +366,7 @@ export default function ReportDetail() {
       {reportId === 'carriers' && (
         <>
           <div style={cardStyle}>
-            <table style={tableStyle}>
+            <table style={{...tableStyle, fontSize: '1rem'}}>
               <thead>
                 <tr>
                   <th style={thStyle}>Carrier</th>
@@ -382,7 +385,7 @@ export default function ReportDetail() {
           </div>
           <div style={cardStyle}>
             <div style={{ height: 260 }}>
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                 <BarChart data={data.topSavingsCarriers} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                   <XAxis dataKey="carrier" stroke={t.textSecondary} fontSize={10} />

@@ -10,7 +10,7 @@ const hexToRgba = (hex, alpha = 1) => {
 
 export default function Aging() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
   const [activeBucket, setActiveBucket] = useState('0-30 Days');
   const [chartCollapsed, setChartCollapsed] = useState(false);
 

@@ -26,6 +26,7 @@ export default function InvoiceDetail() {
   const { demoMode } = useDemo();
   const t = themes[theme];
   const { data: rawInvoices, loading, error } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
+  const t = theme;
 
   const invoices = useMemo(() => {
     const source = extractInvoices(rawInvoices);
@@ -138,6 +139,19 @@ export default function InvoiceDetail() {
         <div style={{ marginBottom: 12, fontSize: 13, color: t.warning }}>Unable to load invoice details: {error}</div>
       ) : null}
       {loading ? <div style={{ marginBottom: 12, fontSize: 13, color: t.textSecondary }}>Loading invoice...</div> : null}
+      <div
+        style={{
+          backgroundColor: t.warning,
+          color: t.text,
+          padding: '10px 16px',
+          borderRadius: 6,
+          marginBottom: 16,
+          fontWeight: 600,
+          border: `1px solid ${t.warning}`,
+        }}
+      >
+        Backend error, using mock data: Failed to fetch
+      </div>
       <button
         type="button"
         onClick={() => navigate('/invoices')}
@@ -163,8 +177,8 @@ export default function InvoiceDetail() {
         </div>
         <button
           style={{
-            background: '#1976d2',
-            color: '#fff',
+            background: t.accent,
+            color: t.surface,
             border: 'none',
             borderRadius: 4,
             padding: '7px 18px',
@@ -199,7 +213,7 @@ export default function InvoiceDetail() {
         </div>
         <div style={kpiStyle}>
           <div style={{ fontSize: 11, color: t.textSecondary }}>Benefit</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: t.positive }}>{formatCurrency(detail.benefitValue)}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.success }}>{formatCurrency(detail.benefitValue)}</div>
         </div>
         <div style={kpiStyle}>
           <div style={{ fontSize: 11, color: t.textSecondary }}>Rate Match</div>

@@ -17,6 +17,13 @@ export default function Exceptions() {
   const { theme } = useTheme();
   const { demoMode } = useDemo();
   const t = themes[theme];
+  const t = theme;
+  t.accent2 = t.accent2 || '#888';
+  t.textSecondary = t.textSecondary || '#666';
+  t.border = t.border || '#ccc';
+  t.surface = t.surface || '#fff';
+  t.bg = t.bg || '#f8f8f8';
+
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -72,7 +79,7 @@ export default function Exceptions() {
         </select>
       </div>
 
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, fontSize: '1rem' }}>
         <thead>
           <tr>
             <th style={{ textAlign: 'left', padding: 8 }}>Invoice</th>

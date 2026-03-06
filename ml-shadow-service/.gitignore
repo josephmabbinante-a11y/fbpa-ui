@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+rate_model.pkl
+env/
+venv/
