@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { User } from '../server/multitenant/src/modules/users/user.model.js';
+import { User } from '../server/models.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://FBPADB:FBPA2020@cluster0.fvycshx.mongodb.net/fbpa-db?appName=Cluster0';
 
@@ -8,7 +8,7 @@ async function resetPassword(email, newHash) {
   try {
     const user = await User.findOneAndUpdate(
       { email },
-      { password_hash: newHash },
+      { passwordHash: newHash },
       { new: true }
     );
     if (user) {
