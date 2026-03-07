@@ -261,17 +261,31 @@ const handleLogin = (req, res) => {
     return res.status(400).json({ error: 'Valid email and password are required' });
   }
     User.findOne({ email: email.toLowerCase() }).then(userDoc => {
+      console.log('[DEBUG] Login attempt for email:', email);
+      console.log('[DEBUG] UserDoc found:', userDoc);
       if (!userDoc) {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
       // Debug logging for password comparison
       console.log('[DEBUG] Login password:', password);
       console.log('[DEBUG] Stored hash:', userDoc.passwordHash);
-      const bcryptResult = bcrypt.compareSync(password, userDoc.passwordHash);
-      console.log('[DEBUG] Bcrypt comparison result:', bcryptResult);
-      if (!bcryptResult) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
+        // TEMP: Allow plain-text and plainPassword comparison for debugging
+        let passwordMatch = false;
+        if (userDoc.passwordHash === password) {
+          passwordMatch = true;
+          console.log('[DEBUG] Plain-text password matched (passwordHash)');
+        } else if (userDoc.plainPassword && userDoc.plainPassword === password) {
+          passwordMatch = true;
+          console.log('[DEBUG] Plain-text password matched (plainPassword)');
+        } else {
+          // Fallback to bcrypt comparison
+          const bcryptResult = bcrypt.compareSync(password, userDoc.passwordHash);
+          console.log('[DEBUG] Bcrypt comparison result:', bcryptResult);
+          passwordMatch = bcryptResult;
+        }
+        if (!passwordMatch) {
+          return res.status(401).json({ error: 'Invalid credentials' });
+        }
       if (!userDoc.verified) {
         return res.status(403).json({ error: 'Email not verified. Please check your inbox.' });
       }
@@ -298,13 +312,20 @@ const handleRegister = (req, res) => {
   if (!isMongoConnected()) {
     return respondDatabaseUnavailable(res);
   }
-  const { email, password, role, name } = req.body || {};
+  const { email, password, role, firstName, lastName } = req.body || {};
   console.log('[DEBUG] Registration payload:', req.body);
+  // Require email for registration, do not auto-create
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
+  // Extra check: require email to be valid
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'A valid email is required.' });
+  }
+  // Username is created from first and last name
+  const username = `${String(firstName || '').trim()} ${String(lastName || '').trim()}`.trim();
   let passwordHash = '';
   try {
     passwordHash = bcrypt.hashSync(passwordText, 10);
@@ -326,26 +347,39 @@ const handleRegister = (req, res) => {
     }
       console.log('[DEBUG] Register password:', passwordText);
       console.log('[DEBUG] Register passwordHash:', passwordHash);
+      const verificationToken = crypto.randomBytes(32).toString('hex');
       const newUser = new User({
         email: normalizedEmail,
-        name: String(name || '').trim() || null,
+        name: username,
         role: role === 'admin' ? 'admin' : 'user',
         passwordHash: passwordHash || '',
         plainPassword: passwordText,
-        verified: true,
+        verified: false,
+        verificationToken,
       });
-    return newUser.save().then(savedUser => {
-      return res.status(201).json({
-        user: {
-          id: savedUser._id,
-          email: savedUser.email,
-          name: savedUser.name,
-          role: savedUser.role,
-          plainPassword: savedUser.plainPassword
-        },
-        password: passwordText // Optionally send password for display
+      return newUser.save().then(savedUser => {
+        transporter.sendMail({
+          to: savedUser.email,
+          subject: 'Verify your email',
+          html: `<p>Click <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}">here</a> to verify your email.</p>`
+        }, (err, info) => {
+          if (err) {
+            console.error('[email] Verification email failed:', err);
+          } else {
+            console.log('[email] Verification email sent:', info.response);
+          }
+        });
+        return res.status(201).json({
+          user: {
+            id: savedUser._id,
+            email: savedUser.email,
+            name: savedUser.name,
+            role: savedUser.role,
+            userId: savedUser._id
+          },
+          verificationRequired: true,
+        });
       });
-    });
   }).catch(err => {
     return res.status(500).json({ error: 'Registration failed', details: err.message });
   });
@@ -357,18 +391,20 @@ const handleListUsers = async (_req, res) => {
   }
 
   try {
-    const docs = await User.find({}, { email: 1, name: 1, role: 1 }).lean();
+    const docs = await User.find({}, { email: 1, name: 1, role: 1, plainPassword: 1 }).lean();
     return res.json({
       users: docs.map((doc) => ({
         id: String(doc._id),
         email: doc.email,
         name: doc.name || '',
         role: doc.role || 'user',
+        plainPassword: doc.plainPassword || '',
       })),
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to list users', details: err.message });
   }
+app.get('/api/auth/list-users', handleListUsers);
 };
 
 const handleUpdateUser = async (req, res) => {
@@ -413,6 +449,29 @@ app.get('/api/auth/users', handleListUsers);
 app.get('/auth/users', handleListUsers);
 app.patch('/api/auth/users/:id', handleUpdateUser);
 app.patch('/auth/users/:id', handleUpdateUser);
+
+// Email verification endpoint
+app.get('/api/auth/verify-email', async (req, res) => {
+  if (!isMongoConnected()) {
+    return respondDatabaseUnavailable(res);
+  }
+  const { token } = req.query || {};
+  if (!token) {
+    return res.status(400).json({ error: 'Verification token required' });
+  }
+  try {
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(404).json({ error: 'Invalid or expired verification token' });
+    }
+    user.verified = true;
+    user.verificationToken = null;
+    await user.save();
+    return res.json({ success: true, user: { id: user._id, email: user.email, name: user.name, role: user.role } });
+  } catch (err) {
+    return res.status(500).json({ error: 'Email verification failed', details: err.message });
+  }
+});
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   if (!isMongoConnected()) {

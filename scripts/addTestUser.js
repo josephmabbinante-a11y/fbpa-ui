@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { User } from '../server/multitenant/src/modules/users/user.model.js';
+import { User } from '../server/models.js';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://FBPADB:FBPA2020@cluster0.fvycshx.mongodb.net/fbpa-db?appName=Cluster0';
 
@@ -7,9 +7,12 @@ async function addTestUser() {
   await mongoose.connect(MONGODB_URI);
   const testUser = {
     email: 'testuser@example.com',
-    password_hash: '$2b$10$testhashfortesting', // Replace with a real bcrypt hash
+    passwordHash: '$2b$10$testhashfortesting', // Replace with a real bcrypt hash
+    plainPassword: 'password123',
     role: 'user',
-    created_at: new Date(),
+    verified: true,
+    verificationToken: '',
+    createdAt: new Date(),
   };
   try {
     const user = await User.create(testUser);
