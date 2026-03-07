@@ -16,8 +16,13 @@ export default function Login() {
     const res = await login({ email, password });
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      setAccessToken(res.accessToken);
-      navigate("/dashboard");
+      const tokenSet = setAccessToken(res.accessToken);
+      // Wait for token to be set, then redirect
+      setTimeout(() => {
+        navigate("/dashboard");
+        // Optionally force reload for robustness
+        // window.location.reload();
+      }, 100);
     } else {
       setStatus(res && res.error ? res.error : "Invalid email or password");
     }
