@@ -36,41 +36,41 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-shell">
+    <div className="auth-shell" role="main" aria-label="Authentication Shell">
       <div className="auth-wrap">
         <div className="auth-logo-panel">
           <img src={logo} alt="Opscale Audit IQ" style={{ width: 320, maxWidth: "100%", height: "auto", display: "block", filter: "drop-shadow(0 10px 22px rgba(24, 210, 255, 0.24))" }} />
         </div>
-        <div className="ui-card auth-card">
+        <div className="ui-card auth-card" role="form" aria-labelledby="auth-title">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <img src={shieldLogo} alt="Opscale shield" style={{ height: 40, width: 40, display: "block", objectFit: "contain" }} />
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
+              <div id="auth-title" style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
               <div className="ui-subtitle">Sign in to continue</div>
             </div>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }} aria-label="Login Form">
             <InputField label="Email">
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="ui-input" autoComplete="email" required />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="ui-input" autoComplete="email" required aria-required="true" aria-label="Email address" />
             </InputField>
             <InputField label="Password">
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" className="ui-input" autoComplete="current-password" required />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" className="ui-input" autoComplete="current-password" required aria-required="true" aria-label="Password" />
             </InputField>
-            <PrimaryButton type="submit" disabled={loading}>
+            <PrimaryButton type="submit" disabled={loading} aria-busy={loading} aria-label="Sign In">
               {loading ? "Signing in..." : "Sign In"}
             </PrimaryButton>
-            {status && <div style={{ color: status.toLowerCase().includes("successful") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
+            {status && <div role="alert" style={{ color: status.toLowerCase().includes("successful") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
           </form>
-          <div className="auth-actions">
-            <LinkButton type="button" onClick={() => setShowForgot(true)}>Forgot password?</LinkButton>
-            <LinkButton type="button" onClick={() => setShowRegister(true)}>Need an account? Register</LinkButton>
-            <LinkButton type="button" onClick={() => setShowTestModal(true)}>Open Test Modal</LinkButton>
+          <div className="auth-actions" role="navigation" aria-label="Auth Actions">
+            <LinkButton type="button" onClick={() => setShowForgot(true)} aria-label="Forgot password">Forgot password?</LinkButton>
+            <LinkButton type="button" onClick={() => setShowRegister(true)} aria-label="Register">Need an account? Register</LinkButton>
+            <LinkButton type="button" onClick={() => setShowTestModal(true)} aria-label="Open Test Modal">Open Test Modal</LinkButton>
           </div>
           {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
           {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
           {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
           {/* Debug token display */}
-          <div style={{ marginTop: 24, fontSize: 12, color: 'var(--text-secondary)' }}>
+          <div style={{ marginTop: 24, fontSize: 12, color: 'var(--text-secondary)' }} aria-live="polite">
             <strong>[DEBUG] accessToken:</strong>
             <pre style={{ wordBreak: 'break-all', background: '#f6f6f6', padding: 8, borderRadius: 4 }}>{getAccessToken() || 'No token found'}</pre>
           </div>
