@@ -1061,88 +1061,12 @@ export default function FleetDashboard() {
           </div>
         </section>
 
-        <div className={`mt-4 rounded-lg p-3 ${complianceTone.barClass}`}>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-700">Compliance Risk</p>
-            <p className={`text-sm font-semibold ${complianceTone.textClass}`}>{driver.compliance}%</p>
-          </div>
-          <progress
-            value={driver.compliance}
-            max="100"
-            className={`h-2 w-full overflow-hidden rounded-full ${complianceTone.accentClass}`}
-          />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LiveMapCard({ driver }) {
-  const hasMapsKey = typeof GOOGLE_MAPS_KEY === 'string' && GOOGLE_MAPS_KEY.trim().length > 0;
-
-  return (
-    <section className="col-span-12 lg:col-span-8">
-      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-200">
-        <div className="mb-4 flex items-center justify-between">
         <aside style={{ ...sectionCardStyle, display: 'grid', gap: 10, alignContent: 'start' }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>Alerts & Risk Queue</div>
             <div style={{ fontSize: 12, color: t.textSecondary }}>Urgency-first operational stack</div>
           </div>
           <button className="rounded-lg bg-blue-600 text-white px-4 py-2 text-xs font-semibold shadow hover:bg-blue-700">View EDI Details</button>
-        </div>
-        <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-          {hasMapsKey ? (
-            <iframe
-              title="Google Maps EDI Tracking"
-              width="100%"
-              height="300"
-              className="rounded-lg border border-gray-300"
-              style={{ border: 0 }}
-              loading="lazy"
-              allowFullScreen
-              referrerPolicy="no-referrer-when-downgrade"
-              src={`https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(GOOGLE_MAPS_KEY)}&q=${encodeURIComponent(driver.telematics.location)}`}
-            />
-          ) : (
-            <div className="flex h-[300px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-sm text-gray-500">
-              Live map unavailable. Set VITE_GOOGLE_MAPS_API_KEY to enable map embeds.
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TelemetryCard({ driver }) {
-  const stats = [
-    { label: 'Current Location', value: driver.telematics.location },
-    { label: 'Status', value: driver.telematics.status },
-    { label: 'Drive Time Today', value: driver.telematics.times[0] || '--:--' },
-    { label: 'HOS Remaining', value: driver.telematics.times[1] || '--:--' },
-    { label: 'ETA', value: driver.telematics.eta },
-    { label: 'Speed', value: driver.telematics.speed || 'N/A' },
-  ];
-
-  return (
-    <section className="col-span-12 lg:col-span-4">
-      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-200">
-        <h2 className="mb-4 text-lg font-semibold text-gray-800">Driver Analytics &amp; Telemetry</h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3">
-              <p className="text-sm text-gray-500">{stat.label}</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-        {/* Placeholder for modern analytics/graphs */}
-        <div className="mt-6 rounded-lg border border-gray-100 bg-white p-4 shadow">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Performance Metrics</h3>
-          <div className="flex flex-col gap-2">
-            <div className="h-24 bg-gradient-to-r from-blue-100 to-blue-300 rounded-lg flex items-center justify-center text-blue-700 text-lg font-bold">Graph: Drive Time vs Compliance</div>
-            <div className="h-24 bg-gradient-to-r from-green-100 to-green-300 rounded-lg flex items-center justify-center text-green-700 text-lg font-bold">Graph: Speed &amp; Location Trends</div>
           <div style={{ display: 'grid', gap: 7, fontSize: 12 }}>
             <div>{commandAlerts.lateLoads} late loads</div>
             <div>{commandAlerts.detentionRisk} detention risks</div>
@@ -1158,6 +1082,8 @@ function TelemetryCard({ driver }) {
           </div>
         </aside>
       </div>
+      </>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 10 }}>
         <section style={sectionCardStyle}>
@@ -1328,7 +1254,7 @@ function TelemetryCard({ driver }) {
             </tbody>
           </table>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

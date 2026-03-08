@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getExceptions } from '../api/client';
 import mockExceptions from '../mock/exceptions';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
 
@@ -16,7 +16,6 @@ function normalizeExceptionsResponse(response) {
 export default function Exceptions() {
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
   const t = theme;
   t.accent2 = t.accent2 || '#888';
   t.textSecondary = t.textSecondary || '#666';

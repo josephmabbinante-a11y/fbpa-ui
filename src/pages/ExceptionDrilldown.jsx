@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getExceptions, getInvoices } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
 import mockExceptions from '../mock/exceptions';
@@ -24,10 +24,9 @@ export default function ExceptionDrilldown() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const t = theme;
   const { data: rawExceptions } = useApi(() => getExceptions(), demoMode ? mockExceptions : null, [demoMode]);
   const { data: rawInvoices } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
-  const t = theme;
 
   // Find exception and related invoice
   const exceptions = extractExceptions(rawExceptions);

@@ -18,7 +18,7 @@ import {
   Cell,
 } from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import carrierPerformance from '../mock/carriersPerformance';
 
@@ -62,7 +62,6 @@ export default function CarrierScorecard() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
   const t = theme;
 
   const decodedCarrier = decodeURIComponent(carrier);

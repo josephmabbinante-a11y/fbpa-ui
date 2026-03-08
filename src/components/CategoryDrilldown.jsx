@@ -1,4 +1,5 @@
-import { ,useEffect,useMemo, useState, memo } from 'react';\
+import { useEffect, useMemo, useState, memo } from 'react';
+import {
   BarChart,
   Bar,
   CartesianGrid,
@@ -12,7 +13,7 @@ import { ,useEffect,useMemo, useState, memo } from 'react';\
   XAxis,
   YAxis,
 } from 'recharts';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const asNumber = (value) => {
   const parsed = Number(value);
