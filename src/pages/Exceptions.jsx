@@ -30,7 +30,7 @@ export default function Exceptions() {
     if (demoMode) {
       Promise.resolve().then(() => {
         if (!mounted) return;
-        setData(mockExceptions.exceptions || []);
+        setData(mockExceptions || []);
         setError(null);
         setLoading(false);
       });
