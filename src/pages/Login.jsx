@@ -71,7 +71,14 @@ export default function Login() {
     if (res && !res.error && res.accessToken) {
       const tokenSet = setAccessToken(res.accessToken);
       if (tokenSet) {
-        navigate("/dashboard", { replace: true });
+        const needsSetup = localStorage.getItem('fbpa_needs_setup') === 'true';
+        if (needsSetup) {
+          localStorage.removeItem('fbpa_needs_setup');
+          localStorage.setItem('fbpa_show_setup_banner', 'true');
+          navigate("/settings", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
       } else {
         setStatus("Login succeeded but session could not be saved. Please allow cookies/storage and try again.");
       }
@@ -96,6 +103,7 @@ export default function Login() {
     setPassword(newPassword);
     setShowRegister(false);
     setStatus("Registration successful. Sign in now.");
+    localStorage.setItem('fbpa_needs_setup', 'true');
   };
 
   return (
