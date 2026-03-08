@@ -71,7 +71,7 @@ function LoadingFallback() {
 function AppRoutes() {
   const location = useLocation();
   const isLogin = location.pathname === '/login' || location.pathname === '/login/';
-  const isAuthed = Boolean(getAccessToken());
+  const isAuthed = Boolean(getAccessToken()) || (import.meta.env.DEV && import.meta.env.VITE_DEV_BYPASS_LOGIN === 'true');
 
 
   if (isLogin || location.pathname.startsWith('/verify-email')) {
