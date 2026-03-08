@@ -602,8 +602,8 @@ export async function login(payload) {
       }
       const errorData = await res.json().catch(() => null);
       lastError = errorData?.error || `Login failed ${res.status}`;
-      // Only retry on 404 (endpoint not found) or 5xx; stop on other 4xx (auth failures)
-      if (res.status !== 404 && res.status >= 400 && res.status < 500) {
+      // Only retry on 404 (endpoint not found) or 5xx; stop on all other non-OK statuses
+      if (res.status !== 404 && res.status < 500) {
         break;
       }
     } catch (err) {
