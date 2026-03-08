@@ -583,15 +583,16 @@ export async function getReports() {
 
 export async function login(payload) {
   try {
-    return await fetchJsonWithFallback(
-      ['/api/auth/login', '/auth/login'],
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      },
-      'Login failed'
-    );
+    const res = await fetch(apiUrl('/api/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Login failed ${res.status}`);
+    }
+    return await res.json();
   } catch (err) {
     console.error('login error:', err?.message || JSON.stringify(err));
     return { error: err.message };

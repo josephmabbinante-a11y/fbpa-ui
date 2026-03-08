@@ -520,7 +520,10 @@ function applyMockStatusTransition(loadId, nextStatus, payload = {}, source = 's
 
 export async function listLoads(filters = {}) {
   if (shouldUseMockLoads()) return getMockList(filters);
-  const result = await safeFetch(`/api/loads${toQueryString(filters)}`);
+  // Get token from localStorage or sessionStorage
+  const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const result = await safeFetch(`/api/loads${toQueryString(filters)}`, { headers });
   if (result?.networkOffline) return getMockList(filters);
   if (result?.error) return result;
   return normalizeApiListResponse(result);

@@ -22,6 +22,7 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
+    setMessage('') // Clear previous message
     setMessage('')
 
     try {
@@ -58,6 +59,16 @@ export default function LoginForm() {
 
       if (!didLogin) {
         setMessage(lastError)
+      if (res.ok) {
+        const data = await res.json();
+        setMessage('Login successful!');
+        localStorage.setItem('token', data.token);
+        setTimeout(() => {
+          window.location.assign('/dashboard');
+        }, 500);
+      } else {
+        const data = await res.json();
+        setMessage(data.error || 'Login failed');
       }
     } catch (error) {
       setMessage(`Error: ${error.message}`)

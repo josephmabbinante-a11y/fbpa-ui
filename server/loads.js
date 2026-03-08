@@ -1,9 +1,13 @@
 import express from 'express';
+import { authenticate } from './multitenant/src/middleware/auth.middleware.js';
 const router = express.Router();
 // Simple test route for debugging
 router.get('/test', (req, res) => {
   res.json({ ok: true, message: 'Loads router is working.' });
 });
+
+// Require authentication for all loads endpoints
+router.use(authenticate);
 // import fs from 'fs';
 // import path from 'path';
 import { buildMileageLaneKey, estimateMileage } from './mileage.js';
