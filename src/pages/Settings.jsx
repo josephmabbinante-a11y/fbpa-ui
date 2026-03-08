@@ -1719,6 +1719,15 @@ export default function Settings() {
   const { demoMode, enableDemo, disableDemo } = useDemo();
   const t = theme || {};
 
+  const [showSetupBanner, setShowSetupBanner] = useState(
+    () => localStorage.getItem('fbpa_show_setup_banner') === 'true',
+  );
+
+  const dismissSetupBanner = () => {
+    localStorage.removeItem('fbpa_show_setup_banner');
+    setShowSetupBanner(false);
+  };
+
   const [activeSectionTitle, setActiveSectionTitle] = useState(adminSections[0].title);
   const activeSection = useMemo(
     () => adminSections.find((s) => s.title === activeSectionTitle) ?? adminSections[0],
@@ -1731,6 +1740,8 @@ export default function Settings() {
   }, [activeSection]);
 
   const isAccountSection = activeSection.title === 'Account & Profile';
+
+  const bannerLinkStyle = { background: 'none', border: 'none', color: '#fff', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 13, padding: 0 };
 
   return (
     <div style={{ width: '100%', minHeight: '100%', background: t.bg, color: t.text }}>
@@ -1749,6 +1760,41 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      {/* Setup banner for new users */}
+      {showSetupBanner && (
+        <div role="status" aria-live="polite" style={{
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16,
+          padding: '16px 24px', background: t.accent, color: '#fff',
+          borderBottom: `1px solid ${t.border}`,
+        }}>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+              🎉 Welcome to Opscale! Complete your organization setup to get started.
+            </div>
+            <div style={{ fontSize: 13, opacity: 0.92 }}>
+              Fill in your{' '}
+              <button type="button" onClick={() => setActiveSectionTitle('Company & Organization')} style={bannerLinkStyle}>Company Info</button>
+              {' · '}
+              <button type="button" onClick={() => setActiveSectionTitle('Company & Organization')} style={bannerLinkStyle}>Upload your Logo</button>
+              {' · '}
+              <button type="button" onClick={() => setActiveSectionTitle('Company & Organization')} style={bannerLinkStyle}>Configure your Preferences</button>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={dismissSetupBanner}
+            aria-label="Dismiss setup banner"
+            style={{
+              background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.4)',
+              color: '#fff', borderRadius: 6, padding: '5px 14px', fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', flexShrink: 0,
+            }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)' }}>
         {/* Left nav */}
