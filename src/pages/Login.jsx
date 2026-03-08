@@ -1,3 +1,57 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../api/client";
+import logo from "../assets/opscale-logo.svg";
+import shieldLogo from "../assets/opscale-shield.svg";
+import RegisterForm from "../components/Register";
+import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
+import { setAccessToken } from "../utils/authToken";
+
+function ForgotPasswordModal({ onClose }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok) setStatus("Password reset email sent!");
+      else setStatus(data.error || "Failed to send reset email.");
+    } catch {
+      setStatus("Network error");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="ui-card modal-card">
+        <h2 style={{ marginTop: 0 }}>Forgot Password</h2>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+          <InputField label="Email">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="ui-input" />
+          </InputField>
+          <PrimaryButton type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Send Reset Email"}
+          </PrimaryButton>
+          {status && <div style={{ color: status.includes("sent") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
+        </form>
+        <div style={{ marginTop: 12 }}>
+          <LinkButton type="button" onClick={onClose}>Close</LinkButton>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ...existing code...
 export default function Login() {
   const navigate = useNavigate();
@@ -7,7 +61,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
-  const [showTestModal, setShowTestModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,84 +122,13 @@ export default function Login() {
             </PrimaryButton>
             {status && <div role="alert" style={{ color: status.toLowerCase().includes("successful") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
           </form>
-          <div className="auth-actions" role="navigation" aria-label="Auth Actions">
-            <LinkButton type="button" onClick={() => setShowForgot(true)} aria-label="Forgot password">Forgot password?</LinkButton>
-            <LinkButton type="button" onClick={() => setShowRegister(true)} aria-label="Register">Need an account? Register</LinkButton>
-            <LinkButton type="button" onClick={() => setShowTestModal(true)} aria-label="Open Test Modal">Open Test Modal</LinkButton>
+
+          <div className="auth-actions">
+            <LinkButton type="button" onClick={() => setShowForgot(true)}>Forgot password?</LinkButton>
+            <LinkButton type="button" onClick={() => setShowRegister(true)}>Need an account? Register</LinkButton>
           </div>
           {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
           {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
-          {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
-          {/* Debug token display */}
-          <div style={{ marginTop: 24, fontSize: 12, color: 'var(--text-secondary)' }} aria-live="polite">
-            <strong>[DEBUG] accessToken:</strong>
-            <pre style={{ wordBreak: 'break-all', background: '#f6f6f6', padding: 8, borderRadius: 4 }}>{getAccessToken() || 'No token found'}</pre>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { login } from "../api/client";
-import logo from "../assets/opscale-logo.svg";
-import shieldLogo from "../assets/opscale-shield.svg";
-import RegisterForm from "../components/Register";
-import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
-import { setAccessToken, getAccessToken } from "../utils/authToken";
-
-function TestModal({ onClose }) {
-  return (
-    <div className="modal-overlay" style={{ zIndex: 2000 }}>
-      <div className="ui-card modal-card" style={{ maxWidth: 320 }}>
-        <h2 style={{ marginTop: 0 }}>Test Modal</h2>
-        <p style={{ marginTop: 0, color: "var(--text-secondary)" }}>If you see this, modal logic works.</p>
-        <LinkButton type="button" onClick={onClose}>Close</LinkButton>
-      </div>
-    </div>
-  );
-}
-
-function ForgotPasswordModal({ onClose }) {
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus("");
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (res.ok) setStatus("Password reset email sent!");
-      else setStatus(data.error || "Failed to send reset email.");
-    } catch {
-      setStatus("Network error");
-    }
-    setLoading(false);
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="ui-card modal-card">
-        <h2 style={{ marginTop: 0 }}>Forgot Password</h2>
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
-          <InputField label="Email">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="ui-input" />
-          </InputField>
-          <PrimaryButton type="submit" disabled={loading}>
-            {loading ? "Sending..." : "Send Reset Email"}
-          </PrimaryButton>
-          {status && <div style={{ color: status.includes("sent") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
-        </form>
-        <div style={{ marginTop: 12 }}>
-          <LinkButton type="button" onClick={onClose}>Close</LinkButton>
         </div>
       </div>
     </div>

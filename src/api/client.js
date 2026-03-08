@@ -2,6 +2,8 @@ import mockInvoices from '../mock/invoices';
 import mockExceptions from '../mock/exceptions';
 import mockDashboard from '../mock/dashboard';
 import mockReports from '../mock/reports';
+import { getAccessToken } from '../utils/authToken';
+import { isMockModeEnabled } from '../utils/mockMode';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
@@ -149,7 +151,7 @@ async function fetchJsonWithFallback(paths, options, failurePrefix) {
 
 
 export async function getInvoices(type) {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockInvoices;
   }
   const query = type ? `?type=${encodeURIComponent(type)}` : '';
@@ -157,7 +159,7 @@ export async function getInvoices(type) {
 }
 
 export async function getCustomers() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return [];
   }
   return safeFetch('/api/customers');
@@ -173,6 +175,9 @@ export async function getCustomerAging(id) {
   return safeFetch(`/api/customers/${encodeURIComponent(id)}/aging`);
 }
 
+export async function getCarriers() {
+  if (isMockModeEnabled()) {
+    return [];
 export async function getCarriers(params = {}) {
   if (isMockMode()) {
     const rawLimit = Number.parseInt(String(params?.limit || ''), 10);
@@ -561,21 +566,21 @@ export async function createInvoice(payload) {
 }
 
 export async function getExceptions() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockExceptions;
   }
   return safeFetch('/api/exceptions');
 }
 
 export async function getDashboard() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockDashboard;
   }
   return safeFetch('/api/dashboard');
 }
 
 export async function getReports() {
-  if (isMockMode()) {
+  if (isMockModeEnabled()) {
     return mockReports;
   }
   return safeFetch('/api/reports');

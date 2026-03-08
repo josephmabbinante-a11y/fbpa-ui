@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
+import { ,useEffect,useMemo, useState, memo } from 'react';\
   BarChart,
   Bar,
   CartesianGrid,
@@ -25,7 +24,7 @@ const formatCurrency = (value) =>
 
 const formatPercent = (value) => `${asNumber(value).toFixed(1)}%`;
 
-export default function CategoryDrilldown({ data }) {
+const CategoryDrilldown = memo(({ data }) => {
   const { theme } = useTheme();
   const t = theme || {};
   const categories = useMemo(
@@ -239,4 +238,6 @@ export default function CategoryDrilldown({ data }) {
       </div>
     </div>
   );
-}
+});
+
+export default CategoryDrilldown;

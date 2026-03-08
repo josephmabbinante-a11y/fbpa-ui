@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api/client';
 import mockReports from '../mock/reports';
+import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import { useTheme } from '../contexts/ThemeContext';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
+import { useApi } from '../hooks/useApi';
 
 const reportCards = [
   { id: 'monthly', title: 'Monthly Summary', description: 'Invoice and savings summary by month' },
@@ -16,10 +19,24 @@ const reportCards = [
 
 const isNonEmptyArray = (value) => Array.isArray(value) && value.length > 0;
 
+const EMPTY_REPORTS = {
+  monthlySummary: [],
+  exceptionBreakdown: [],
+  statusDistribution: [],
+  topSavingsCarriers: [],
+  savingsTrend: [],
+  exceptionTrend: [],
+  categoryDrilldown: [],
+  auditMetrics: {
+    freightBillAudit: [],
+    paymentRecovery: [],
+    auditFindings: [],
+    paymentProcessing: [],
+  },
+};
+
 function mergeReportsData(base, incoming) {
-  if (!incoming || typeof incoming !== 'object') {
-    return base;
-  }
+  if (!incoming || typeof incoming !== 'object') return base;
 
   const next = {
     ...base,
@@ -60,52 +77,25 @@ function mergeReportsData(base, incoming) {
 
 export default function Reports() {
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
+  const t = themes[theme];
   const t = theme || {};
   const navigate = useNavigate();
-  const [data, setData] = useState(mockReports);
-  const [loading, setLoading] = useState(false); // Always false to force UI
-  const [error, setError] = useState(null);
-  const [warning, setWarning] = useState(null);
+  const { data: rawData, loading, error } = useApi(getReports, demoMode ? mockReports : null, [demoMode]);
 
-  useEffect(() => {
-    let mounted = true;
-    // Always use mock data as default
-    setData(mockReports);
-    setLoading(false);
-    // Debug log
-    if (typeof window !== 'undefined') {
-      window.__REPORTS_DEBUG__ = { data: mockReports };
-      console.log('[Reports Debug] mockReports:', mockReports);
-    }
-    // Optionally, allow API override if needed
-    // getReports()
-    //   .then((res) => {
-    //     if (!mounted) return;
-    //     if (res?.error) setError(res.error);
-    //     if (res?.warning) setWarning(res.warning);
-    //     setData((prev) => mergeReportsData(prev || mockReports, res));
-    //   })
-    //   .catch((err) => {
-    //     if (!mounted) return;
-    //     setError(err.message || String(err));
-    //   })
-    //   .finally(() => {
-    //     if (mounted) setLoading(false);
-    //   });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
+  const data = useMemo(
+    () => mergeReportsData(demoMode ? mockReports : EMPTY_REPORTS, rawData),
+    [demoMode, rawData]
+  );
   const monthlyRows = useMemo(() => data?.monthlySummary || [], [data]);
 
   return (
     <div style={{ display: 'grid', gap: 20 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: 28 }}>Reports</h1>
-        {error ? <span style={{ fontSize: 12, color: t.warning }}>Using fallback data: {error}</span> : null}
+        {error ? <span style={{ fontSize: 12, color: t.warning }}>{demoMode ? `Using fallback data: ${error}` : `Unable to load reports: ${error}`}</span> : null}
       </div>
-      {warning ? <div style={{ fontSize: 12, color: t.textSecondary }}>{warning}</div> : null}
+
       {loading ? (
         <div
           style={{
@@ -121,12 +111,81 @@ export default function Reports() {
         </div>
       ) : null}
 
-      {/* Fallback UI for missing/invalid data */}
-      {!loading && (!data || typeof data !== 'object' || Object.keys(data).length === 0) && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-          <b>Reports fallback:</b> No reports data available.<br />
-          <pre style={{ fontSize: 12, color: t.textSecondary, marginTop: 8 }}>data: {JSON.stringify(data, null, 2)}</pre>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+        {reportCards.map((card) => (
+          <button
+            key={card.id}
+            type="button"
+            onClick={() => navigate(`/reports/${card.id}`)}
+            style={{
+              textAlign: 'left',
+              backgroundColor: t.surface,
+              border: `1px solid ${t.border}`,
+              borderRadius: 8,
+              padding: 12,
+              color: t.text,
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{card.title}</div>
+            <div style={{ fontSize: 12, color: t.textSecondary }}>{card.description}</div>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12 }}>
+          <h3 style={{ marginTop: 0 }}>Monthly Summary</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Month</th>
+                <th style={{ textAlign: 'left' }}>Invoices</th>
+                <th style={{ textAlign: 'left' }}>Exceptions</th>
+                <th style={{ textAlign: 'left' }}>Savings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthlyRows.map((row) => (
+                <tr key={row.month}>
+                  <td>{row.month}</td>
+                  <td>{Number(row.invoices || 0).toLocaleString()}</td>
+                  <td>{Number(row.exceptions || 0).toLocaleString()}</td>
+                  <td>${Number(row.savings || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+
+        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 12 }}>
+          <h3 style={{ marginTop: 0 }}>Top Savings Carriers</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Carrier</th>
+                <th style={{ textAlign: 'left' }}>Total Savings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.topSavingsCarriers || []).map((row) => (
+                <tr key={row.carrier}>
+                  <td>{row.carrier}</td>
+                  <td>${Number(row.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+        <TrendLineChart data={data?.savingsTrend || []} dataKey="savings" title="Savings Trend" color="#10b981" yAxisLabel="Savings ($)" />
+        <TrendLineChart data={data?.exceptionTrend || []} dataKey="exceptions" title="Exception Trend" color="#ef4444" yAxisLabel="Count" />
+      </div>
+
+      {data?.auditMetrics ? <AuditDrillDown auditMetrics={data.auditMetrics} /> : null}
+      {data?.categoryDrilldown ? <CategoryDrilldown data={data.categoryDrilldown} /> : null}
       )}
 
       {/* Main UI for valid data */}

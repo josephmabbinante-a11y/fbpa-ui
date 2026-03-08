@@ -1,3 +1,4 @@
+import { memo } from 'react';
 // Lightweight trend sparkline component for KPI cards
 import {
   AreaChart,
@@ -8,7 +9,7 @@ import {
   Tooltip,
 } from 'recharts';
 
-export default function KPICard({ title, value, trend, unit = '' }) {
+const KPICard = memo(({ title, value, trend, unit = '' }) => {
   return (
     <div style={{
       border: '1px solid var(--border)',
@@ -71,4 +72,6 @@ export default function KPICard({ title, value, trend, unit = '' }) {
       )}
     </div>
   );
-}
+});
+
+export default KPICard;

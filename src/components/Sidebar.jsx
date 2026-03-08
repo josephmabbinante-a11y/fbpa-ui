@@ -38,6 +38,8 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const { theme } = useTheme();
+  const t = themes[theme];
   const {
     theme,
     themeMode,
@@ -49,7 +51,13 @@ export default function Sidebar() {
     settings,
   } = useTheme();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('opscale_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showThemePanel, setShowThemePanel] = useState(true);
@@ -85,6 +93,16 @@ export default function Sidebar() {
     : (collapsed ? DESKTOP_COLLAPSED_WIDTH : DESKTOP_EXPANDED_WIDTH);
   const showLabels = !collapsed && (!isMobile || showMobileSidebar);
   const navGap = collapsed ? 4 : 10;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('opscale_sidebar_collapsed', String(collapsed));
+    } catch {
+      // localStorage may be unavailable
+    }
+
+    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
+  }, [collapsed]);
 
   return (
     <aside

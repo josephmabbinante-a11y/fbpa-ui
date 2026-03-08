@@ -124,6 +124,22 @@ function AppRoutes() {
             <Route path="/locations" element={<Locations />} />
             <Route path="/locations/new" element={<AddLocation />} />
             <Route path="/invoices" element={<CombinedPage />} />
+            <Route path="/invoices/:id" element={<InvoiceDetail />} />
+            <Route path="/exceptions" element={<ExceptionsUploads />} />
+            <Route path="/uploads" element={<ExceptionsUploads />} />
+            <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports/:reportId" element={<ReportDetail />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/rate-logic" element={<RateLogicTool />} />
+            <Route path="/system-status" element={<SystemStatus />} />
+            <Route path="/smoke-test" element={<LoginTest />} />
+            <Route path="/load-board" element={<LoadBoard />} />
+            <Route path="/shipments" element={<Shipments />} />
+            <Route path="/fleet" element={<FleetDashboard />} />
+            <Route path="/fleet-dashboard" element={<FleetDashboard />} />
+            <Route path="/finance/ar" element={<AR />} />
+            <Route path="/finance/ap" element={<AP />} />
             <Route path="/uploads" element={<Uploads />} />
             <Route path="/exceptions" element={<ExceptionDrilldown />} />
             <Route path="/reports" element={<Reports />} />

@@ -11,6 +11,7 @@ import {
   Line,
 } from 'recharts';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import { Link } from 'react-router-dom';
 import carrierPerformance from '../mock/carriersPerformance';
 import { useState } from 'react';
@@ -21,10 +22,11 @@ export default function CarriersPerformance() {
   const [carrierForm, setCarrierForm] = useState({ carrier: '', onTime: '', billingErrors: '', invoiceDiscrepancy: '', avgTransitDays: '', claimsRate: '', totalInvoices: '' });
   const [formError, setFormError] = useState('');
   const [importStatus, setImportStatus] = useState('');
+  const { demoMode } = useDemo();
   const { theme } = useTheme();
   const t = theme;
 
-  const data = carrierPerformance;
+  const data = demoMode ? carrierPerformance : [];
 
   const summary = useMemo(() => {
     const total = data.length;
@@ -169,6 +171,7 @@ export default function CarriersPerformance() {
         <div style={{ fontSize: 12, color: t.textSecondary }}>
           On-time performance, billing errors, and invoice discrepancy metrics by carrier.
         </div>
+        {!demoMode ? <div style={{ marginTop: 8, fontSize: 12, color: t.warning }}>Carrier preview data is available when Mock Data mode is ON.</div> : null}
       </div>
 
       {summary && (

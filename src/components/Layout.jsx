@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useLocation } from 'react-router-dom';
@@ -109,6 +110,21 @@ function Layout({ children }) {
       window.removeEventListener('opscale-sidebar-toggle', syncWidth);
     };
   }, []);
+
+  const containerStyle = useMemo(() => ({
+    display: 'flex',
+    minHeight: '100vh',
+    backgroundColor: t.bg,
+    color: t.text,
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+  }), [t.bg, t.text]);
+
+  const mainStyle = useMemo(() => ({
+    flex: 1,
+    marginLeft: sidebarWidth,
+    transition: 'margin-left 0.3s ease',
+    backgroundColor: t.bg,
+  }), [sidebarWidth, t.bg]);
 
   useEffect(() => {
     // Recharts can keep a stale width after parent layout transitions (sidebar collapse/expand).
@@ -303,6 +319,9 @@ function Layout({ children }) {
   };
 
   return (
+    <div style={containerStyle}>
+      <main style={mainStyle}>
+        {children}
     <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', color: t.text }}>
         <main
           style={{

@@ -1,5 +1,64 @@
 import { useMemo, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
+
+const MOCK_SHIPMENTS = [
+  {
+    id: 'SHP-001',
+    customer: 'Acme Corp',
+    carrier: 'TransCo',
+    origin: 'Los Angeles, CA',
+    destination: 'Dallas, TX',
+    status: 'In Transit',
+    revenue: '$2,450',
+    cost: '$1,800',
+    margin: '$650 (26.5%)',
+    dueDate: '2026-02-15',
+  },
+  {
+    id: 'SHP-002',
+    customer: 'Global Trade',
+    carrier: 'FastHaul',
+    origin: 'Chicago, IL',
+    destination: 'Miami, FL',
+    status: 'Delivered',
+    revenue: '$1,820',
+    cost: '$1,200',
+    margin: '$620 (34.1%)',
+    dueDate: '2026-02-10',
+  },
+  {
+    id: 'SHP-003',
+    customer: 'Swift Logistics',
+    carrier: 'RedLine',
+    origin: 'Atlanta, GA',
+    destination: 'Toronto, ON',
+    status: 'Booked',
+    revenue: '$3,100',
+    cost: '$2,100',
+    margin: '$1,000 (32.3%)',
+    dueDate: '2026-02-20',
+  },
+];
+
+export default function Shipments() {
+  const { theme } = useTheme();
+  const { demoMode } = useDemo();
+  const t = themes[theme];
+
+  const containerStyle = {
+    padding: 24,
+    backgroundColor: t.bg,
+    color: t.text,
+    minHeight: '100vh',
+  };
+
+  const headerStyle = {
+    marginBottom: 32,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  };
 import GPSBreadcrumbTracker from '../components/GPSBreadcrumbTracker';
 import { formatLoadStatusLabel, normalizeLoadStatus } from '../utils/loadLifecycle';
 
@@ -70,6 +129,7 @@ export default function Shipments() {
     };
   };
 
+  const shipments = demoMode ? MOCK_SHIPMENTS : [];
   const shipments = [
     {
       id: 'SHP-001',
@@ -211,6 +271,15 @@ export default function Shipments() {
                   </th>
                 ))}
               </tr>
+            ))}
+            {!shipments.length ? (
+              <tr>
+                <td style={tdStyle} colSpan={10}>No shipment data available.</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
             </thead>
             <tbody>
               {filteredRows.map((ship) => (

@@ -1,12 +1,9 @@
 import { useId, useMemo } from 'react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
-/**
- * Lightweight sparkline chart for KPI trend visualization
- * Displays a simple area chart below KPI cards
- */
 export default function SparklineChart({ data, color = '#0066cc', height = 40 }) {
   const gradientId = useId();
+
   const normalizedData = useMemo(
     () =>
       (Array.isArray(data) ? data : [])
@@ -28,6 +25,8 @@ export default function SparklineChart({ data, color = '#0066cc', height = 40 })
   if (!normalizedData.length) return null;
 
   return (
+    <div style={{ width: '100%', height, marginTop: 8 }}>
+      <ResponsiveContainer width="100%" height="100%" debounce={60}>
     <div
       style={{
         width: '100%',
