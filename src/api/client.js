@@ -587,21 +587,32 @@ export async function getReports() {
 }
 
 export async function login(payload) {
-  try {
-    const res = await fetch(apiUrl('/api/auth/login'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
+  const endpoints = ['/api/auth/login', '/auth/login'];
+  let lastError = 'Login failed';
+
+  for (const endpoint of endpoints) {
+    try {
+      const res = await fetch(apiUrl(endpoint), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        return await res.json();
+      }
       const errorData = await res.json().catch(() => null);
-      throw new Error(errorData?.error || `Login failed ${res.status}`);
+      lastError = errorData?.error || `Login failed ${res.status}`;
+      // Only retry on 404 (endpoint not found) or 5xx; stop on other 4xx (auth failures)
+      if (res.status !== 404 && res.status >= 400 && res.status < 500) {
+        break;
+      }
+    } catch (err) {
+      lastError = err.message;
+      console.error('login error:', err?.message || JSON.stringify(err));
     }
-    return await res.json();
-  } catch (err) {
-    console.error('login error:', err?.message || JSON.stringify(err));
-    return { error: err.message };
   }
+
+  return { error: lastError };
 }
 
 export async function connectEdiIntegration(payload) {
