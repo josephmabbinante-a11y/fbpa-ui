@@ -124,6 +124,11 @@ function AppRoutes() {
             <Route path="/locations" element={<Locations />} />
             <Route path="/locations/new" element={<AddLocation />} />
             <Route path="/invoices" element={<CombinedPage />} />
+            <Route path="/uploads" element={<Uploads />} />
+            <Route path="/exceptions" element={<ExceptionDrilldown />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports/:reportId" element={<ReportDetail />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/finance/aging" element={<Aging />} />
             <Route path="/lane-intelligence" element={<LaneIntelligence />} />
             <Route path="/carriers" element={<Carriers />} />
