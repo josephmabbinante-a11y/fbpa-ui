@@ -2,6 +2,7 @@ import mockInvoices from '../mock/invoices';
 import mockExceptions from '../mock/exceptions';
 import mockDashboard from '../mock/dashboard';
 import mockReports from '../mock/reports';
+import mockUsers from '../mock/users';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
@@ -259,6 +260,9 @@ export async function register(payload) {
 }
 
 export async function getUsers() {
+  if (isMockMode()) {
+    return mockUsers;
+  }
   try {
     const res = await fetch(apiUrl('/api/auth/users'));
     if (!res.ok) {
@@ -273,6 +277,10 @@ export async function getUsers() {
 }
 
 export async function updateUser(userId, payload) {
+  if (isMockMode()) {
+    const user = mockUsers.find(u => u._id === userId);
+    return user ? { ...user, ...payload } : { error: 'User not found' };
+  }
   try {
     const res = await fetch(apiUrl(`/api/auth/users/${encodeURIComponent(userId)}`), {
       method: 'PATCH',
