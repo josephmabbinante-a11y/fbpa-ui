@@ -1,6 +1,5 @@
 import RoleManagement from '../components/admin/RoleManagement';
 import { useEffect, useMemo, useState } from 'react';
-import AdminControlCard from '../components/admin/AdminControlCard';
 import CompanyInfoForm from '../components/admin/CompanyInfoForm';
 import LogoUpload from '../components/admin/LogoUpload';
 import CurrencyUnitsForm from '../components/admin/CurrencyUnitsForm';
@@ -466,7 +465,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
 
 // ── Account & Profile Panel ──────────────────────────────────────────────────
 
-function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
+function AccountProfilePanel({ activeAction, t, theme, setTheme, demoMode }) {
   const tabFromAction = (a) => {
     if (['Team Management', 'Billing & Plan', 'Integrations', 'API Keys', 'Preferences'].includes(a)) return a;
     return 'Profile';
@@ -508,7 +507,7 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
     return () => {
       mounted = false;
     };
-  }, [tab]);
+  }, [tab, demoMode]);
 
   const handleInviteChange = (event) => {
     const { name, value } = event.target;
@@ -838,7 +837,7 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme }) {
           <div style={{ background: t.bgAlt, borderRadius: 6, padding: 14, fontSize: 12, marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <strong>sk_live_4eC39Hq••••••••••••j81e</strong>
+                <strong>API Key ••••••••••••••••</strong>
                 <div style={{ color: t.textSecondary, marginTop: 4 }}>Created Jan 15, 2026 • Last used 2 days ago</div>
               </div>
               <button style={{ ...secBtn, padding: '4px 10px', fontSize: 11 }}>Revoke</button>
@@ -995,7 +994,7 @@ export default function Settings() {
             )}
 
             {isAccountSection ? (
-              <AccountProfilePanel activeAction={activeAction} t={t} theme={theme} setTheme={setTheme} />
+              <AccountProfilePanel activeAction={activeAction} t={t} theme={theme} setTheme={setTheme} demoMode={demoMode} />
             ) : (
               <ActionPanel action={activeAction} t={t} theme={theme} setTheme={setTheme} />
             )}
