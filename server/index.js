@@ -268,12 +268,56 @@ const handleUpdateUser = (req, res) => {
   });
 };
 
+const getAuthTokenFromRequest = (req) => {
+  const authHeader = req.headers && req.headers.authorization;
+  if (!authHeader || typeof authHeader !== 'string') {
+    return null;
+  }
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2) {
+    return null;
+  }
+  const [scheme, token] = parts;
+  if (!/^Bearer$/i.test(scheme) || !token) {
+    return null;
+  }
+  return token;
+};
+
+const authenticateJwt = (req, res, next) => {
+  const token = getAuthTokenFromRequest(req);
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: 'Authentication not configured' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, secret);
+    req.authUser = decoded;
+    return next();
+  } catch (_err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+const requireAdmin = (req, res, next) => {
+  const authUser = req.authUser || {};
+  if (authUser.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin privileges required' });
+  }
+  return next();
+};
+
 app.post('/api/auth/register', handleRegister);
 app.post('/auth/register', handleRegister);
-app.get('/api/auth/users', handleListUsers);
-app.get('/auth/users', handleListUsers);
-app.patch('/api/auth/users/:id', handleUpdateUser);
-app.patch('/auth/users/:id', handleUpdateUser);
+app.get('/api/auth/users', authenticateJwt, requireAdmin, handleListUsers);
+app.get('/auth/users', authenticateJwt, requireAdmin, handleListUsers);
+app.patch('/api/auth/users/:id', authenticateJwt, requireAdmin, handleUpdateUser);
+app.patch('/auth/users/:id', authenticateJwt, requireAdmin, handleUpdateUser);
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body || {};
