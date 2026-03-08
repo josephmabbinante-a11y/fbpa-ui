@@ -1,0 +1,4 @@
+quote_id,origin,destination,equipment_type,ship_date,weight_lbs,commodity,service_level,declared_value,pickup_window_start,pickup_window_end,hazmat,temp_controlled,market_rpm
+Q-1001,"Los Angeles, CA 90001","Dallas, TX 75201",dry_van,2026-03-05,24000,General Freight,standard,45000,08:00,17:00,false,false,2.37
+Q-1002,"Chicago, IL 60601","Atlanta, GA 30301",reefer,2026-03-06,18000,Produce,expedite,78000,07:00,14:00,false,true,2.64
+Q-1003,"Seattle, WA 98101","Phoenix, AZ 85001",flatbed,2026-03-07,32000,Building Materials,critical,120000,06:00,12:00,false,false,2.88

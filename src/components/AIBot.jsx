@@ -8,27 +8,37 @@ export default function AIBot() {
 
   async function sendMessage() {
     if (!input.trim()) return;
-    setMessages([...messages, { role: 'user', content: input }]);
+    const userMessage = { role: 'user', content: input };
+    setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
+    setInput('');
+
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer YOUR_OPENAI_API_KEY', // Replace with your backend proxy for security
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          // Auth headers would be needed here, e.g., from localStorage
+          // 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [...messages, { role: 'user', content: input }]
-        })
+          messages: [...messages, userMessage],
+        }),
       });
+
+      if (!res.ok) {
+        throw new Error('API request failed');
+      }
+
       const data = await res.json();
-      setMessages([...messages, { role: 'user', content: input }, { role: 'assistant', content: data.choices[0].message.content }]);
+      const assistantMessage = { role: 'assistant', content: data.content };
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
-      setMessages([...messages, { role: 'user', content: input }, { role: 'assistant', content: 'Error: Unable to get response.' }]);
+      const errorMessage = { role: 'assistant', content: 'Error: Unable to get response.' };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
     }
-    setInput('');
-    setLoading(false);
   }
 
   return (

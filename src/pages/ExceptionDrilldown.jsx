@@ -1,18 +1,39 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getExceptions, getInvoices } from '../api/client';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
+import { useApi } from '../hooks/useApi';
 import mockExceptions from '../mock/exceptions';
 import mockInvoices from '../mock/invoices';
+
+function extractExceptions(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.exceptions)) return payload.exceptions;
+  return [];
+}
+
+function extractInvoices(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && Array.isArray(payload.invoices)) return payload.invoices;
+  return [];
+}
 
 export default function ExceptionDrilldown() {
   const { id } = useParams(); // id = exception id
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { demoMode } = useDemo();
   const t = themes[theme];
+  const { data: rawExceptions } = useApi(() => getExceptions(), demoMode ? mockExceptions : null, [demoMode]);
+  const { data: rawInvoices } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
+  const t = theme;
 
   // Find exception and related invoice
-  const exception = mockExceptions.find(e => String(e.id) === String(id));
-  const invoice = exception ? mockInvoices.find(inv => inv.invoiceNumber === exception.invoiceNumber) : null;
+  const exceptions = extractExceptions(rawExceptions);
+  const invoices = extractInvoices(rawInvoices);
+  const exception = exceptions.find(e => String(e.id) === String(id));
+  const invoice = exception ? invoices.find(inv => String(inv.invoiceNumber) === String(exception.invoiceNumber)) : null;
 
   if (!exception) {
     return (

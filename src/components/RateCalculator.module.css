@@ -1,0 +1,75 @@
+.container {
+  min-height: 100vh;
+  background:
+    linear-gradient(165deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--surface-strong) 100%);
+  color: var(--color-text);
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 32px 0 32px;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.header h1 {
+  margin: 0;
+  line-height: 1.1;
+}
+
+.headerIcons {
+  display: flex;
+  gap: 16px;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  gap: 32px;
+  padding: 32px;
+}
+
+.leftPanel {
+  flex: 1 1 320px;
+  background: linear-gradient(165deg, var(--surface), var(--surface-strong));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.centerPanel {
+  flex: 2 1 600px;
+  background: linear-gradient(165deg, var(--surface), var(--surface-strong));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.rightPanel {
+  flex: 1 1 320px;
+  background: linear-gradient(165deg, var(--surface), var(--surface-strong));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: var(--shadow-soft);
+}
+
+.footer {
+  background: linear-gradient(165deg, var(--surface), var(--surface-strong));
+  border: 1px solid var(--border);
+  border-radius: 18px 18px 0 0;
+  margin: 24px 32px 0 32px;
+  padding: 18px 32px;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
