@@ -259,6 +259,9 @@ export async function register(payload) {
 }
 
 export async function getUsers() {
+  if (isMockMode()) {
+    return [];
+  }
   try {
     const res = await fetch(apiUrl('/api/auth/users'));
     if (!res.ok) {
@@ -273,6 +276,9 @@ export async function getUsers() {
 }
 
 export async function updateUser(userId, payload) {
+  if (isMockMode()) {
+    return { success: true };
+  }
   try {
     const res = await fetch(apiUrl(`/api/auth/users/${encodeURIComponent(userId)}`), {
       method: 'PATCH',
