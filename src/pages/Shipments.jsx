@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
+import GPSBreadcrumbTracker from '../components/GPSBreadcrumbTracker';
+import { formatLoadStatusLabel, normalizeLoadStatus } from '../utils/loadLifecycle';
 
 const MOCK_SHIPMENTS = [
   {
@@ -40,27 +42,6 @@ const MOCK_SHIPMENTS = [
     dueDate: '2026-02-20',
   },
 ];
-
-export default function Shipments() {
-  const { theme } = useTheme();
-  const { demoMode } = useDemo();
-  const t = themes[theme];
-
-  const containerStyle = {
-    padding: 24,
-    backgroundColor: t.bg,
-    color: t.text,
-    minHeight: '100vh',
-  };
-
-  const headerStyle = {
-    marginBottom: 32,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-import GPSBreadcrumbTracker from '../components/GPSBreadcrumbTracker';
-import { formatLoadStatusLabel, normalizeLoadStatus } from '../utils/loadLifecycle';
 
 function money(amount) {
   return `$${Number(amount || 0).toLocaleString()}`;
@@ -129,7 +110,6 @@ export default function Shipments() {
     };
   };
 
-  const shipments = demoMode ? MOCK_SHIPMENTS : [];
   const shipments = [
     {
       id: 'SHP-001',
@@ -271,15 +251,6 @@ export default function Shipments() {
                   </th>
                 ))}
               </tr>
-            ))}
-            {!shipments.length ? (
-              <tr>
-                <td style={tdStyle} colSpan={10}>No shipment data available.</td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
             </thead>
             <tbody>
               {filteredRows.map((ship) => (

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -71,7 +71,17 @@ function LoadingFallback() {
 function AppRoutes() {
   const location = useLocation();
   const isLogin = location.pathname === '/login' || location.pathname === '/login/';
-  const isAuthed = Boolean(getAccessToken());
+  const [isAuthed, setIsAuthed] = useState(() => Boolean(getAccessToken()));
+
+  useEffect(() => {
+    const recheck = () => setIsAuthed(Boolean(getAccessToken()));
+    window.addEventListener('storage', recheck);
+    window.addEventListener('focus', recheck);
+    return () => {
+      window.removeEventListener('storage', recheck);
+      window.removeEventListener('focus', recheck);
+    };
+  }, []);
 
 
   if (isLogin || location.pathname.startsWith('/verify-email')) {

@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react';
 import { uploadInvoiceFile } from '../api/client';
 import uploadHistory from '../mock/uploads';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import { useDemo } from '../demo/DemoContext';
-import React, { useState } from 'react';
-import { uploadInvoiceFile } from '../api/client';
-import uploadHistory from '../mock/uploads';
 import { useTheme } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import DocumentManagementPanel from './DocumentManagementPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
@@ -14,7 +10,6 @@ import logo from '../assets/opscale-logo.svg';
 export default function Uploads() {
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
   const t = theme || {};
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);

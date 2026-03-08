@@ -15,9 +15,8 @@ import {
   YAxis,
 } from 'recharts';
 import { getReports } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import { useDemo } from '../demo/DemoContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useDemo } from '../demo/DemoContext';
 import mockReports from '../mock/reports';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
@@ -92,11 +91,9 @@ export default function ReportDetail() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const t = theme || {};
   const { data: rawData } = useApi(getReports, demoMode ? mockReports : null, [demoMode]);
   const data = useMemo(() => mergeReportsData(demoMode ? mockReports : EMPTY_REPORTS, rawData), [demoMode, rawData]);
-  const t = theme || {};
-  const data = mockReports;
 
   const reportMap = useMemo(
     () => ({

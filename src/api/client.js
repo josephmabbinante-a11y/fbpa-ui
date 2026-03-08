@@ -175,9 +175,6 @@ export async function getCustomerAging(id) {
   return safeFetch(`/api/customers/${encodeURIComponent(id)}/aging`);
 }
 
-export async function getCarriers() {
-  if (isMockModeEnabled()) {
-    return [];
 export async function getCarriers(params = {}) {
   if (isMockMode()) {
     const rawLimit = Number.parseInt(String(params?.limit || ''), 10);
@@ -449,24 +446,18 @@ export async function uploadCarriersCsv(file) {
       let imported = 0;
       let updated = 0;
       let skipped = 0;
-      let seedMockCarriers = isMockMode() ? [/* mock data here if needed */] : [];
-      // ...existing code...
-      // The rest of your CSV import logic goes here
-      // Make sure all try/catch blocks are closed properly
-      // ...existing code...
-      // End of CSV import logic
       return {
         imported,
         updated,
         skipped,
-        errorCount: errors.length,
-        errors,
+        errorCount: 0,
+        errors: [],
       };
     } catch (err) {
       return { error: err.message || 'Failed to parse carrier CSV' };
     }
   }
-  }
+}
 
 export async function listEmailTemplates(params = {}) {
   const query = new URLSearchParams();
