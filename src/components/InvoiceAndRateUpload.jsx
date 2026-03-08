@@ -3,7 +3,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function InvoiceAndRateUpload({ invoiceImages = [], rateImage = null }) {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   // Invoice image upload state
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [invoicePreview, setInvoicePreview] = useState(null);
@@ -29,12 +29,30 @@ export default function InvoiceAndRateUpload({ invoiceImages = [], rateImage = n
       return;
     }
     setInvoiceLoading(true);
-    setTimeout(() => {
-      setInvoiceLoading(false);
+    const formData = new FormData();
+    formData.append('file', invoiceFile);
+
+    try {
+      const res = await fetch('/api/invoices/upload-image', {
+        method: 'POST',
+        body: formData,
+        // headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Upload failed' }));
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      await res.json();
       setInvoiceStatus('Invoice image uploaded!');
       setInvoiceFile(null);
       setInvoicePreview(null);
-    }, 1200);
+    } catch (err) {
+      setInvoiceStatus(err.message || 'An error occurred during upload.');
+    } finally {
+      setInvoiceLoading(false);
+    }
   };
 
   // Handlers for rate confirmation image
@@ -51,12 +69,30 @@ export default function InvoiceAndRateUpload({ invoiceImages = [], rateImage = n
       return;
     }
     setRateLoading(true);
-    setTimeout(() => {
-      setRateLoading(false);
+    const formData = new FormData();
+    formData.append('file', rateFile);
+
+    try {
+      const res = await fetch('/api/invoices/upload-rate-confirmation', {
+        method: 'POST',
+        body: formData,
+        // headers: { 'Authorization': `Bearer ${localStorage.getItem('accessToken')}` }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Upload failed' }));
+        throw new Error(errorData.message || 'Upload failed');
+      }
+
+      await res.json();
       setRateStatus('Rate confirmation image uploaded!');
       setRateFile(null);
       setRatePreview(null);
-    }, 1200);
+    } catch (err) {
+      setRateStatus(err.message || 'An error occurred during upload.');
+    } finally {
+      setRateLoading(false);
+    }
   };
 
   return (

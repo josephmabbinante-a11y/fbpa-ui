@@ -3,14 +3,65 @@ import { useNavigate } from "react-router-dom";
 import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage } from "../api/client";
 import mockInvoices from "../mock/invoices";
 import mockInvoiceImages from "../mock/invoiceImages";
-import { useTheme, themes } from "../contexts/ThemeContext";
+import KPIWithTrend from '../components/KPIWithTrend';
+import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import CollapsibleSection from "../components/CollapsibleSection";
+import { InlineAlert, PageHeader, PrimaryButton } from "../components/ui/Primitives";
+
+const MOCK_RECENT_ACTIVITY_KEY = 'mock:invoices:recentActivity';
+const DEFAULT_RECENT_ACTIVITY = [
+  {
+    id: 'ra-1',
+    type: 'exception',
+    invoiceNumber: 'INV-1001',
+    amount: 1245.67,
+    status: 'Review',
+    timestamp: '2026-02-09T14:32:00Z',
+  },
+  {
+    id: 'ra-2',
+    type: 'upload',
+    fileName: 'feb-9-invoices.csv',
+    count: 42,
+    status: 'Processed',
+    timestamp: '2026-02-09T13:15:00Z',
+  },
+  {
+    id: 'ra-3',
+    type: 'exception',
+    invoiceNumber: 'INV-1002',
+    amount: 980.5,
+    status: 'Fail',
+    timestamp: '2026-02-09T10:45:00Z',
+  },
+];
+
+function isMockModeEnabled() {
+  if (import.meta.env.VITE_MOCK_MODE === 'true') return true;
+  try {
+    return typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function readMockRecentActivity() {
+  if (!isMockModeEnabled()) return DEFAULT_RECENT_ACTIVITY;
+  try {
+    const raw = localStorage.getItem(MOCK_RECENT_ACTIVITY_KEY);
+    if (!raw) return DEFAULT_RECENT_ACTIVITY;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : DEFAULT_RECENT_ACTIVITY;
+  } catch {
+    return DEFAULT_RECENT_ACTIVITY;
+  }
+}
 
 export default function Invoices() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const t = themes[theme];
-  const [data, setData] = useState(mockInvoices);
+  const mockMode = isMockModeEnabled();
+  const [data, setData] = useState(() => (mockMode ? mockInvoices : []));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,29 +70,79 @@ export default function Invoices() {
   const [imageStatus, setImageStatus] = useState(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState("");
-  const [imageHistory, setImageHistory] = useState(mockInvoiceImages);
+  const [imageHistory, setImageHistory] = useState(() => (mockMode ? mockInvoiceImages : []));
   const [verificationResult, setVerificationResult] = useState(null);
+  const [recentActivity, setRecentActivity] = useState(() => (mockMode ? readMockRecentActivity() : []));
+
+  const persistRecentActivity = (nextActivity) => {
+    if (!isMockModeEnabled()) return;
+    try {
+      localStorage.setItem(MOCK_RECENT_ACTIVITY_KEY, JSON.stringify(nextActivity));
+    } catch {
+      // Ignore storage write failures.
+    }
+  };
+
+  const appendRecentActivity = (entry) => {
+    setRecentActivity((previous) => {
+      const next = [entry, ...previous].slice(0, 50);
+      persistRecentActivity(next);
+      return next;
+    });
+  };
+
+  const formatActivityAmount = (activity) => {
+    if (Number.isFinite(Number(activity?.amount))) {
+      return `$${Number(activity.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    if (Number.isFinite(Number(activity?.count))) {
+      return Number(activity.count).toLocaleString();
+    }
+    return '-';
+  };
+
+  const openActivity = (activity) => {
+    const type = String(activity?.type || '').toLowerCase();
+    const invoiceId = String(activity?.invoiceNumber || activity?.invoiceId || '').trim();
+    const hasInvoice = invoiceId && data.some((inv) => inv.id === invoiceId);
+
+    if (hasInvoice) {
+      navigate(`/invoices/${invoiceId}`);
+      return;
+    }
+    if (type === 'upload') {
+      navigate('/uploads');
+      return;
+    }
+    if (type === 'exception' || type === 'verification') {
+      navigate('/exceptions');
+      return;
+    }
+    navigate('/invoices');
+  };
 
   useEffect(() => {
     let mounted = true;
     getInvoices()
       .then((res) => {
         if (!mounted) return;
-        if (res && !res.error && res.invoices) {
+        if (Array.isArray(res)) {
+          setData(res);
+        } else if (res && !res.error && Array.isArray(res.invoices)) {
           setData(res.invoices);
         } else {
-          setData(mockInvoices);
+          setData(mockMode ? mockInvoices : []);
           if (res && res.error) setError(res.error);
         }
       })
       .catch((err) => {
         if (!mounted) return;
-        setData(mockInvoices);
+        setData(mockMode ? mockInvoices : []);
         setError(err.message || String(err));
       })
       .finally(() => mounted && setLoading(false));
     return () => (mounted = false);
-  }, []);
+  }, [mockMode]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -59,10 +160,43 @@ export default function Invoices() {
       if (res && !res.error && res.images) {
         setImageHistory(res.images);
       } else {
-        setImageHistory(mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId));
+        setImageHistory(mockMode ? mockInvoiceImages.filter((img) => img.invoiceId === selectedInvoiceId) : []);
       }
     });
-  }, [selectedInvoiceId]);
+  }, [selectedInvoiceId, mockMode]);
+
+  const invoiceKpis = useMemo(() => {
+    const totalInvoices = data.length;
+    const exceptions = data.reduce((sum, inv) => sum + Number(inv.exceptions || 0), 0);
+    const totalAmount = data.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+    const pending = data.filter((inv) => String(inv.status || '').toLowerCase().includes('pending')).length;
+    return { totalInvoices, exceptions, totalAmount, pending };
+  }, [data]);
+
+  const exceptionBreakdownData = useMemo(() => {
+    const groups = new Map();
+    data.forEach((inv) => {
+      const key = String(inv.status || 'Unknown');
+      groups.set(key, (groups.get(key) || 0) + 1);
+    });
+    return Array.from(groups.entries()).map(([name, value]) => ({ name, value }));
+  }, [data]);
+
+  const savingsByCarrierData = useMemo(() => {
+    const groups = new Map();
+    data.forEach((inv) => {
+      const carrier = String(inv.carrier || 'Unknown');
+      const amount = Number(inv.amount || 0);
+      const current = groups.get(carrier) || { carrier, savings: 0, invoiceCount: 0 };
+      current.savings += amount * 0.03;
+      current.invoiceCount += 1;
+      groups.set(carrier, current);
+    });
+    return Array.from(groups.values())
+      .sort((a, b) => b.savings - a.savings)
+      .slice(0, 5)
+      .map((row) => ({ ...row, savings: Number(row.savings.toFixed(2)) }));
+  }, [data]);
 
   const filtered = data.filter(
     (inv) =>
@@ -75,101 +209,11 @@ export default function Invoices() {
     [data, selectedInvoiceId]
   );
 
-  const containerStyle = {
-    padding: '24px',
-    backgroundColor: t.bg,
-    color: t.text,
-    minHeight: '100vh',
-    width: '100%',
-    boxSizing: 'border-box',
-  };
-
-  const headerStyle = {
-    marginBottom: 24,
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  };
-
-  const titleStyle = {
-    fontSize: '24px',
-    fontWeight: '700',
-    letterSpacing: '-0.5px',
-  };
-
-  const searchStyle = {
-    padding: '8px 12px',
-    backgroundColor: t.surface,
-    border: `1px solid ${t.border}`,
-    borderRadius: 4,
-    color: t.text,
-    fontSize: '13px',
-    width: '240px',
-  };
-
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '13px',
-  };
-
-  const thStyle = {
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontWeight: '600',
-    backgroundColor: t.surface,
-    borderBottom: `1px solid ${t.border}`,
-    color: t.textSecondary,
-    fontSize: '11px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.3px',
-  };
-
-  const tdStyle = {
-    padding: '8px 12px',
-    borderBottom: `1px solid ${t.borderLight}`,
-    color: t.text,
-  };
-
-  const currencyStyle = {
-    ...tdStyle,
-    color: t.positive,
-    fontWeight: '500',
-  };
-
-  const cardStyle = {
-    backgroundColor: t.surface,
-    border: `1px solid ${t.border}`,
-    borderRadius: 6,
-    padding: 16,
-  };
-
-  const buttonStyle = (disabled) => ({
-    padding: '8px 16px',
-    backgroundColor: t.accent,
-    color: '#fff',
-    border: 'none',
-    borderRadius: 4,
-    fontSize: '13px',
-    fontWeight: '500',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-  });
-
-  const chipStyle = (tone) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '2px 8px',
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: 600,
-    backgroundColor: tone === 'good' ? `${t.positive}20` : tone === 'warn' ? `${t.warning}20` : `${t.error}20`,
-    color: tone === 'good' ? t.positive : tone === 'warn' ? t.warning : t.error,
-  });
+  const chipClass = (tone) => `ui-chip ${tone === "good" ? "good" : tone === "warn" ? "warn" : "bad"}`;
 
   const handleImageUpload = async () => {
     if (!imageFile || !selectedInvoiceId) {
-      setImageStatus('Select an invoice and image first');
+      setImageStatus("Select an invoice and image first");
       return;
     }
     setImageLoading(true);
@@ -184,14 +228,22 @@ export default function Invoices() {
         invoiceId: res.invoiceId || selectedInvoiceId,
         fileName: res.fileName || imageFile.name,
         uploadedAt: res.uploadedAt || new Date().toISOString(),
-        status: res.status || 'Uploaded',
+        status: res.status || "Uploaded",
         verification: res.verification || null,
       };
       setImageHistory((prev) => [entry, ...prev]);
-      setImageStatus('Image uploaded');
+      appendRecentActivity({
+        id: `ra-upload-${Date.now()}`,
+        type: 'upload',
+        fileName: entry.fileName,
+        count: 1,
+        status: entry.status || 'Uploaded',
+        timestamp: entry.uploadedAt || new Date().toISOString(),
+      });
+      setImageStatus("Image uploaded");
       setImageFile(null);
     } else {
-      setImageStatus(`Upload failed: ${res && res.error ? res.error : 'unknown'}`);
+      setImageStatus(`Upload failed: ${res && res.error ? res.error : "unknown"}`);
     }
   };
 
@@ -207,7 +259,15 @@ export default function Invoices() {
       setImageHistory((prev) =>
         prev.map((img) => (img.id === imageId ? { ...img, status: res.status || img.status, verification: res.verification } : img))
       );
-      setImageStatus('Verification complete');
+      appendRecentActivity({
+        id: `ra-verify-${Date.now()}`,
+        type: 'verification',
+        invoiceNumber: selectedInvoiceId,
+        amount: Number(res?.verification?.extractedFields?.amount ?? selectedInvoice?.amount ?? 0),
+        status: res.status || 'Verified',
+        timestamp: new Date().toISOString(),
+      });
+      setImageStatus("Verification complete");
     } else {
       const fallback = mockInvoiceImages.find((img) => img.id === imageId);
       if (fallback) {
@@ -215,115 +275,39 @@ export default function Invoices() {
         setImageHistory((prev) =>
           prev.map((img) => (img.id === imageId ? { ...img, status: fallback.status, verification: fallback.verification } : img))
         );
-        setImageStatus('Verification complete (mock)');
+        appendRecentActivity({
+          id: `ra-verify-${Date.now()}`,
+          type: 'verification',
+          invoiceNumber: selectedInvoiceId,
+          amount: Number(fallback?.verification?.extractedFields?.amount ?? selectedInvoice?.amount ?? 0),
+          status: fallback.status || 'Verified',
+          timestamp: new Date().toISOString(),
+        });
+        setImageStatus("Verification complete (mock)");
       } else {
-        setImageStatus(`Verification failed: ${res && res.error ? res.error : 'unknown'}`);
+        setImageStatus(`Verification failed: ${res && res.error ? res.error : "unknown"}`);
       }
     }
   };
 
-
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>Invoices</h1>
-        {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Loading...</span>}
+    <div className="ui-page">
+      <PageHeader title="Invoices" loading={loading} />
+
+      {/* Dashboard assets moved from Dashboard.jsx */}
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
+        <KPIWithTrend label="Total Invoices" value={invoiceKpis.totalInvoices} delta={0} trendData={[]} trendColor="#0066cc" />
+        <KPIWithTrend label="Exceptions" value={invoiceKpis.exceptions} delta={0} trendData={[]} trendColor="#ef4444" />
+        <KPIWithTrend label="Total Savings" value={invoiceKpis.totalAmount * 0.03} format="currency" delta={0} trendData={[]} trendColor="#10b981" />
+        <KPIWithTrend label="Pending" value={invoiceKpis.pending} delta={0} trendData={[]} trendColor="#f59e0b" />
       </div>
-
-      {error && (
-        <div style={{ padding: '8px 12px', backgroundColor: t.bgAlt, border: `1px solid ${t.warning}`, borderRadius: 4, fontSize: '13px', color: t.warning, marginBottom: 24 }}>
-          Backend error, using mock data: {error}
-        </div>
-      )}
-
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
-        <input
-          type="text"
-          placeholder="Search invoices..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={searchStyle}
-        />
-        <span style={{ fontSize: 12, color: t.textSecondary }}>
-          Showing {filtered.length} of {data.length}
-        </span>
-      </div>
-
-      {filtered.length > 0 ? (
-        <div style={{ ...cardStyle, padding: 0, overflowX: 'auto', marginBottom: 24 }}>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Invoice ID</th>
-                <th style={thStyle}>Carrier</th>
-                <th style={thStyle}>Amount</th>
-                <th style={thStyle}>Status</th>
-                <th style={thStyle}>Exceptions</th>
-                <th style={thStyle}>Upload Date</th>
-                <th style={thStyle}>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((invoice) => (
-                <tr key={invoice.id}>
-                <td
-                  style={{ ...tdStyle, color: t.accent, cursor: 'pointer' }}
-                  onClick={() => navigate(`/invoices/${invoice.id}`)}
-                >
-                  {invoice.id}
-                </td>
-                  <td style={tdStyle}>{invoice.carrier}</td>
-                  <td style={currencyStyle}>
-                    ${invoice.amount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </td>
-                  <td style={tdStyle}>{invoice.status}</td>
-                  <td style={tdStyle}>{invoice.exceptions}</td>
-                  <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
-                    {new Date(invoice.uploadDate).toLocaleDateString()}
-                  </td>
-                  <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>
-                    {invoice.description || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div style={{ padding: '32px', textAlign: 'center', color: t.textSecondary }}>
-          No invoices found.
-        </div>
-      )}
 
       <CollapsibleSection title="Invoice Imaging" defaultOpen={true}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: 16,
-            alignItems: 'start',
-          }}
-        >
-          <div style={cardStyle}>
+        <div className="ui-grid-wide" style={{ alignItems: "start" }}>
+          <div className="ui-card">
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Upload Invoice Image</div>
-            <label style={{ display: 'block', fontSize: 12, color: t.textSecondary, marginBottom: 6 }}>Invoice</label>
-            <select
-              value={selectedInvoiceId}
-              onChange={(e) => setSelectedInvoiceId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 4,
-                border: `1px solid ${t.border}`,
-                backgroundColor: t.bgAlt,
-                color: t.text,
-                marginBottom: 12,
-                boxSizing: 'border-box',
-              }}
-            >
+            <label className="ui-label">Invoice</label>
+            <select value={selectedInvoiceId} onChange={(e) => setSelectedInvoiceId(e.target.value)} className="ui-select" style={{ marginBottom: 12 }}>
               <option value="">Select invoice</option>
               {data.map((inv) => (
                 <option key={inv.id} value={inv.id}>
@@ -336,51 +320,30 @@ export default function Invoices() {
               type="file"
               accept=".png,.jpg,.jpeg,.pdf"
               onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                borderRadius: 4,
-                border: `1px solid ${t.border}`,
-                backgroundColor: t.bgAlt,
-                color: t.text,
-                marginBottom: 12,
-                boxSizing: 'border-box',
-              }}
+              className="ui-input"
+              style={{ marginBottom: 12 }}
             />
 
             {imagePreview && (
-              <div
-                style={{
-                  height: 160,
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                  border: `1px solid ${t.borderLight}`,
-                  marginBottom: 12,
-                }}
-              >
-                <img src={imagePreview} alt="Invoice preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ height: 160, borderRadius: 6, overflow: "hidden", border: "1px solid var(--border)", marginBottom: 12 }}>
+                <img src={imagePreview} alt="Invoice preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleImageUpload}
-              disabled={imageLoading || !imageFile || !selectedInvoiceId}
-              style={{ ...buttonStyle(imageLoading || !imageFile || !selectedInvoiceId), width: '100%' }}
-            >
-              {imageLoading ? 'Uploading...' : 'Upload Image'}
-            </button>
+            <PrimaryButton type="button" onClick={handleImageUpload} disabled={imageLoading || !imageFile || !selectedInvoiceId} style={{ width: "100%" }}>
+              {imageLoading ? "Uploading..." : "Upload Image"}
+            </PrimaryButton>
 
             {imageStatus && (
               <div
                 style={{
                   marginTop: 10,
-                  padding: '8px 12px',
+                  padding: "8px 12px",
                   borderRadius: 4,
                   fontSize: 12,
-                  backgroundColor: imageStatus.includes('failed') ? `${t.error}10` : `${t.positive}10`,
-                  color: imageStatus.includes('failed') ? t.error : t.positive,
-                  border: `1px solid ${imageStatus.includes('failed') ? t.error : t.positive}`,
+                  backgroundColor: imageStatus.includes("failed") ? "rgba(239, 68, 68, 0.1)" : "rgba(16, 185, 129, 0.1)",
+                  color: imageStatus.includes("failed") ? "var(--error)" : "var(--success)",
+                  border: imageStatus.includes("failed") ? "1px solid var(--error)" : "1px solid var(--success)",
                 }}
               >
                 {imageStatus}
@@ -388,89 +351,58 @@ export default function Invoices() {
             )}
           </div>
 
-          <div style={cardStyle}>
+          <div className="ui-card">
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Verification</div>
             {selectedInvoice ? (
-              <div style={{ fontSize: 12, color: t.textSecondary, marginBottom: 12 }}>
-                Selected: <strong style={{ color: t.text }}>{selectedInvoice.id}</strong> · {selectedInvoice.carrier}
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>
+                Selected: <strong style={{ color: "var(--text)" }}>{selectedInvoice.id}</strong> · {selectedInvoice.carrier}
               </div>
             ) : (
-              <div style={{ fontSize: 12, color: t.textSecondary, marginBottom: 12 }}>
-                Select an invoice to view verification results.
-              </div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 12 }}>Select an invoice to view verification results.</div>
             )}
 
             {imageHistory.length > 0 ? (
-              <div style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: "grid", gap: 10 }}>
                 {imageHistory.map((img) => (
-                  <div
-                    key={img.id}
-                    style={{
-                      border: `1px solid ${t.borderLight}`,
-                      borderRadius: 6,
-                      padding: 10,
-                      backgroundColor: t.bgAlt,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  <div key={img.id} style={{ border: "1px solid var(--border)", borderRadius: 6, padding: 10, backgroundColor: "var(--bg-alt)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                       <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: t.text }}>{img.fileName}</div>
-                        <div style={{ fontSize: 11, color: t.textSecondary }}>
-                          {new Date(img.uploadedAt).toLocaleDateString()}
-                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text)" }}>{img.fileName}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{new Date(img.uploadedAt).toLocaleDateString()}</div>
                       </div>
-                      <span style={chipStyle(img.status === 'Verified' ? 'good' : img.status === 'Needs Review' ? 'warn' : 'bad')}>
-                        {img.status}
-                      </span>
+                      <span className={chipClass(img.status === "Verified" ? "good" : img.status === "Needs Review" ? "warn" : "bad")}>{img.status}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleVerify(img.id)}
-                      style={{ ...buttonStyle(false), marginTop: 10, width: '100%' }}
-                      disabled={imageLoading}
-                    >
-                      {imageLoading ? 'Verifying...' : 'Run Verification'}
-                    </button>
+                    <PrimaryButton type="button" onClick={() => handleVerify(img.id)} style={{ marginTop: 10, width: "100%" }} disabled={imageLoading}>
+                      {imageLoading ? "Verifying..." : "Run Verification"}
+                    </PrimaryButton>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ fontSize: 12, color: t.textSecondary }}>
-                No images uploaded yet for this invoice.
-              </div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>No images uploaded yet for this invoice.</div>
             )}
           </div>
 
-          <div style={cardStyle}>
+          <div className="ui-card">
             <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Verification Results</div>
             {verificationResult ? (
               <>
                 <div style={{ marginBottom: 10 }}>
-                  <span style={chipStyle(verificationResult.matchConfidence >= 90 ? 'good' : verificationResult.matchConfidence >= 75 ? 'warn' : 'bad')}>
+                  <span className={chipClass(verificationResult.matchConfidence >= 90 ? "good" : verificationResult.matchConfidence >= 75 ? "warn" : "bad")}>
                     {verificationResult.matchConfidence}% match confidence
                   </span>
                 </div>
-                <div style={{ display: 'grid', gap: 8, fontSize: 12 }}>
-                  <div>
-                    <strong>Invoice ID:</strong> {verificationResult.extractedFields.invoiceId}
-                  </div>
-                  <div>
-                    <strong>Carrier:</strong> {verificationResult.extractedFields.carrier}
-                  </div>
-                  <div>
-                    <strong>Amount:</strong> ${verificationResult.extractedFields.amount.toLocaleString()}
-                  </div>
-                  <div>
-                    <strong>Invoice Date:</strong> {verificationResult.extractedFields.invoiceDate}
-                  </div>
-                  <div>
-                    <strong>Due Date:</strong> {verificationResult.extractedFields.dueDate}
-                  </div>
+                <div style={{ display: "grid", gap: 8, fontSize: 12 }}>
+                  <div><strong>Invoice ID:</strong> {verificationResult.extractedFields.invoiceId}</div>
+                  <div><strong>Carrier:</strong> {verificationResult.extractedFields.carrier}</div>
+                  <div><strong>Amount:</strong> ${verificationResult.extractedFields.amount.toLocaleString()}</div>
+                  <div><strong>Invoice Date:</strong> {verificationResult.extractedFields.invoiceDate}</div>
+                  <div><strong>Due Date:</strong> {verificationResult.extractedFields.dueDate}</div>
                 </div>
                 {verificationResult.issues && verificationResult.issues.length > 0 && (
                   <div style={{ marginTop: 12 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Issues</div>
-                    <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: t.textSecondary }}>
+                    <ul style={{ margin: 0, paddingLeft: 16, fontSize: 12, color: "var(--text-secondary)" }}>
                       {verificationResult.issues.map((issue) => (
                         <li key={issue}>{issue}</li>
                       ))}
@@ -479,13 +411,104 @@ export default function Invoices() {
                 )}
               </>
             ) : (
-              <div style={{ fontSize: 12, color: t.textSecondary }}>
-                Run verification to see extracted fields and match confidence.
-              </div>
+              <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Run verification to see extracted fields and match confidence.</div>
             )}
           </div>
         </div>
       </CollapsibleSection>
+
+      <CollapsibleSection title="Recent Activity" defaultOpen={true}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: 8 }}>Type</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Invoice/File</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Amount</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+              <th style={{ textAlign: 'left', padding: 8 }}>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentActivity.length > 0 ? recentActivity.slice(0, 12).map((activity) => (
+              <tr
+                key={activity.id}
+                onClick={() => openActivity(activity)}
+                style={{ cursor: 'pointer' }}
+                title="Open related page"
+              >
+                <td style={{ padding: 8 }}>{activity.type || '-'}</td>
+                <td style={{ padding: 8 }}>{activity.invoiceNumber || activity.fileName || '-'}</td>
+                <td style={{ padding: 8 }}>{formatActivityAmount(activity)}</td>
+                <td style={{ padding: 8 }}>{activity.status || '-'}</td>
+                <td style={{ padding: 8 }}>{activity.timestamp ? new Date(activity.timestamp).toLocaleDateString() : '-'}</td>
+              </tr>
+            )) : (
+              <tr>
+                <td style={{ padding: 8, color: 'var(--text-secondary)' }} colSpan={5}>No recent activity.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </CollapsibleSection>
+
+      <div className="ui-row">
+        <input
+          type="text"
+          placeholder="Search invoices..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="ui-input"
+          style={{ width: 240 }}
+        />
+        <span className="ui-subtitle">
+          Showing {filtered.length} of {data.length}
+        </span>
+      </div>
+
+      {filtered.length > 0 ? (
+        <div className="ui-table-wrap">
+          <table className="ui-table">
+            <thead>
+              <tr>
+                <th>Invoice ID</th>
+                <th>Carrier</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Exceptions</th>
+                <th>Upload Date</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((invoice) => (
+                <tr key={invoice.id}>
+                  <td style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate(`/invoices/${invoice.id}`)}>
+                    {invoice.id}
+                  </td>
+                  <td>{invoice.carrier}</td>
+                  <td style={{ color: "var(--success)", fontWeight: 600 }}>
+                    ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td>{invoice.status}</td>
+                  <td>{invoice.exceptions}</td>
+                  <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{new Date(invoice.uploadDate).toLocaleDateString()}</td>
+                  <td style={{ fontSize: 12, color: "var(--text-secondary)" }}>{invoice.description || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <InlineAlert tone="warn">No invoices found.</InlineAlert>
+      )}
+
+      <CollapsibleSection title="Analytics" defaultOpen={true}>
+        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 24 }}>
+            <ExceptionBreakdownChart data={exceptionBreakdownData} />
+            <SavingsByCarrierChart data={savingsByCarrierData} />
+        </div>
+      </CollapsibleSection>
+
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
 
 export default function RateConfirmationUpload() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const { theme } = useTheme();
+  const t = theme || {};
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [status, setStatus] = useState(null);
@@ -63,7 +64,7 @@ export default function RateConfirmationUpload() {
             )}
           </div>
         )}
-        <button type="submit" disabled={loading} style={{ padding: '10px 0', background: t.accent, color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
+        <button type="submit" disabled={loading} style={{ padding: '10px 0', background: t.accent, color: t.surface, border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer' }}>
           {loading ? 'Uploading...' : 'Upload'}
         </button>
         {status && <div style={{ color: status.includes('success') ? t.positive : t.error, fontSize: 13 }}>{status}</div>}

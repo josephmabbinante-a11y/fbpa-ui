@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { uploadInvoiceFile } from '../api/client';
 import uploadHistory from '../mock/uploads';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
+import DocumentManagementPanel from './DocumentManagementPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
 
 export default function Uploads() {
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme || {};
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState(null);
+  const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState(uploadHistory);
 
@@ -48,34 +50,36 @@ export default function Uploads() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setUploadResult(null);
     if (!file) return setStatus('Choose a file first');
     setLoading(true);
-
-    let invoiceCount = 1;
+    setStatus(null);
+    let res;
     try {
-      if (file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv' || (file.type && file.type.startsWith('text/'))) {
-        const text = await file.text();
-        const lines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
-        invoiceCount = Math.max(1, lines.length - (lines.length > 1 ? 1 : 0));
-      }
+      res = await uploadInvoiceFile(file);
     } catch (err) {
-      invoiceCount = 1;
+      setStatus('Upload failed: ' + (err.message || 'unknown error'));
+      setLoading(false);
+      return;
     }
-
-    const payload = { fileName: file.name, invoiceCount };
-    const res = await uploadInvoiceFile(payload);
     setLoading(false);
-
-    if (res && !res.error) {
+    if (res && !res.error && res.success) {
       setStatus('Upload successful');
-      const entry = res.id
-        ? { id: res.id, fileName: res.fileName || file.name, uploadDate: res.uploadDate || new Date().toISOString(), invoiceCount: res.invoiceCount || invoiceCount, successCount: res.successCount || invoiceCount, errorCount: res.errorCount || 0, status: res.status || 'Processed' }
-        : { id: Date.now(), fileName: file.name, uploadDate: new Date().toISOString(), invoiceCount, successCount: invoiceCount, errorCount: 0, status: 'Processed' };
+      setUploadResult(res);
+      const entry = {
+        id: Date.now(),
+        fileName: res.fileName || file.name,
+        uploadDate: res.uploadedAt || new Date().toISOString(),
+        invoiceCount: res.invoiceCount || 0,
+        successCount: res.successCount || 0,
+        errorCount: res.errorCount || 0,
+        status: 'Processed',
+      };
       setHistory((h) => [entry, ...h]);
     } else {
       setStatus(`Upload failed: ${res && res.error ? res.error : 'unknown'}`);
+      setUploadResult(res && res.errors ? res : null);
     }
-
     setFile(null);
   };
 
@@ -94,6 +98,11 @@ export default function Uploads() {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 4,
+    minHeight: -52,
+    padding: '0 4px',
+    borderBottom: `1px solid ${t.border}`,
+    background: t.bgAlt,
   };
 
   const titleStyle = {
@@ -122,7 +131,7 @@ export default function Uploads() {
     display: 'inline-block',
     padding: '8px 12px',
     backgroundColor: t.accent,
-    color: '#fff',
+    color: 'var(--surface-elevated)',
     textDecoration: 'none',
     borderRadius: 4,
     fontSize: '13px',
@@ -136,7 +145,7 @@ export default function Uploads() {
     backgroundColor: t.surface,
     border: `1px solid ${t.border}`,
     borderRadius: 4,
-    color: t.text,
+    color: t.textPrimary,
     fontSize: '13px',
     marginBottom: 12,
   };
@@ -144,7 +153,7 @@ export default function Uploads() {
   const buttonStyle = {
     padding: '8px 16px',
     backgroundColor: t.accent,
-    color: '#fff',
+    color: 'var(--surface-elevated)',
     border: 'none',
     borderRadius: 4,
     fontSize: '13px',
@@ -157,6 +166,8 @@ export default function Uploads() {
     width: '100%',
     borderCollapse: 'collapse',
     fontSize: '13px',
+    backgroundColor: t.surface,
+    color: t.textPrimary,
   };
 
   const thStyle = {
@@ -174,11 +185,19 @@ export default function Uploads() {
   const tdStyle = {
     padding: '8px 12px',
     borderBottom: `1px solid ${t.borderLight}`,
-    color: t.text,
+    backgroundColor: t.surface,
+    color: t.textPrimary,
   };
 
   return (
     <div style={containerStyle}>
+      {/* Document Management & Search Panel */}
+      <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.bgAlt, marginBottom: 24, padding: 16 }}>
+        <DocumentManagementPanel t={t} />
+      </div>
+
+
+
       <div style={headerStyle}>
         <h1 style={titleStyle}>Uploads</h1>
         {loading && <span style={{ fontSize: '12px', color: t.textSecondary }}>Uploading...</span>}
@@ -226,6 +245,28 @@ export default function Uploads() {
               {status}
             </div>
           )}
+          {uploadResult && (
+            <div style={{ marginTop: 8, fontSize: 13 }}>
+              <div><b>Invoices Parsed:</b> {uploadResult.successCount} / {uploadResult.invoiceCount}</div>
+              {uploadResult.errorCount > 0 && (
+                <div style={{ color: t.error }}>
+                  <b>Errors:</b> {uploadResult.errorCount}
+                  <ul style={{ margin: '4px 0 0 16px', fontSize: 12 }}>
+                    {uploadResult.errors.slice(0, 5).map((err, idx) => (
+                      <li key={idx}>Line {err.line}: {err.value}</li>
+                    ))}
+                    {uploadResult.errorCount > 5 && <li>...and {uploadResult.errorCount - 5} more</li>}
+                  </ul>
+                </div>
+              )}
+              {uploadResult.invoices && uploadResult.invoices.length > 0 && (
+                <div style={{ marginTop: 6 }}>
+                  <b>Preview:</b>
+                  <pre style={{ background: t.bgAlt, padding: 8, borderRadius: 4, fontSize: 12, maxHeight: 120, overflow: 'auto' }}>{JSON.stringify(uploadResult.invoices, null, 2)}</pre>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Rate Confirmation Upload Section */}
@@ -244,7 +285,7 @@ export default function Uploads() {
               onChange={handleRcFileChange}
               style={{ fontSize: 14, color: t.text, marginBottom: 0, flex: 1 }}
             />
-            <button type="submit" disabled={rcLoading} style={{ padding: '10px 0', background: t.accent, color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer', minWidth: 100 }}>
+            <button type="submit" disabled={rcLoading} style={{ padding: '10px 0', background: t.accent, color: 'var(--surface-elevated)', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 15, cursor: 'pointer', minWidth: 100 }}>
               {rcLoading ? 'Uploading...' : 'Upload'}
             </button>
           </form>
@@ -264,7 +305,7 @@ export default function Uploads() {
 
       {/* Upload History */}
       <CollapsibleSection title={`Upload History (${history.length})`} defaultOpen={true} id="upload-history">
-        <table style={tableStyle}>
+        <table style={{...tableStyle, fontSize: '1rem'}}>
           <thead>
             <tr>
               <th style={thStyle}>File Name</th>

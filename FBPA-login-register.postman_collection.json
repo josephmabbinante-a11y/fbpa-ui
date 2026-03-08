@@ -1,0 +1,50 @@
+{
+    "info": {
+        "_postman_id": "fbpa-login-register-collection-2026",
+        "name": "FBPA Login & Register API",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Register",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {"key": "Content-Type", "value": "application/json"}
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"name\": \"Test User\",\n  \"role\": \"user\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/signup",
+                    "host": ["{{base_url}}"],
+                    "path": ["auth", "signup"]
+                }
+            }
+        },
+        {
+            "name": "Login",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {"key": "Content-Type", "value": "application/json"}
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{base_url}}/auth/login",
+                    "host": ["{{base_url}}"],
+                    "path": ["auth", "login"]
+                }
+            }
+        }
+    ],
+    "variable": [
+        {"key": "base_url", "value": "https://mongodb-production-744f.up.railway.app"},
+        {"key": "test_email", "value": "your@email.com"},
+        {"key": "test_password", "value": "yourpassword"}
+    ]
+}

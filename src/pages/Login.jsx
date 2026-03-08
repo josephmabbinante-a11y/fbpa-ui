@@ -1,124 +1,152 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { login } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import logo from '../assets/opscale-logo.svg';
-
+// ...existing code...
 export default function Login() {
-  const { theme } = useTheme();
-  const t = themes[theme];
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [status, setStatus] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus(null);
+    setStatus("");
     setLoading(true);
     const res = await login({ email, password });
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      try {
-        localStorage.setItem('accessToken', res.accessToken);
-      } catch {
-        // ignore storage errors
-      }
-      navigate('/dashboard');
+      const tokenSet = setAccessToken(res.accessToken);
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 100);
     } else {
-      setStatus('Invalid email or password');
+      // Improved error handling
+      if (res && res.error) {
+        if (res.error.toLowerCase().includes("not verified")) {
+          setStatus("Email not verified. Please check your inbox.");
+        } else if (res.error.toLowerCase().includes("invalid credentials")) {
+          setStatus("Invalid email or password.");
+        } else {
+          setStatus(res.error);
+        }
+      } else {
+        setStatus("Invalid email or password.");
+      }
     }
   };
 
-  const containerStyle = {
-    minHeight: '100vh',
-    backgroundColor: t.bg,
-    color: t.text,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    boxSizing: 'border-box',
-  };
-
-  const cardStyle = {
-    width: '100%',
-    maxWidth: 420,
-    backgroundColor: t.surface,
-    border: `1px solid ${t.border}`,
-    borderRadius: 8,
-    padding: 24,
-    boxShadow: `0 10px 30px ${t.border}55`,
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '10px 12px',
-    borderRadius: 6,
-    border: `1px solid ${t.border}`,
-    backgroundColor: t.bgAlt,
-    color: t.text,
-    fontSize: 13,
-    boxSizing: 'border-box',
-  };
-
-  const buttonStyle = {
-    width: '100%',
-    padding: '10px 14px',
-    borderRadius: 6,
-    border: 'none',
-    backgroundColor: t.accent,
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: 'pointer',
+  const handleRegistered = ({ email: newEmail, password: newPassword }) => {
+    setEmail(newEmail);
+    setPassword(newPassword);
+    setShowRegister(false);
+    setStatus("Registration successful. Sign in now.");
   };
 
   return (
-    <div style={containerStyle}>
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <img src={logo} alt="Opscale" style={{ height: 40, width: 'auto', display: 'block' }} />
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
-            <div style={{ fontSize: 12, color: t.textSecondary }}>Sign in to continue</div>
+    <div className="auth-shell" role="main" aria-label="Authentication Shell">
+      <div className="auth-wrap">
+        <div className="auth-logo-panel">
+          <img src={logo} alt="Opscale Audit IQ" style={{ width: 320, maxWidth: "100%", height: "auto", display: "block", filter: "drop-shadow(0 10px 22px rgba(24, 210, 255, 0.24))" }} />
+        </div>
+        <div className="ui-card auth-card" role="form" aria-labelledby="auth-title">
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+            <img src={shieldLogo} alt="Opscale shield" style={{ height: 40, width: 40, display: "block", objectFit: "contain" }} />
+            <div>
+              <div id="auth-title" style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
+              <div className="ui-subtitle">Sign in to continue</div>
+            </div>
+          </div>
+          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }} aria-label="Login Form">
+            <InputField label="Email">
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="ui-input" autoComplete="email" required aria-required="true" aria-label="Email address" />
+            </InputField>
+            <InputField label="Password">
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" className="ui-input" autoComplete="current-password" required aria-required="true" aria-label="Password" />
+            </InputField>
+            <PrimaryButton type="submit" disabled={loading} aria-busy={loading} aria-label="Sign In">
+              {loading ? "Signing in..." : "Sign In"}
+            </PrimaryButton>
+            {status && <div role="alert" style={{ color: status.toLowerCase().includes("successful") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
+          </form>
+          <div className="auth-actions" role="navigation" aria-label="Auth Actions">
+            <LinkButton type="button" onClick={() => setShowForgot(true)} aria-label="Forgot password">Forgot password?</LinkButton>
+            <LinkButton type="button" onClick={() => setShowRegister(true)} aria-label="Register">Need an account? Register</LinkButton>
+            <LinkButton type="button" onClick={() => setShowTestModal(true)} aria-label="Open Test Modal">Open Test Modal</LinkButton>
+          </div>
+          {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
+          {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
+          {showTestModal && <TestModal onClose={() => setShowTestModal(false)} />}
+          {/* Debug token display */}
+          <div style={{ marginTop: 24, fontSize: 12, color: 'var(--text-secondary)' }} aria-live="polite">
+            <strong>[DEBUG] accessToken:</strong>
+            <pre style={{ wordBreak: 'break-all', background: '#f6f6f6', padding: 8, borderRadius: 4 }}>{getAccessToken() || 'No token found'}</pre>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { login } from "../api/client";
+import logo from "../assets/opscale-logo.svg";
+import shieldLogo from "../assets/opscale-shield.svg";
+import RegisterForm from "../components/Register";
+import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
+import { setAccessToken, getAccessToken } from "../utils/authToken";
 
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12 }}>
-          <div>
-            <label style={{ fontSize: 12, color: t.textSecondary, display: 'block', marginBottom: 6 }}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@company.com"
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: t.textSecondary, display: 'block', marginBottom: 6 }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={inputStyle}
-            />
-          </div>
-          <button type="submit" style={buttonStyle} disabled={loading}>
-            {loading ? 'Signing In...' : 'Sign In'}
-          </button>
-          {status && (
-            <div style={{ fontSize: 12, color: t.error, backgroundColor: `${t.error}10`, border: `1px solid ${t.error}`, padding: '8px 10px', borderRadius: 6 }}>
-              {status}
-            </div>
-          )}
+function TestModal({ onClose }) {
+  return (
+    <div className="modal-overlay" style={{ zIndex: 2000 }}>
+      <div className="ui-card modal-card" style={{ maxWidth: 320 }}>
+        <h2 style={{ marginTop: 0 }}>Test Modal</h2>
+        <p style={{ marginTop: 0, color: "var(--text-secondary)" }}>If you see this, modal logic works.</p>
+        <LinkButton type="button" onClick={onClose}>Close</LinkButton>
+      </div>
+    </div>
+  );
+}
+
+function ForgotPasswordModal({ onClose }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (res.ok) setStatus("Password reset email sent!");
+      else setStatus(data.error || "Failed to send reset email.");
+    } catch {
+      setStatus("Network error");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="ui-card modal-card">
+        <h2 style={{ marginTop: 0 }}>Forgot Password</h2>
+        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+          <InputField label="Email">
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="ui-input" />
+          </InputField>
+          <PrimaryButton type="submit" disabled={loading}>
+            {loading ? "Sending..." : "Send Reset Email"}
+          </PrimaryButton>
+          {status && <div style={{ color: status.includes("sent") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
         </form>
-
-        <div style={{ marginTop: 16, fontSize: 12, color: t.textSecondary }}>
-          By signing in you agree to the Opscale terms and privacy policy.
+        <div style={{ marginTop: 12 }}>
+          <LinkButton type="button" onClick={onClose}>Close</LinkButton>
         </div>
       </div>
     </div>

@@ -60,7 +60,7 @@ export default function CarrierScorecard() {
   const { carrier } = useParams();
   const navigate = useNavigate();
   const { theme } = useTheme();
-  const t = themes[theme];
+  const t = theme;
 
   const decodedCarrier = decodeURIComponent(carrier);
   const data = carrierPerformance.find((c) => c.carrier === decodedCarrier);
@@ -165,41 +165,81 @@ export default function CarrierScorecard() {
     },
   ];
 
+  const panelStyle = {
+    border: `1px solid ${t.border}`,
+    borderRadius: 12,
+    background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`,
+    boxShadow: '0 10px 24px rgba(0,0,0,0.14)',
+  };
+
+  const controlStyle = {
+    minHeight: 34,
+    borderRadius: 8,
+    border: `1px solid ${t.border}`,
+    background: t.bgAlt,
+    color: t.text,
+    padding: '6px 10px',
+    fontSize: 12,
+  };
+
+  const summaryRows = [
+    show.onTime && ['On-Time %', `${data.onTime.toFixed(1)}%`],
+    show.billingErrors && ['Billing Errors %', `${data.billingErrors.toFixed(1)}%`],
+    show.invoiceDiscrepancy && ['Invoice Discrepancy %', `${data.invoiceDiscrepancy.toFixed(1)}%`],
+    show.avgTransitDays && ['Avg Transit (Days)', data.avgTransitDays.toFixed(1)],
+    show.claimsRate && ['Claims %', `${data.claimsRate.toFixed(1)}%`],
+    show.totalInvoices && ['Total Invoices', data.totalInvoices.toLocaleString()],
+    show.shipmentVolume && ['Shipment Volume', shipmentVolume.toLocaleString()],
+    show.avgShipmentValue && ['Avg Shipment Value', `$${avgShipmentValue.toLocaleString()}`],
+    show.lateDeliveries && ['Late Deliveries (est)', lateDeliveries.toLocaleString()],
+  ].filter(Boolean);
+
   return (
-    <div style={{ padding: 32, background: t.bg, color: t.text, minHeight: '100vh' }}>
-      <button onClick={() => navigate(-1)} style={{ marginBottom: 16, background: t.bgAlt, border: `1px solid ${t.border}`, color: t.text, borderRadius: 6, padding: '8px 12px', cursor: 'pointer' }}>Back</button>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{data.carrier} Scorecard</h1>
+    <div style={{ display: 'grid', gap: 14 }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            style={{ ...controlStyle, cursor: 'pointer', marginBottom: 8 }}
+          >
+            Back
+          </button>
+          <h1 style={{ margin: 0, fontSize: 26 }}>{data.carrier} Scorecard</h1>
+          <div style={{ fontSize: 12, color: t.textSecondary }}>
+            Service, billing quality, and risk profile against carrier pool benchmarks.
+          </div>
+        </div>
+      </header>
 
-      <div style={{ marginBottom: 18, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-        <span style={{ fontWeight: 600, fontSize: 14, marginRight: 8 }}>Customize:</span>
-        {Object.keys(show).map((key) => key !== 'advanced' && key !== 'summary' && (
-          <label key={key} style={{ fontSize: 13, marginRight: 8 }}>
-            <input type="checkbox" checked={show[key]} onChange={(e) => setShow((s) => ({ ...s, [key]: e.target.checked }))} /> {key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())}
-          </label>
+      <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 10 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>Customize Visibility</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          {Object.keys(show).map((key) => (
+            <label key={key} style={{ ...controlStyle, display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 30, padding: '4px 8px' }}>
+              <input
+                type="checkbox"
+                checked={show[key]}
+                onChange={(event) => setShow((prev) => ({ ...prev, [key]: event.target.checked }))}
+              />
+              {key.replace(/([A-Z])/g, ' $1').replace(/^./, (value) => value.toUpperCase())}
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+        {summaryRows.map(([label, value]) => (
+          <div key={label} style={{ ...panelStyle, padding: 10 }}>
+            <div style={{ fontSize: 11, color: t.textSecondary }}>{label}</div>
+            <div style={{ marginTop: 4, fontSize: 18, fontWeight: 700 }}>{value}</div>
+          </div>
         ))}
-        <label style={{ fontSize: 13 }}>
-          <input type="checkbox" checked={show.summary} onChange={(e) => setShow((s) => ({ ...s, summary: e.target.checked }))} /> Summary
-        </label>
-        <label style={{ fontSize: 13 }}>
-          <input type="checkbox" checked={show.advanced} onChange={(e) => setShow((s) => ({ ...s, advanced: e.target.checked }))} /> Advanced
-        </label>
-      </div>
-
-      <div style={{ marginBottom: 24, fontSize: 15 }}>
-        {show.onTime && (<><strong>On-Time %:</strong> {data.onTime.toFixed(1)}%<br /></>)}
-        {show.billingErrors && (<><strong>Billing Errors %:</strong> {data.billingErrors.toFixed(1)}%<br /></>)}
-        {show.invoiceDiscrepancy && (<><strong>Invoice Discrepancy %:</strong> {data.invoiceDiscrepancy.toFixed(1)}%<br /></>)}
-        {show.avgTransitDays && (<><strong>Avg Transit (Days):</strong> {data.avgTransitDays.toFixed(1)}<br /></>)}
-        {show.claimsRate && (<><strong>Claims %:</strong> {data.claimsRate.toFixed(1)}%<br /></>)}
-        {show.totalInvoices && (<><strong>Total Invoices:</strong> {data.totalInvoices.toLocaleString()}<br /></>)}
-        {show.shipmentVolume && (<><strong>Shipment Volume:</strong> {shipmentVolume.toLocaleString()}<br /></>)}
-        {show.avgShipmentValue && (<><strong>Avg Shipment Value:</strong> ${avgShipmentValue.toLocaleString()}<br /></>)}
-        {show.lateDeliveries && (<><strong>Late Deliveries (est):</strong> {lateDeliveries.toLocaleString()}<br /></>)}
-      </div>
+      </section>
 
       {show.summary && (
-        <div style={{ background: t.surface, border: `1px solid ${t.borderLight}`, borderRadius: 8, padding: 24, fontSize: 15, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>Performance Summary</h2>
+        <div style={{ ...panelStyle, padding: 12, fontSize: 14 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 8px 0' }}>Performance Summary</h2>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {show.onTime && <li>On-time rank in pool: <strong>#{serviceRank}</strong> of {carrierPerformance.length}</li>}
             {show.billingErrors && <li>Billing quality rank: <strong>#{billingRank}</strong> of {carrierPerformance.length}</li>}
@@ -207,18 +247,18 @@ export default function CarrierScorecard() {
             {show.totalInvoices && <li>Invoice share: <strong>{((data.totalInvoices / poolVolume) * 100).toFixed(1)}%</strong> of carrier pool volume</li>}
           </ul>
 
-          <div style={{ marginTop: 28, marginBottom: 18 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 10 }}>Carrier Pool Comparison</h3>
+          <div style={{ marginTop: 20, marginBottom: 12 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Carrier Pool Comparison</h3>
             <div style={{ fontSize: 13, color: t.textSecondary }}>
               Selected carrier is benchmarked against the full carrier pool across service, risk, and stability metrics.
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-            <div style={{ background: t.bgAlt, borderRadius: 8, padding: 12, minHeight: 240 }}>
+            <div style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 10, padding: 10, minHeight: 240 }}>
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>On-Time Performance by Carrier</div>
               <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                   <BarChart data={serviceLevelData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                     <XAxis dataKey="carrier" stroke={t.textSecondary} fontSize={11} />
@@ -234,10 +274,10 @@ export default function CarrierScorecard() {
               </div>
             </div>
 
-            <div style={{ background: t.bgAlt, borderRadius: 8, padding: 12, minHeight: 240 }}>
+            <div style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 10, padding: 10, minHeight: 240 }}>
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Risk Rates Across Carrier Pool</div>
               <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                   <BarChart data={riskRateData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                     <XAxis dataKey="carrier" stroke={t.textSecondary} fontSize={11} />
@@ -252,10 +292,10 @@ export default function CarrierScorecard() {
               </div>
             </div>
 
-            <div style={{ background: t.bgAlt, borderRadius: 8, padding: 12, minHeight: 240 }}>
+            <div style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 10, padding: 10, minHeight: 240 }}>
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Selected Carrier vs Pool Average</div>
               <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                   <RadarChart data={radarData}>
                     <PolarGrid stroke={t.borderLight} />
                     <PolarAngleAxis dataKey="metric" tick={{ fill: t.textSecondary, fontSize: 11 }} />
@@ -269,10 +309,10 @@ export default function CarrierScorecard() {
               </div>
             </div>
 
-            <div style={{ background: t.bgAlt, borderRadius: 8, padding: 12, minHeight: 240 }}>
+            <div style={{ background: t.bgAlt, border: `1px solid ${t.border}`, borderRadius: 10, padding: 10, minHeight: 240 }}>
               <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>On-Time Trend vs Carrier Pool</div>
               <div style={{ height: 200 }}>
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10}>
                   <LineChart data={trendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={t.borderLight} />
                     <XAxis dataKey="month" stroke={t.textSecondary} fontSize={11} />
@@ -289,8 +329,8 @@ export default function CarrierScorecard() {
       )}
 
       {show.advanced && (
-        <div style={{ background: t.bgAlt, border: `1px solid ${t.borderLight}`, borderRadius: 8, padding: 24, fontSize: 15 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 600, marginBottom: 12 }}>Advanced Details</h2>
+        <div style={{ ...panelStyle, padding: 12, fontSize: 14 }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600, margin: '0 0 10px 0' }}>Advanced Details</h2>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             <li>Pool average on-time: <strong>{poolAverages.onTime.toFixed(1)}%</strong></li>
             <li>Pool average billing errors: <strong>{poolAverages.billingErrors.toFixed(1)}%</strong></li>
