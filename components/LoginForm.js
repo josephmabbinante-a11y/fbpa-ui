@@ -12,6 +12,7 @@ export default function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
+    setMessage('') // Clear previous message
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       const payload = { email, password };
@@ -23,13 +24,15 @@ export default function LoginForm() {
       })
 
       if (res.ok) {
-        const data = await res.json()
-        setMessage('Login successful!')
-        localStorage.setItem('token', data.token)
-        // Redirect or handle successful login
+        const data = await res.json();
+        setMessage('Login successful!');
+        localStorage.setItem('token', data.token);
+        setTimeout(() => {
+          window.location.assign('/dashboard');
+        }, 500);
       } else {
-        const data = await res.json()
-        setMessage(data.error || 'Login failed')
+        const data = await res.json();
+        setMessage(data.error || 'Login failed');
       }
     } catch (error) {
       setMessage('Error: ' + error.message)

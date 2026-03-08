@@ -17,14 +17,22 @@ export default function Login() {
     setLoading(false);
     if (res && !res.error && res.accessToken) {
       const tokenSet = setAccessToken(res.accessToken);
-      // Wait for token to be set, then redirect
       setTimeout(() => {
         navigate("/dashboard");
-        // Optionally force reload for robustness
-        // window.location.reload();
       }, 100);
     } else {
-      setStatus(res && res.error ? res.error : "Invalid email or password");
+      // Improved error handling
+      if (res && res.error) {
+        if (res.error.toLowerCase().includes("not verified")) {
+          setStatus("Email not verified. Please check your inbox.");
+        } else if (res.error.toLowerCase().includes("invalid credentials")) {
+          setStatus("Invalid email or password.");
+        } else {
+          setStatus(res.error);
+        }
+      } else {
+        setStatus("Invalid email or password.");
+      }
     }
   };
 
