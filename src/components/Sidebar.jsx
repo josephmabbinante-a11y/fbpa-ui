@@ -38,8 +38,6 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const { theme } = useTheme();
-  const t = themes[theme];
   const {
     theme,
     themeMode,
@@ -93,16 +91,6 @@ export default function Sidebar() {
     : (collapsed ? DESKTOP_COLLAPSED_WIDTH : DESKTOP_EXPANDED_WIDTH);
   const showLabels = !collapsed && (!isMobile || showMobileSidebar);
   const navGap = collapsed ? 4 : 10;
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('opscale_sidebar_collapsed', String(collapsed));
-    } catch {
-      // localStorage may be unavailable
-    }
-
-    window.dispatchEvent(new Event('opscale-sidebar-toggle'));
-  }, [collapsed]);
 
   return (
     <aside
@@ -197,8 +185,7 @@ export default function Sidebar() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 8,
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                      backgroundColor: 'var(--surface)',
+                    backgroundColor: 'var(--surface)',
                     border: `1px solid ${theme.border}`,
                     fontSize: 11,
                     letterSpacing: 0.4,
@@ -240,8 +227,7 @@ export default function Sidebar() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: 6,
-                        backgroundColor: 'rgba(255,255,255,0.04)',
-                          backgroundColor: 'var(--surface)',
+                        backgroundColor: 'var(--surface)',
                         border: `1px solid ${theme.border}`,
                         fontSize: 10,
                         letterSpacing: 0.3,
@@ -266,16 +252,15 @@ export default function Sidebar() {
                 gap: 10,
                 borderRadius: 12,
                 border: `1px solid ${isActive ? theme.accent : theme.border}`,
-                  background: isActive
-                    ? 'var(--surface-elevated)'
-                    : 'var(--surface)',
+                background: isActive
+                  ? 'var(--surface-elevated)'
+                  : 'var(--surface)',
                 color: isActive ? theme.text : theme.textSecondary,
                 padding: collapsed ? '10px 8px' : '10px 12px',
                 fontSize: 13,
                 fontWeight: 600,
                 transition: 'all 180ms ease',
-                boxShadow: isActive ? 'inset 0 0 0 1px rgba(255,255,255,0.04)' : 'none',
-                  boxShadow: isActive ? '0 2px 8px var(--accent-shadow, rgba(47,128,255,0.08))' : 'none',
+                boxShadow: isActive ? '0 2px 8px var(--accent-shadow, rgba(47,128,255,0.08))' : 'none',
               })}
             >
               <span

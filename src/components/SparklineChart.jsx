@@ -25,8 +25,6 @@ export default function SparklineChart({ data, color = '#0066cc', height = 40 })
   if (!normalizedData.length) return null;
 
   return (
-    <div style={{ width: '100%', height, marginTop: 8 }}>
-      <ResponsiveContainer width="100%" height="100%" debounce={60}>
     <div
       style={{
         width: '100%',

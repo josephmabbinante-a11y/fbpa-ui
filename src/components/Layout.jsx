@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useLocation } from 'react-router-dom';
@@ -319,9 +318,6 @@ function Layout({ children }) {
   };
 
   return (
-    <div style={containerStyle}>
-      <main style={mainStyle}>
-        {children}
     <div className="app-shell" style={{ display: 'flex', minHeight: '100vh', color: t.text }}>
         <main
           style={{
