@@ -70,9 +70,11 @@ export default function Login() {
     setLoading(false);
     if (res && !res.error && res.accessToken) {
       const tokenSet = setAccessToken(res.accessToken);
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 100);
+      if (tokenSet) {
+        navigate("/dashboard", { replace: true });
+      } else {
+        setStatus("Login succeeded but session could not be saved. Please allow cookies/storage and try again.");
+      }
     } else {
       // Improved error handling
       if (res && res.error) {
