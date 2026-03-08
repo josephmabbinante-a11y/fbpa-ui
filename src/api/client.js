@@ -14,6 +14,29 @@ function apiUrl(path) {
   return `${API_URL}${path}`;
 }
 
+
+const REGISTER_EMAIL_DOMAIN = (import.meta.env.VITE_REGISTER_EMAIL_DOMAIN || 'users.opscale.local').toLowerCase();
+
+function buildUserIdFromName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/\.{2,}/g, '.');
+}
+
+function ensureGeneratedRegisterEmail(payload) {
+  const nameUserId = buildUserIdFromName(payload?.name);
+  const rawEmail = String(payload?.email || '').trim().toLowerCase();
+
+  if (rawEmail.includes('@')) return rawEmail;
+
+  const emailUserId = rawEmail.replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').replace(/\.{2,}/g, '.');
+  const userId = nameUserId || emailUserId;
+  return userId ? `${userId}@${REGISTER_EMAIL_DOMAIN}` : '';
+}
+
 // Send customer message and log activity
 export async function sendCustomerMessage({ message, customer, invoice, exception }) {
   try {
@@ -564,17 +587,17 @@ export async function getReports() {
 }
 
 export async function login(payload) {
-  console.log('Frontend login payload:', payload);
   try {
-    return await fetchJsonWithFallback(
-      ['/api/auth/login', '/auth/login'],
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      },
-      'Login failed'
-    );
+    const res = await fetch(apiUrl('/api/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error || `Login failed ${res.status}`);
+    }
+    return await res.json();
   } catch (err) {
     console.error('login error:', err?.message || JSON.stringify(err));
     return { error: err.message };
@@ -732,12 +755,22 @@ export async function exportTrainingDatasetJson() {
 }
 
 export async function register(payload) {
-  console.log('Frontend register payload:', payload);
   try {
+    const normalizedEmail = ensureGeneratedRegisterEmail(payload);
+    if (!normalizedEmail) {
+      return { error: 'Name is required to generate a valid email/user ID.' };
+    }
+
+    const requestBody = {
+      ...payload,
+      email: normalizedEmail,
+      name: String(payload?.name || '').trim(),
+    };
+
     const res = await fetch(apiUrl('/api/auth/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestBody),
     });
     if (!res.ok) {
       const errorData = await res.json().catch(() => null);

@@ -73,11 +73,14 @@ function AppRoutes() {
   const isLogin = location.pathname === '/login' || location.pathname === '/login/';
   const isAuthed = Boolean(getAccessToken());
 
-  if (isLogin) {
+
+  if (isLogin || location.pathname.startsWith('/verify-email')) {
+    const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
     return (
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
         </Routes>
       </Suspense>
     );
@@ -137,6 +140,11 @@ function AppRoutes() {
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/finance/ar" element={<AR />} />
             <Route path="/finance/ap" element={<AP />} />
+            <Route path="/uploads" element={<Uploads />} />
+            <Route path="/exceptions" element={<ExceptionDrilldown />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/reports/:reportId" element={<ReportDetail />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/finance/aging" element={<Aging />} />
             <Route path="/lane-intelligence" element={<LaneIntelligence />} />
             <Route path="/carriers" element={<Carriers />} />
@@ -147,7 +155,7 @@ function AppRoutes() {
             <Route path="/carriers-list" element={<Carriers />} />
             <Route path="/account" element={<Navigate to="/settings" replace />} />
             <Route path="/profile" element={<Navigate to="/settings" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<NotFound />} />
             <Route path="/truckload-rate-calculator" element={<TruckloadRateCalculator />} />
             <Route path="/fsm-demo" element={<LoadStatusDemo />} />
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />

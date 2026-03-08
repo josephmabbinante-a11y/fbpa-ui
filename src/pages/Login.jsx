@@ -52,26 +52,40 @@ function ForgotPasswordModal({ onClose }) {
   );
 }
 
+// ...existing code...
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus(null);
+    setStatus("");
     setLoading(true);
     const res = await login({ email, password });
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      setAccessToken(res.accessToken);
-      navigate("/dashboard");
+      const tokenSet = setAccessToken(res.accessToken);
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 100);
     } else {
-      setStatus(res && res.error ? res.error : "Invalid email or password");
+      // Improved error handling
+      if (res && res.error) {
+        if (res.error.toLowerCase().includes("not verified")) {
+          setStatus("Email not verified. Please check your inbox.");
+        } else if (res.error.toLowerCase().includes("invalid credentials")) {
+          setStatus("Invalid email or password.");
+        } else {
+          setStatus(res.error);
+        }
+      } else {
+        setStatus("Invalid email or password.");
+      }
     }
   };
 
@@ -83,65 +97,36 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-shell">
+    <div className="auth-shell" role="main" aria-label="Authentication Shell">
       <div className="auth-wrap">
         <div className="auth-logo-panel">
-          <img
-            src={logo}
-            alt="Opscale Audit IQ"
-            style={{
-              width: 320,
-              maxWidth: "100%",
-              height: "auto",
-              display: "block",
-              filter: "drop-shadow(0 10px 22px rgba(24, 210, 255, 0.24))",
-            }}
-          />
+          <img src={logo} alt="Opscale Audit IQ" style={{ width: 320, maxWidth: "100%", height: "auto", display: "block", filter: "drop-shadow(0 10px 22px rgba(24, 210, 255, 0.24))" }} />
         </div>
-
-        <div className="ui-card auth-card">
+        <div className="ui-card auth-card" role="form" aria-labelledby="auth-title">
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <img src={shieldLogo} alt="Opscale shield" style={{ height: 40, width: 40, display: "block", objectFit: "contain" }} />
             <div>
-              <div style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
+              <div id="auth-title" style={{ fontWeight: 700, fontSize: 16 }}>Opscale Portal</div>
               <div className="ui-subtitle">Sign in to continue</div>
             </div>
           </div>
-
-          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+          <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }} aria-label="Login Form">
             <InputField label="Email">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                className="ui-input"
-                autoComplete="email"
-                required
-              />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" className="ui-input" autoComplete="email" required aria-required="true" aria-label="Email address" />
             </InputField>
             <InputField label="Password">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="********"
-                className="ui-input"
-                autoComplete="current-password"
-                required
-              />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="********" className="ui-input" autoComplete="current-password" required aria-required="true" aria-label="Password" />
             </InputField>
-            <PrimaryButton type="submit" disabled={loading}>
+            <PrimaryButton type="submit" disabled={loading} aria-busy={loading} aria-label="Sign In">
               {loading ? "Signing in..." : "Sign In"}
             </PrimaryButton>
-            {status && <div style={{ color: status.toLowerCase().includes("successful") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
+            {status && <div role="alert" style={{ color: status.toLowerCase().includes("successful") ? "var(--success)" : "var(--error)", fontSize: 13 }}>{status}</div>}
           </form>
 
           <div className="auth-actions">
             <LinkButton type="button" onClick={() => setShowForgot(true)}>Forgot password?</LinkButton>
             <LinkButton type="button" onClick={() => setShowRegister(true)}>Need an account? Register</LinkButton>
           </div>
-
           {showRegister && <RegisterForm onClose={() => setShowRegister(false)} onRegistered={handleRegistered} />}
           {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
         </div>
