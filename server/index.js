@@ -307,18 +307,45 @@ const handleLogin = (req, res) => {
 app.post('/auth/login', handleLogin);
 app.post('/api/auth/login', handleLogin);
 
+
+const REGISTER_EMAIL_DOMAIN = String(process.env.REGISTER_EMAIL_DOMAIN || 'users.opscale.local').toLowerCase();
+
+function buildUserIdFromName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/\.{2,}/g, '.');
+}
+
+function normalizeRegistrationEmail(email, name) {
+  const rawEmail = String(email || '').trim().toLowerCase();
+  if (rawEmail.includes('@')) return rawEmail;
+
+  const fromName = buildUserIdFromName(name);
+  const fromEmail = rawEmail
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/\.{2,}/g, '.');
+
+  const userId = fromName || fromEmail;
+  return userId ? `${userId}@${REGISTER_EMAIL_DOMAIN}` : '';
+}
+
 const handleRegister = (req, res) => {
-  console.log('[DEBUG] Register req.body:', req.body);
   if (!isMongoConnected()) {
     return respondDatabaseUnavailable(res);
   }
+  const { email, password, role, name } = req.body || {};
+  const normalizedEmail = normalizeRegistrationEmail(email, name);
   const { email, password, role, firstName, lastName } = req.body || {};
   console.log('[DEBUG] Registration payload:', req.body);
   // Require email for registration, do not auto-create
   const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
   if (!normalizedEmail || !passwordText) {
-    return res.status(400).json({ error: 'Email and password are required' });
+    return res.status(400).json({ error: 'Name-based email/user ID and password are required' });
   }
   // Extra check: require email to be valid
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail)) {

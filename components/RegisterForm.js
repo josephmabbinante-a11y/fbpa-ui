@@ -3,6 +3,21 @@
 import { useState } from 'react'
 import styles from './RegisterForm.module.css'
 
+const REGISTER_EMAIL_DOMAIN = 'users.opscale.local'
+
+const buildUserIdFromName = (name) =>
+  String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '')
+    .replace(/\.{2,}/g, '.')
+
+const buildEmailFromName = (name) => {
+  const userId = buildUserIdFromName(name)
+  return userId ? `${userId}@${REGISTER_EMAIL_DOMAIN}` : ''
+}
+
 export default function RegisterForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,9 +32,15 @@ export default function RegisterForm() {
     setIsLoading(true)
 
     try {
+      const generatedEmail = buildEmailFromName(name)
+      if (!generatedEmail) {
+        setMessage('Enter a valid name to generate an email/user ID.')
+        setIsLoading(false)
+        return
+      }
+
       const apiUrl = import.meta.env.VITE_API_URL;
-      const payload = { email, password, name, organization, phone };
-      console.log('Register payload:', payload);
+      const payload = { email: generatedEmail, password, name, organization, phone };
       const res = await fetch(`${apiUrl}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -51,12 +72,13 @@ export default function RegisterForm() {
         <label>Email</label>
         <input 
           type="email" 
-          placeholder="you@company.com" 
+          placeholder="Generated from name" 
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="email"
+          readOnly
         />
+        <small>Email (user ID) is generated automatically from Name.</small>
         <label>Password</label>
         <input 
           type="password" 
@@ -71,7 +93,12 @@ export default function RegisterForm() {
           type="text" 
           placeholder="Full Name" 
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            const nextName = e.target.value
+            setName(nextName)
+            setEmail(buildEmailFromName(nextName))
+          }}
+          required
         />
         <label>Organization</label>
         <input 

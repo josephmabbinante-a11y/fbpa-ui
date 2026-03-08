@@ -57,6 +57,8 @@ export default function LoginForm() {
         lastError = data.error || `Login failed (${res.status})`
       }
 
+      if (!didLogin) {
+        setMessage(lastError)
       if (res.ok) {
         const data = await res.json();
         setMessage('Login successful!');
