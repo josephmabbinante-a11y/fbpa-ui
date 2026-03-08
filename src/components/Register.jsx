@@ -3,23 +3,6 @@ import React, { useState } from "react";
 import { useTheme } from '../contexts/ThemeContext';
 import { register } from '../api/client';
 
-
-const REGISTER_EMAIL_DOMAIN = "users.opscale.local";
-
-function buildUserIdFromName(name) {
-  return String(name || "")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ".")
-    .replace(/^\.+|\.+$/g, "")
-    .replace(/\.{2,}/g, ".");
-}
-
-function buildEmailFromName(name) {
-  const userId = buildUserIdFromName(name);
-  return userId ? `${userId}@${REGISTER_EMAIL_DOMAIN}` : "";
-}
-
 const Register = ({ onClose, onRegistered }) => {
   const { theme } = useTheme();
   const t = theme || {};
@@ -29,13 +12,6 @@ const Register = ({ onClose, onRegistered }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "name") {
-      const generatedEmail = buildEmailFromName(value);
-      setForm((prev) => ({ ...prev, name: value, email: generatedEmail }));
-      return;
-    }
-
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -43,19 +19,11 @@ const Register = ({ onClose, onRegistered }) => {
     e.preventDefault();
     setMessage("");
     setLoading(true);
-    const normalizedName = form.name.trim();
-    const generatedEmail = buildEmailFromName(normalizedName);
-
-    if (!generatedEmail) {
-      setMessage("Enter a valid name to generate an email/user ID.");
-      setLoading(false);
-      return;
-    }
 
     const payload = {
-      email: generatedEmail,
+      email: form.email,
       password: form.password,
-      name: normalizedName,
+      name: form.name.trim(),
       organization: form.organization.trim(),
     };
 
@@ -63,7 +31,7 @@ const Register = ({ onClose, onRegistered }) => {
     if (res && !res.error) {
       setMessage("Registration successful.");
       if (onRegistered) {
-        onRegistered({ email: payload.email, password: form.password });
+        onRegistered({ email: form.email, password: form.password });
       }
     } else {
       setMessage(res?.error || "Registration failed.");
@@ -120,18 +88,16 @@ const Register = ({ onClose, onRegistered }) => {
             type="email"
             name="email"
             value={form.email}
+            onChange={handleChange}
             required
-            readOnly
+            autoComplete="email"
             style={inputStyle}
-            placeholder="Generated from name"
+            placeholder="you@company.com"
           />
-          <div style={{ fontSize: 11, color: t.textSecondary, marginTop: -8 }}>
-            Email (user ID) is generated automatically from the full name.
-          </div>
         </div>
         <div>
           <label style={labelStyle}>Password</label>
-          <input type="password" name="password" value={form.password} onChange={handleChange} required style={inputStyle} />
+          <input type="password" name="password" value={form.password} onChange={handleChange} required autoComplete="new-password" style={inputStyle} />
         </div>
         <div>
           <label style={labelStyle}>Name</label>
