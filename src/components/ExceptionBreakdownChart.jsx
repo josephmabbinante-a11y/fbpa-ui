@@ -7,11 +7,12 @@ import { useTheme, themes } from '../contexts/ThemeContext';
  * Uses a donut chart for compact visualization
  * Clickable to navigate to Exceptions page
  */
+const fallbackPalette = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0099cc'];
+
 export default function ExceptionBreakdownChart({ data, onClick }) {
   const { theme } = useTheme();
   const t = themes[theme];
   const [isHovered, setIsHovered] = useState(false);
-  const fallbackPalette = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0099cc'];
 
 
     const normalizedData = useMemo(() => {
@@ -26,7 +27,7 @@ export default function ExceptionBreakdownChart({ data, onClick }) {
         })
         .filter((entry) => entry.value > 0);
       return arr;
-    }, [data, fallbackPalette]);
+    }, [data]);
 
     const chartDataToUse = normalizedData;
 

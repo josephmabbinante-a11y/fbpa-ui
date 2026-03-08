@@ -242,6 +242,15 @@ export async function calculateRateLogic(payload) {
 
 export async function register(payload) {
   console.log('Frontend register payload:', payload);
+  if (isMockMode()) {
+    const newUser = {
+      id: `user_mock_${Date.now()}`,
+      name: payload.name || '',
+      email: payload.email || '',
+      role: payload.role === 'admin' ? 'admin' : 'user',
+    };
+    return { user: newUser };
+  }
   try {
     const res = await fetch(apiUrl('/api/auth/register'), {
       method: 'POST',
@@ -261,7 +270,7 @@ export async function register(payload) {
 
 export async function getUsers() {
   if (isMockMode()) {
-    return mockUsers;
+    return { users: mockUsers.map((u) => ({ id: u._id, email: u.email, name: u.name || '', role: u.role })) };
   }
   try {
     const res = await fetch(apiUrl('/api/auth/users'));
@@ -279,7 +288,9 @@ export async function getUsers() {
 export async function updateUser(userId, payload) {
   if (isMockMode()) {
     const user = mockUsers.find(u => u._id === userId);
-    return user ? { ...user, ...payload } : { error: 'User not found' };
+    if (!user) return { error: 'User not found' };
+    const updated = { ...user, ...payload };
+    return { user: { id: updated._id, email: updated.email, name: updated.name || '', role: updated.role } };
   }
   try {
     const res = await fetch(apiUrl(`/api/auth/users/${encodeURIComponent(userId)}`), {

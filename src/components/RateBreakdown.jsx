@@ -20,9 +20,9 @@ const RateBreakdown = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ display: 'flex', gap: 24 }}>
-        <KPIWithTrend label="Carrier Cost" value={carrierCost} format="currency" trendData={winProbHistory} trendColor="#4fc3f7" />
-        <KPIWithTrend label="Predicted Market" value={predictedMarket} format="currency" trendData={winProbHistory} trendColor="#81c784" />
-        <KPIWithTrend label="Recommended Sell" value={recommendedSell} format="currency" trendData={winProbHistory} trendColor="#ffd54f" />
+        <KPIWithTrend label="Carrier Cost" value={carrierCost} format="currency" trendColor="#4fc3f7" />
+        <KPIWithTrend label="Predicted Market" value={predictedMarket} format="currency" trendColor="#81c784" />
+        <KPIWithTrend label="Recommended Sell" value={recommendedSell} format="currency" trendColor="#ffd54f" />
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
         <div style={{ flex: 2 }}>

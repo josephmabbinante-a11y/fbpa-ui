@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { uploadInvoiceFile } from '../api/client';
 import { useDemo } from '../demo/DemoContext';
 import uploadHistory from '../mock/uploads';
@@ -15,6 +15,10 @@ export default function Uploads() {
   const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState(demoMode ? uploadHistory : []);
+
+  useEffect(() => {
+    setHistory(demoMode ? uploadHistory : []);
+  }, [demoMode]);
 
   // State for Rate Confirmation Upload
   const [rcFile, setRcFile] = useState(null);
@@ -53,6 +57,21 @@ export default function Uploads() {
     e.preventDefault();
     setUploadResult(null);
     if (!file) return setStatus('Choose a file first');
+    if (demoMode) {
+      const entry = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `demo_${Date.now()}`,
+        fileName: file.name,
+        uploadDate: new Date().toISOString(),
+        invoiceCount: 0,
+        successCount: 0,
+        errorCount: 0,
+        status: 'Demo',
+      };
+      setHistory((h) => [entry, ...h]);
+      setStatus('Demo mode: upload simulated.');
+      setFile(null);
+      return;
+    }
     setLoading(true);
     setStatus(null);
     let res;
