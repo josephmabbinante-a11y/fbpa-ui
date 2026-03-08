@@ -589,10 +589,12 @@ export async function login(payload) {
         body: JSON.stringify(payload),
       });
       if (res.ok) {
-        return await res.json();
+        const data = await res.json();
+        // Normalize: API returns { token }, but the UI expects { accessToken }
+        return { ...data, accessToken: data.accessToken || data.token };
       }
       const errorData = await res.json().catch(() => null);
-      lastError = errorData?.error || `Login failed ${res.status}`;
+      lastError = errorData?.error || errorData?.message || `Login failed ${res.status}`;
       // Only retry on 404 (endpoint not found) or 5xx; stop on all other non-OK statuses
       if (res.status !== 404 && res.status < 500) {
         break;
