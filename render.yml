@@ -10,6 +10,7 @@ services:
     envVars:
       - key: MONGODB_URI
         sync: false  # Set in dashboard
+        value: mongodb+srv://Vercel-Admin-FBPA-Platform:RXKnQPyNad7lOFkF@fbpa-platform.rut6g2t.mongodb.net/?retryWrites=true&w=majority
       - key: JWT_SECRET
         sync: false  # Set in dashboard
       - key: NODE_ENV

@@ -1,0 +1,161 @@
+/* Loads.module.css - styles for Loads page to match provided screenshot */
+
+.loads-page {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f6f8fa;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+}
+
+.loads-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #d1d5da;
+  padding: 18px 32px 12px 32px;
+}
+
+.loads-header h1 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.loads-header .add-shipment-btn {
+  background: #2ea44f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.loads-header .add-shipment-btn:hover {
+  background: #22863a;
+}
+
+.loads-search-panel {
+  background: #fff;
+  border-bottom: 1px solid #d1d5da;
+  padding: 24px 32px 12px 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 32px;
+  align-items: flex-end;
+}
+
+.loads-search-panel label {
+  font-size: 0.95rem;
+  color: #24292f;
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.loads-search-panel input,
+.loads-search-panel select {
+  width: 180px;
+  padding: 5px 8px;
+  border: 1px solid #d1d5da;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #f6f8fa;
+}
+
+.loads-search-panel .search-btn {
+  background: #0366d6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-left: 12px;
+}
+.loads-search-panel .search-btn:hover {
+  background: #024ea2;
+}
+
+.loads-table-container {
+  background: #fff;
+  margin: 0 32px 32px 32px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(27,31,35,0.04);
+  overflow-x: auto;
+}
+
+.loads-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.97rem;
+}
+
+.loads-table th, .loads-table td {
+  border: 1px solid #e1e4e8;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.loads-table th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+.loads-table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.loads-table .status-booked {
+  background: #28a745;
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+.loads-table .status-quoted {
+  background: #ffd33d;
+  color: #735c0f;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+.loads-table .status-delivered {
+  background: #0366d6;
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+.loads-table .status-other {
+  background: #e1e4e8;
+  color: #24292f;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+.loads-table .action-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.loads-table .action-icons button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #586069;
+  font-size: 1.1em;
+  padding: 0;
+}
+.loads-table .action-icons button:hover {
+  color: #0366d6;
+}

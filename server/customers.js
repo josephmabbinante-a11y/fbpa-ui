@@ -1,16 +1,109 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
-import { Customer, Invoice, Exception } from './models.js';
+import { Customer, Invoice } from './models.js';
 
 const router = express.Router();
 const upload = multer();
 
+const normalizeString = (value) => (value || '').trim();
+const normalizeKey = (value) => normalizeString(value).toLowerCase();
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const seedMemoryCustomers = [
+  {
+    id: 'c-memory-1',
+    name: 'Acme Retail Group',
+    email: 'ops@acmeretail.test',
+    phone: '(555) 101-2000',
+    company: 'Acme Retail Group',
+    billingAddress: '100 Main St, Dallas, TX',
+    nameLower: 'acme retail group',
+    emailLower: 'ops@acmeretail.test',
+    status: 'Active',
+    totalRevenue: 0,
+    openAR: 0,
+    invoiceCount: 0,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+  },
+];
+
+let memoryCustomers = [...seedMemoryCustomers];
+
+function isDbReady() {
+  return mongoose.connection.readyState === 1;
+}
+
+function toSerializableCustomer(customer) {
+  return {
+    ...customer,
+    totalRevenue: Number(customer?.totalRevenue || 0),
+    openAR: Number(customer?.openAR || 0),
+    invoiceCount: Number(customer?.invoiceCount || 0),
+  };
+}
+
+function diffInDays(from, to) {
+  return Math.floor((to - from) / DAY_MS);
+}
+
+function toAmount(value) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? n : 0;
+}
+
+async function getCustomerAggregates() {
+  if (!isDbReady()) {
+    return {};
+  }
+
+  const aggregates = await Invoice.aggregate([
+    { $match: { type: 'AR', customerId: { $ne: null } } },
+    {
+      $group: {
+        _id: '$customerId',
+        totalRevenue: { $sum: { $ifNull: ['$amount', 0] } },
+        openAR: {
+          $sum: {
+            $cond: [{ $ne: ['$status', 'Paid'] }, { $ifNull: ['$amount', 0] }, 0],
+          },
+        },
+        invoiceCount: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return aggregates.reduce((acc, row) => {
+    acc[row._id] = {
+      totalRevenue: row.totalRevenue || 0,
+      openAR: row.openAR || 0,
+      invoiceCount: row.invoiceCount || 0,
+    };
+    return acc;
+  }, {});
+}
+
 // Get all customers
 router.get('/', async (req, res) => {
   try {
-    const customers = await Customer.find();
-    res.json(customers);
+    if (!isDbReady()) {
+      const data = [...memoryCustomers]
+        .sort((left, right) => new Date(right.updatedAt || 0).getTime() - new Date(left.updatedAt || 0).getTime())
+        .map((customer) => toSerializableCustomer(customer));
+      return res.json(data);
+    }
+
+    const [customers, aggregates] = await Promise.all([
+      Customer.find().sort({ updatedAt: -1 }),
+      getCustomerAggregates(),
+    ]);
+    const data = customers.map((customer) => {
+      const metrics = aggregates[customer.id] || { totalRevenue: 0, openAR: 0, invoiceCount: 0 };
+      return { ...customer.toObject(), ...metrics };
+    });
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -19,9 +112,80 @@ router.get('/', async (req, res) => {
 // Get customer by ID
 router.get('/:id', async (req, res) => {
   try {
+    if (!isDbReady()) {
+      const customer = memoryCustomers.find((item) => item.id === req.params.id);
+      if (!customer) return res.status(404).json({ error: 'Customer not found' });
+
+      const normalized = toSerializableCustomer(customer);
+      return res.json({
+        ...normalized,
+        contact: normalized.company || '',
+        address: normalized.billingAddress || '',
+        auditStats: {
+          invoices: normalized.invoiceCount,
+          exceptions: 0,
+          reviewed: normalized.invoiceCount,
+        },
+        paymentStats: {
+          paid: 0,
+          pending: 0,
+          overdue: 0,
+        },
+        analysis: {
+          totalBilled: Number(normalized.totalRevenue || 0),
+          totalPaid: 0,
+          totalOutstanding: Number(normalized.openAR || 0),
+          totalOverdue: 0,
+        },
+      });
+    }
+
     const customer = await Customer.findOne({ id: req.params.id });
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
-    res.json(customer);
+    const invoices = await Invoice.find({ customerId: req.params.id, type: 'AR' }).sort({ createdAt: -1 });
+    const aggregates = await getCustomerAggregates();
+    const metrics = aggregates[customer.id] || { totalRevenue: 0, openAR: 0, invoiceCount: 0 };
+
+    const paidCount = invoices.filter((inv) => inv.status === 'Paid').length;
+    const pendingCount = invoices.filter((inv) => inv.status === 'Pending').length;
+    const overdueCount = invoices.filter((inv) => {
+      if (!inv.dueDate || inv.status === 'Paid') return false;
+      return new Date(inv.dueDate) < new Date();
+    }).length;
+
+    const totalBilled = invoices.reduce((sum, inv) => sum + toAmount(inv.amount), 0);
+    const totalPaid = invoices
+      .filter((inv) => inv.status === 'Paid')
+      .reduce((sum, inv) => sum + toAmount(inv.amount), 0);
+    const totalOutstanding = invoices
+      .filter((inv) => inv.status !== 'Paid')
+      .reduce((sum, inv) => sum + toAmount(inv.amount), 0);
+    const totalOverdue = invoices
+      .filter((inv) => inv.status !== 'Paid' && inv.dueDate && new Date(inv.dueDate) < new Date())
+      .reduce((sum, inv) => sum + toAmount(inv.amount), 0);
+
+    res.json({
+      ...customer.toObject(),
+      contact: customer.company || '',
+      address: customer.billingAddress || '',
+      ...metrics,
+      auditStats: {
+        invoices: metrics.invoiceCount,
+        exceptions: 0,
+        reviewed: metrics.invoiceCount,
+      },
+      paymentStats: {
+        paid: paidCount,
+        pending: pendingCount,
+        overdue: overdueCount,
+      },
+      analysis: {
+        totalBilled,
+        totalPaid,
+        totalOutstanding,
+        totalOverdue,
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -30,12 +194,27 @@ router.get('/:id', async (req, res) => {
 // Get customer aging (invoices)
 router.get('/:id/aging', async (req, res) => {
   try {
-    const invoices = await Invoice.find({ customerId: req.params.id });
-    res.json({
-      customerId: req.params.id,
-      invoices,
-      total: invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0),
+    if (!isDbReady()) {
+      return res.json({ '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 });
+    }
+
+    const invoices = await Invoice.find({ customerId: req.params.id, type: 'AR' });
+    const now = new Date();
+    const buckets = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+
+    invoices.forEach((inv) => {
+      if (inv.status === 'Paid') return;
+      const amount = toAmount(inv.amount);
+      const due = inv.dueDate ? new Date(inv.dueDate) : now;
+      const daysPastDue = Math.max(0, diffInDays(due, now));
+
+      if (daysPastDue <= 30) buckets['0-30'] += amount;
+      else if (daysPastDue <= 60) buckets['31-60'] += amount;
+      else if (daysPastDue <= 90) buckets['61-90'] += amount;
+      else buckets['90+'] += amount;
     });
+
+    res.json(buckets);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -46,13 +225,39 @@ router.post('/', async (req, res) => {
   try {
     const { name, contact, email, phone, address } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name is required' });
+
+    if (!isDbReady()) {
+      const id = `c-${Date.now()}`;
+      const newCustomer = {
+        id,
+        name: normalizeString(name),
+        email: normalizeString(email),
+        phone: normalizeString(phone),
+        company: normalizeString(contact),
+        billingAddress: normalizeString(address),
+        nameLower: normalizeKey(name),
+        emailLower: normalizeKey(email),
+        status: 'Active',
+        totalRevenue: 0,
+        openAR: 0,
+        invoiceCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      memoryCustomers = [newCustomer, ...memoryCustomers];
+      return res.status(201).json(toSerializableCustomer(newCustomer));
+    }
+
     const id = `c-${Date.now()}`;
     const newCustomer = new Customer({
       id,
-      name,
-      email: email || '',
-      phone: phone || '',
-      company: contact || '',
+      name: normalizeString(name),
+      email: normalizeString(email),
+      phone: normalizeString(phone),
+      company: normalizeString(contact),
+      billingAddress: normalizeString(address),
+      nameLower: normalizeKey(name),
+      emailLower: normalizeKey(email),
       status: 'Active',
     });
     await newCustomer.save();
@@ -69,15 +274,43 @@ router.post('/upload-csv', upload.single('file'), async (req, res) => {
     const csv = req.file.buffer.toString('utf-8');
     const records = parse(csv, { columns: true, skip_empty_lines: true });
     const added = [];
+
+    if (!isDbReady()) {
+      for (const row of records) {
+        if (!row.name) continue;
+        const customer = {
+          id: `c-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+          name: normalizeString(row.name),
+          email: normalizeString(row.email),
+          phone: normalizeString(row.phone),
+          company: normalizeString(row.contact),
+          billingAddress: normalizeString(row.address),
+          nameLower: normalizeKey(row.name),
+          emailLower: normalizeKey(row.email),
+          status: 'Active',
+          totalRevenue: 0,
+          openAR: 0,
+          invoiceCount: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        memoryCustomers = [customer, ...memoryCustomers];
+        added.push(toSerializableCustomer(customer));
+      }
+      return res.json({ message: `Uploaded ${added.length} customers`, customers: added });
+    }
+
     for (const row of records) {
       if (!row.name) continue;
       const id = `c-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
       const newCustomer = new Customer({
         id,
-        name: row.name,
-        email: row.email || '',
-        phone: row.phone || '',
-        company: row.contact || '',
+        name: normalizeString(row.name),
+        email: normalizeString(row.email),
+        phone: normalizeString(row.phone),
+        company: normalizeString(row.contact),
+        nameLower: normalizeKey(row.name),
+        emailLower: normalizeKey(row.email),
         status: 'Active',
       });
       await newCustomer.save();

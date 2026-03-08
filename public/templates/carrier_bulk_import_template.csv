@@ -1,0 +1,4 @@
+name,mcNumber,dotNumber,taxId,email,phone,paymentTerms,insuranceExpiry,status
+Prime Logistics,MC123456,123456,12-3456789,ops@primelogistics.com,(555) 100-1000,Net 30,2026-12-31,Active
+Velocity Van Logistics,MC654321,654321,98-7654321,dispatch@velocityvan.com,(555) 200-2000,Quick Pay,2026-08-15,Alert
+Polar Freight Solutions,MC112233,112233,,carrier@polarfreight.com,(555) 300-3000,Net 21,2025-12-01,Inactive

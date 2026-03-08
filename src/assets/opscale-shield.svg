@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 220" width="280" height="220" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="shieldOuter" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#19c8ff" />
+      <stop offset="55%" stop-color="#0a5ddb" />
+      <stop offset="100%" stop-color="#072f91" />
+    </linearGradient>
+    <linearGradient id="shieldInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#63dcff" />
+      <stop offset="100%" stop-color="#0f4fbc" />
+    </linearGradient>
+    <linearGradient id="bar1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8efb2b" />
+      <stop offset="100%" stop-color="#2daa22" />
+    </linearGradient>
+    <linearGradient id="bar2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#30d7ff" />
+      <stop offset="100%" stop-color="#0f73e8" />
+    </linearGradient>
+    <linearGradient id="bar3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b6f2ff" />
+      <stop offset="100%" stop-color="#27a0ff" />
+    </linearGradient>
+    <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d0f3ff" />
+      <stop offset="100%" stop-color="#1452bf" />
+    </linearGradient>
+  </defs>
+
+  <g opacity="0.72" stroke="#3fc7ff" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M182 86h42l10-10h22" />
+    <path d="M190 98h58l8 11h20" />
+    <path d="M183 130h40l12 13h26" />
+    <circle cx="232" cy="74" r="5" />
+    <circle cx="264" cy="98" r="5" />
+    <circle cx="252" cy="143" r="5" />
+  </g>
+
+  <g transform="translate(18,14)">
+    <path d="M112 6L14 38v66c0 42 34 78 98 102 64-24 98-60 98-102V38L112 6z" fill="url(#shieldOuter)" stroke="#2ed0ff" stroke-width="4" />
+    <path d="M112 26L35 49v50c0 32 26 60 77 81 51-21 77-49 77-81V49l-77-23z" fill="url(#shieldInner)" stroke="#6de5ff" stroke-width="2.5" />
+
+    <rect x="65" y="84" width="23" height="56" fill="url(#bar1)" stroke="#0a2f75" stroke-width="3" />
+    <rect x="95" y="62" width="23" height="78" fill="url(#bar2)" stroke="#0a2f75" stroke-width="3" />
+    <rect x="125" y="42" width="23" height="98" fill="url(#bar3)" stroke="#0a2f75" stroke-width="3" />
+
+    <circle cx="147" cy="108" r="40" fill="#081f58" stroke="url(#lens)" stroke-width="7" />
+    <circle cx="147" cy="108" r="30" fill="#0b3a8b" stroke="#5ec8ff" stroke-width="2" />
+    <path d="M132 108l10 10 20-22" fill="none" stroke="#8df43e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M119 137L78 172" stroke="#0a1f57" stroke-width="16" stroke-linecap="round" />
+    <path d="M119 137L78 172" stroke="#5cb9ff" stroke-width="7" stroke-linecap="round" />
+  </g>
+</svg>
