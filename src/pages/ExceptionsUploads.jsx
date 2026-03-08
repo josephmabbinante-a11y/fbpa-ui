@@ -1,4 +1,4 @@
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
@@ -9,10 +9,9 @@ import uploadHistory from '../mock/uploads';
 export default function ExceptionsUploads() {
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const t = theme;
   const chartData = demoMode && Array.isArray(mockExceptions?.trend) ? mockExceptions.trend : [];
   const historyItems = demoMode && Array.isArray(uploadHistory) ? uploadHistory : [];
-  const t = theme;
 
   return (
     <div className="page-shell section" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 24 }}>

@@ -48,8 +48,6 @@ const SavingsByCarrierChart = memo(function SavingsByCarrierChart({ data, onClic
 
       <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
         {chartData.length ? (
-          <ResponsiveContainer width="100%" height="100%" debounce={60}>
-            <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 100 }}>
           <ResponsiveContainer width="100%" height="100%" minWidth={10} minHeight={10} debounce={60}>
             <BarChart
               data={chartData}

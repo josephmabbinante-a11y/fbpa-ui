@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import ContactCustomerModal from '../components/ContactCustomerModal';
 import { getInvoices, sendCustomerMessage } from '../api/client';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
 import mockInvoices from '../mock/invoices';
@@ -24,9 +24,8 @@ export default function InvoiceDetail() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
-  const { data: rawInvoices, loading, error } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
   const t = theme;
+  const { data: rawInvoices, loading, error } = useApi(() => getInvoices(), demoMode ? mockInvoices : null, [demoMode]);
 
   const invoices = useMemo(() => {
     const source = extractInvoices(rawInvoices);
