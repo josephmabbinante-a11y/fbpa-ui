@@ -1,7 +1,7 @@
 import { apiUrl } from './apiUrl';
 
 export async function quoteSaiaAuction(load) {
-  const res = await fetch(apiUrl('/multitenant/saia/quote'), {
+  const res = await fetch(apiUrl('/api/rate-logic/saia/quote'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(load),
@@ -11,9 +11,10 @@ export async function quoteSaiaAuction(load) {
 }
 
 export async function getSaiaAuctionCircuit() {
-  const res = await fetch(apiUrl('/multitenant/saia/circuit'), {
+  const res = await fetch(apiUrl('/health/saia'), {
     method: 'GET',
     credentials: 'include',
   });
-  return res.json();
+  const data = await res.json();
+  return data?.circuit ?? data;
 }
