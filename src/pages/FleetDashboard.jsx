@@ -182,7 +182,6 @@ function statusTone(status) {
   if (status === 'breakdown') return 'error';
   return 'accent';
 }
-ErrorBoundary.defaultProps = { children: null };
 // import DriverCommandCardModern from '../components/DriverCommandCardModern';
 // Placeholder icons (replace with your icon components or SVGs)
 const IconBus = () => <span role="img" aria-label="bus" style={{fontSize: 24}}>🚌</span>;
@@ -474,15 +473,17 @@ function ProgressBar({ value, color, t }) {
 
 export default function FleetDashboard() {
   const { theme } = useTheme();
-  const t = theme;
-  t.surface = t.surface || '#fff';
-  t.bgAlt = t.bgAlt || '#f8f8f8';
-  t.textSecondary = t.textSecondary || '#666';
-  t.border = t.border || '#ccc';
-  t.success = t.success || '#16A34A';
-  t.warning = t.warning || '#D97706';
-  t.error = t.error || '#DC2626';
-  t.text = t.text || '#111827';
+  const t = {
+    ...theme,
+    surface: theme.surface || '#fff',
+    bgAlt: theme.bgAlt || '#f8f8f8',
+    textSecondary: theme.textSecondary || '#666',
+    border: theme.border || '#ccc',
+    success: theme.success || '#16A34A',
+    warning: theme.warning || '#D97706',
+    error: theme.error || '#DC2626',
+    text: theme.text || '#111827',
+  };
   const navigate = useNavigate();
   const { vehicles, setVehicles, drivers, loading, source, lastUpdated } = useFleetCommandData();
 

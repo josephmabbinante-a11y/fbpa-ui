@@ -1,4 +1,3 @@
-/* global process */
 // Script to seed MongoDB with example data
 // Usage: node scripts/seed.js
 import mongoose from 'mongoose';

@@ -17,10 +17,10 @@ export default function CarrierProfile() {
     setConsoleMessages((prev) => [...prev, { msg, type, ts: new Date().toLocaleTimeString() }]);
     // Optionally, also log to browser console
     if (type === 'error') {
-      // eslint-disable-next-line no-console
+       
       console.error(msg);
     } else {
-      // eslint-disable-next-line no-console
+       
       console.log(msg);
     }
   };

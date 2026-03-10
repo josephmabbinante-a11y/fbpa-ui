@@ -4,7 +4,6 @@ import logo from '../assets/opscale-logo.svg';
 
 export default function RateConfirmationUpload() {
   const { theme } = useTheme();
-  const { theme } = useTheme();
   const t = theme || {};
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);

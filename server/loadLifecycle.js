@@ -88,7 +88,7 @@ export function canTransitionStatus(fromStatus, toStatus, options = {}) {
   const target = normalizeLoadStatus(toStatus);
 
   if (source === target) return true;
-  if (Boolean(options.overrideRolePermission)) return true;
+  if (options.overrideRolePermission) return true;
 
   const allowed = ALLOWED_STATUS_TRANSITIONS[source] || [];
   return allowed.includes(target);

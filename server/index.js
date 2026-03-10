@@ -21,7 +21,6 @@ process.on('unhandledRejection', (reason, promise) => {
 
 
 
-/* global process */
 import crypto from 'crypto';
 import express from 'express';
 import cors from 'cors';
@@ -345,12 +344,10 @@ const handleRegister = (req, res) => {
   if (!isMongoConnected()) {
     return respondDatabaseUnavailable(res);
   }
-  const { email, password, role, name } = req.body || {};
+  const { email, password, role, name, firstName, lastName } = req.body || {};
   const normalizedEmail = normalizeRegistrationEmail(email, name);
-  const { email, password, role, firstName, lastName } = req.body || {};
   console.log('[DEBUG] Registration payload:', req.body);
   // Require email for registration, do not auto-create
-  const normalizedEmail = String(email || '').trim().toLowerCase();
   const passwordText = String(password || '');
   if (!normalizedEmail || !passwordText) {
     return res.status(400).json({ error: 'Name-based email/user ID and password are required' });
@@ -439,7 +436,6 @@ const handleListUsers = async (_req, res) => {
   } catch (err) {
     return res.status(500).json({ error: 'Failed to list users', details: err.message });
   }
-app.get('/api/auth/list-users', handleListUsers);
 };
 
 const handleUpdateUser = async (req, res) => {
