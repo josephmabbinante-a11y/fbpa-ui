@@ -19,7 +19,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_API_URL: http://api:5000
+      VITE_API_URL: http://localhost:5000
     depends_on:
       - api
 
