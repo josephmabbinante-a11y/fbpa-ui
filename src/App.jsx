@@ -52,6 +52,10 @@ const BuildLoad = lazy(() => import('./pages/BuildLoad'));
 const SearchLoads = lazy(() => import('./pages/SearchLoads'));
 const TruckloadRateCalculator = lazy(() => import('./pages/TruckloadRateCalculator'));
 const AuctionBoard = lazy(() => import('./pages/AuctionBoard'));
+const AuditIQ = lazy(() => import('./pages/AuditIQ'));
+const FraudPrevention = lazy(() => import('./pages/FraudPrevention'));
+const RiskScoring = lazy(() => import('./pages/RiskScoring'));
+const RouteOptimization = lazy(() => import('./pages/RouteOptimization'));
 
 function LoadingFallback() {
   return (
@@ -64,6 +68,16 @@ function LoadingFallback() {
       }}
     >
       Loading module...
+    </div>
+  );
+}
+
+function NotFound() {
+  return (
+    <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-secondary)' }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>404</div>
+      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Page not found</div>
+      <div style={{ fontSize: 14 }}>The page you're looking for doesn't exist.</div>
     </div>
   );
 }
@@ -167,6 +181,10 @@ function AppRoutes() {
             <Route path="/profile" element={<Navigate to="/settings" replace />} />
             <Route path="*" element={<NotFound />} />
             <Route path="/truckload-rate-calculator" element={<TruckloadRateCalculator />} />
+            <Route path="/audit-iq" element={<AuditIQ />} />
+            <Route path="/fraud-prevention" element={<FraudPrevention />} />
+            <Route path="/risk-scoring" element={<RiskScoring />} />
+            <Route path="/route-optimization" element={<RouteOptimization />} />
             <Route path="/fsm-demo" element={<LoadStatusDemo />} />
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
