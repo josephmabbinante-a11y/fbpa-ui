@@ -61,6 +61,7 @@ export default function Sidebar() {
     setModePreference,
     setPalette,
     settings,
+    setAdvancedSetting,
   } = useTheme();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(() => {

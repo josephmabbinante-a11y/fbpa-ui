@@ -80,6 +80,14 @@ function assertCircuitReady() {
   });
 }
 
+function mapCarrierError(status, fallbackMessage) {
+  if (status === 401) return createError('Saia authentication failed (401)', 401, { code: 'SAIA_AUTH_INVALID' });
+  if (status === 403) return createError('Saia subscription invalid or unauthorized (403)', 403, { code: 'SAIA_SUBSCRIPTION_INVALID' });
+  if (status === 400) return createError('Saia payload validation failed (400)', 400, { code: 'SAIA_PAYLOAD_INVALID' });
+  if (status >= 500) return createError('Saia carrier service unavailable (500)', 502, { code: 'SAIA_CARRIER_OUTAGE' });
+  return createError(fallbackMessage || `Saia request failed with status ${status}`, status || 500, { code: 'SAIA_REQUEST_FAILED' });
+}
+
 export function getSaiaCircuitState() {
   return {
     state: circuitState.state,

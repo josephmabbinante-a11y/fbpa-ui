@@ -85,6 +85,17 @@ let loadTemplates = structuredClone(seedLoadTemplates);
 let eventsByLoad = structuredClone(seedEventsByLoad);
 let botActivityByLoad = structuredClone(seedBotActivityByLoad);
 
+function createInitialStatusHistory(status) {
+  return [{
+    status: status || 'DRAFT',
+    fromStatus: status || 'DRAFT',
+    toStatus: status || 'DRAFT',
+    timestamp: new Date().toISOString(),
+    source: 'initial',
+    reason: 'Load created',
+  }];
+}
+
 function normalizeStoredLoad(rawLoad) {
   const normalizedStatus = normalizeLoadStatus(rawLoad?.status);
   const statusHistory = Array.isArray(rawLoad?.statusHistory) && rawLoad.statusHistory.length > 0
@@ -128,7 +139,7 @@ function transitionLoadToStatus(load, targetStatus, payload = {}, source = 'stat
     return { ok: true, fromStatus, toStatus, path: [fromStatus] };
   }
 
-  if (Boolean(payload.overrideRolePermission)) {
+  if (payload.overrideRolePermission) {
     appendStatusHistory(load, toStatus, payload, source);
     return { ok: true, fromStatus, toStatus, path: [fromStatus, toStatus] };
   }
