@@ -12,8 +12,16 @@ services:
     image: redis:7
     ports:
       - "6379:6379"
+  api:
+    build: ./api
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./api/.env
+    depends_on:
+      - postgres
   route-intelligence-service:
-    build: ./route-intelligence-service
+    build: ./server/route-intelligence-service
     depends_on:
       - postgres
       - redis
@@ -21,18 +29,18 @@ services:
       DATABASE_URL: postgres://freight:freight@postgres:5432/freightdb
       REDIS_URL: redis://redis:6379
   pricing-service:
-    build: ./pricing-service
+    build: ./server/pricing-service
     depends_on:
       - route-intelligence-service
   ml-shadow-service:
-    build: ./ml-shadow-service
+    build: ./server/ml-shadow-service
     ports:
       - "8000:8000"
   tracking-service:
-    build: ./tracking-service
+    build: ./server/tracking-service
     depends_on:
       - route-intelligence-service
   capacity-worker:
-    build: ./capacity-worker
+    build: ./server/capacity-worker
     depends_on:
       - postgres
