@@ -12,7 +12,6 @@ export default class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     // Always stringify error for logging
-     
     console.error('ErrorBoundary caught:', String(error?.message || JSON.stringify(error) || error), errorInfo);
   }
 

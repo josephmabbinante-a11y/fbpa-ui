@@ -17,10 +17,8 @@ export default function CarrierProfile() {
     setConsoleMessages((prev) => [...prev, { msg, type, ts: new Date().toLocaleTimeString() }]);
     // Optionally, also log to browser console
     if (type === 'error') {
-       
       console.error(msg);
     } else {
-       
       console.log(msg);
     }
   };
