@@ -110,7 +110,7 @@ export default function AuditDrillDown({ auditMetrics }) {
         </div>
         {expandedSection === 'freight' && (
           <div style={metricGridStyle}>
-            {auditMetrics.freightBillAudit.map((metric) => (
+            {(auditMetrics.freightBillAudit || []).map((metric) => (
               <div key={metric.metric} style={metricCardStyle}>
                 <div style={{ fontSize: '11px', color: t.textSecondary, marginBottom: 4 }}>
                   {metric.metric}
@@ -119,7 +119,7 @@ export default function AuditDrillDown({ auditMetrics }) {
                   {metric.value}
                 </div>
                 <div style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: metric.trend.startsWith('-') ? t.negative : t.positive }}>
+                  <span style={{ color: (metric.trend || '').startsWith('-') ? t.negative : t.positive }}>
                     {metric.trend}
                   </span>
                   <span style={{ color: t.textSecondary }}>{metric.status}</span>
@@ -151,7 +151,7 @@ export default function AuditDrillDown({ auditMetrics }) {
               </tr>
             </thead>
             <tbody>
-              {auditMetrics.paymentRecovery.map((item) => (
+              {(auditMetrics.paymentRecovery || []).map((item) => (
                 <tr key={item.type}>
                   <td style={tdStyle}>{item.type}</td>
                   <td style={{ ...tdStyle, color: t.positive, fontWeight: '500' }}>
@@ -187,7 +187,7 @@ export default function AuditDrillDown({ auditMetrics }) {
               </tr>
             </thead>
             <tbody>
-              {auditMetrics.auditFindings.map((finding) => (
+              {(auditMetrics.auditFindings || []).map((finding) => (
                 <tr key={finding.category}>
                   <td style={tdStyle}>{finding.category}</td>
                   <td style={tdStyle}>{finding.count}</td>
@@ -236,7 +236,7 @@ export default function AuditDrillDown({ auditMetrics }) {
                 </tr>
               </thead>
               <tbody>
-                {auditMetrics.paymentProcessing.map((item) => (
+                {(auditMetrics.paymentProcessing || []).map((item) => (
                   <tr key={item.status}>
                     <td style={tdStyle}>
                       <span
@@ -268,7 +268,7 @@ export default function AuditDrillDown({ auditMetrics }) {
 
             {/* Status Progress Bars */}
             <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
-              {auditMetrics.paymentProcessing.map((item) => (
+              {(auditMetrics.paymentProcessing || []).map((item) => (
                 <div key={item.status}>
                   <div
                     style={{
@@ -328,7 +328,7 @@ export default function AuditDrillDown({ auditMetrics }) {
             Total Bills Audited
           </div>
           <div style={{ fontSize: '18px', fontWeight: '700', color: t.positive }}>
-            {auditMetrics.freightBillAudit[0].value}
+            {auditMetrics.freightBillAudit?.[0]?.value ?? 0}
           </div>
         </div>
         <div>
@@ -336,8 +336,8 @@ export default function AuditDrillDown({ auditMetrics }) {
             Total Recovery Amount
           </div>
           <div style={{ fontSize: '18px', fontWeight: '700', color: t.positive }}>
-            ${auditMetrics.paymentRecovery
-              .reduce((sum, item) => sum + item.amount, 0)
+            ${(auditMetrics.paymentRecovery || [])
+              .reduce((sum, item) => sum + (item.amount || 0), 0)
               .toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
@@ -346,7 +346,7 @@ export default function AuditDrillDown({ auditMetrics }) {
             Total Findings
           </div>
           <div style={{ fontSize: '18px', fontWeight: '700', color: t.text }}>
-            {auditMetrics.auditFindings.reduce((sum, item) => sum + item.count, 0)}
+            {(auditMetrics.auditFindings || []).reduce((sum, item) => sum + (item.count || 0), 0)}
           </div>
         </div>
         <div>
@@ -354,7 +354,7 @@ export default function AuditDrillDown({ auditMetrics }) {
             Processing Rate
           </div>
           <div style={{ fontSize: '18px', fontWeight: '700', color: t.success }}>
-            {auditMetrics.paymentProcessing[0].percentage}%
+            {auditMetrics.paymentProcessing?.[0]?.percentage ?? 0}%
           </div>
         </div>
       </div>
