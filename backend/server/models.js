@@ -198,9 +198,44 @@ const carrierRateLogSchema = new mongoose.Schema({
 carrierRateLogSchema.index({ carrier: 1, createdAt: -1 });
 carrierRateLogSchema.index({ originZip: 1, destinationZip: 1, createdAt: -1 });
 
+// Shipment Schema
+// NOTE: load_id index is defined inline only to avoid duplicate index warnings.
+const shipmentSchema = new mongoose.Schema({
+  load_id: { type: String, unique: true, required: true },
+  status: { type: String, enum: ['Pending', 'In Transit', 'Delivered', 'Cancelled'], default: 'Pending' },
+  origin: String,
+  destination: String,
+  carrier: String,
+  customer: String,
+  revenue: Number,
+  cost: Number,
+  margin: Number,
+  dueDate: Date,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+// CarrierProfile Schema
+// NOTE: carrier_mc index is defined inline only to avoid duplicate index warnings.
+const carrierProfileSchema = new mongoose.Schema({
+  carrier_mc: { type: String, unique: true, required: true },
+  name: String,
+  dotNumber: String,
+  email: String,
+  phone: String,
+  safetyRating: String,
+  insuranceExpiry: Date,
+  complianceStatus: { type: String, enum: ['Active', 'Inactive', 'Suspended'], default: 'Active' },
+  laneHistory: [mongoose.Schema.Types.Mixed],
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
 export const Customer = mongoose.model('Customer', customerSchema);
 export const Carrier = mongoose.model('Carrier', carrierSchema);
 export const Invoice = mongoose.model('Invoice', invoiceSchema);
 export const Exception = mongoose.model('Exception', exceptionSchema);
 export const AuditTrail = mongoose.model('AuditTrail', auditTrailSchema);
 export const CarrierRateLog = mongoose.model('CarrierRateLog', carrierRateLogSchema);
+export const Shipment = mongoose.model('Shipment', shipmentSchema);
+export const CarrierProfile = mongoose.model('CarrierProfile', carrierProfileSchema);
