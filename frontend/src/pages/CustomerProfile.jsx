@@ -114,25 +114,7 @@ export default function CustomerProfile() {
 
       {!loading && detail && (
         <>
-          <div>
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            disabled={!detail}
-            style={{
-              minHeight: 36,
-              borderRadius: 8,
-              border: `1px solid ${t.accent}`,
-              background: t.accent,
-              color: t.surface,
-              padding: '8px 10px',
-              fontSize: 12,
-              cursor: detail ? 'pointer' : 'not-allowed',
-              fontWeight: 700,
-            }}
-          >
-            Contact Customer
-          </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
           <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
           <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
           <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />

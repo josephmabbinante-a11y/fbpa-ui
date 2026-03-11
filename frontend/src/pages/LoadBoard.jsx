@@ -532,7 +532,7 @@ export default function LoadBoard() {
 
   const headerStyle = {
     marginBottom: 24,
-    minHeight: -52,
+    minHeight: 52,
     padding: '0 4px',
     borderBottom: `1px solid ${t.border}`,
     background: t.bgAlt,

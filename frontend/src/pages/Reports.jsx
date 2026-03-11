@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports } from '../api/client';
 import mockReports from '../mock/reports';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
@@ -77,7 +77,7 @@ function mergeReportsData(base, incoming) {
 export default function Reports() {
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const t = theme;
   const navigate = useNavigate();
   const { data: rawData, loading, error } = useApi(getReports, demoMode ? mockReports : null, [demoMode]);
 

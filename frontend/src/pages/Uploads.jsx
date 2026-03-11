@@ -105,7 +105,7 @@ export default function Uploads() {
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 4,
-    minHeight: -52,
+    minHeight: 52,
     padding: '0 4px',
     borderBottom: `1px solid ${t.border}`,
     background: t.bgAlt,

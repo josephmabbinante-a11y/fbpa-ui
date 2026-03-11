@@ -782,7 +782,7 @@ export const ThemeProvider = ({ children }) => {
   return (
     <ThemeContext.Provider
       value={{
-        theme: themeTokens,
+        theme,
         themePackageKey,
         setThemePackageKey,
         settings,
