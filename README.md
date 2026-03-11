@@ -1,168 +1,154 @@
-# FBPA UI - Freight Bill Payment & Audit System
+# FBPA — Freight Bill Payment & Audit (Monorepo)
 
-A modern web application for freight bill auditing and payment management built with React and Node.js.
+A monorepo containing the full FBPA platform: React/Vite frontend, Express backend/microservices, and the standalone FBPA API.
 
 ## 🚨 Security Notice
 
-**Important:** This repository previously contained exposed database credentials. If you are setting up this application, see [DEPLOYMENT.md](./DEPLOYMENT.md) for critical security information and setup instructions.
+**Important:** Never commit secrets or credentials. Use `.env` files (see `.env.example` in each package) and configure sensitive values via your deployment platform's dashboard. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
+
+---
+
+## Repository Structure
+
+```
+fbpa-ui/
+├── frontend/          ← React/Vite UI application
+├── backend/           ← Express server & microservices
+├── api/               ← FBPA API (sourced from josephmabbinante-a11y/FBPA-api)
+├── postman/           ← Postman collections
+├── docker-compose.yml ← Orchestrates all services
+├── package.json       ← Root npm workspace config
+└── README.md
+```
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
+- npm 7+ (for workspaces support)
 - MongoDB Atlas account (or local MongoDB)
-- npm or yarn
+- Docker & Docker Compose (optional, for containerised setup)
 
-### Local Development
+### Install all dependencies
 
-1. **Clone and install:**
-   ```bash
-   git clone <repository-url>
-   cd fbpa-ui
-   npm install
-   ```
+```bash
+# From the monorepo root:
+npm install
+```
 
-2. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+Or install per package:
 
-3. **Start development servers:**
-   ```bash
-   # Terminal 1: Start backend server
-   npm run server
-   
-   # Terminal 2: Start frontend dev server
-   npm run dev
-   ```
+```bash
+cd frontend && npm install
+cd ../backend && npm install
+cd ../api && npm install
+```
 
-4. **Access the application:**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:4000
+### Environment variables
 
-## Deployment
+Each package has its own `.env.example`:
 
-For production deployment to Render or other platforms, see [DEPLOYMENT.md](./DEPLOYMENT.md) for complete instructions.
+```bash
+cp frontend/.env.example frontend/.env
+cp api/.env.example api/.env
+cp backend/.env.example backend/.env   # create if needed
+```
 
-## Available Scripts
+Edit each `.env` with your configuration values.
 
-- `npm run dev` - Start Vite development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run server` - Start backend server
-- `npm run lint` - Run ESLint
+---
 
-## Tech Stack
+## Running the application
 
-- **Frontend:** React 19, Vite, React Router
-- **Backend:** Express, Node.js
-- **Database:** MongoDB with Mongoose
-- **Authentication:** JWT
-- **Styling:** Custom CSS-in-JS
+### All services at once (from root)
+
+```bash
+npm run dev
+```
+
+This runs `frontend`, `api`, and `backend` concurrently.
+
+### Individual services
+
+```bash
+npm run dev:frontend   # Vite dev server  → http://localhost:5173
+npm run dev:api        # FBPA API server  → http://localhost:5000
+npm run dev:backend    # Express server   → http://localhost:4000
+```
+
+---
+
+## Running with Docker
+
+```bash
+docker-compose up
+```
+
+Services exposed:
+| Service    | URL                      |
+|------------|--------------------------|
+| Frontend   | http://localhost:3000    |
+| API        | http://localhost:5000    |
+| Backend    | http://localhost:4000    |
+| ML service | http://localhost:8000    |
+
+---
+
+## Available root scripts
+
+| Script               | Description                                  |
+|----------------------|----------------------------------------------|
+| `npm run dev`        | Run all services concurrently                |
+| `npm run dev:frontend` | Start the Vite frontend dev server         |
+| `npm run dev:api`    | Start the FBPA API                           |
+| `npm run dev:backend`| Start the backend Express server            |
+| `npm run build:frontend` | Build the frontend for production        |
+| `npm run install:all`| Install deps in all workspaces              |
+
+---
+
+## Package details
+
+### `frontend/`
+React 19 + Vite application. See `frontend/package.json` for available scripts.
+
+### `backend/`
+Node.js/Express server and microservices (route intelligence, ML shadow, tracking, capacity worker). See `backend/package.json`.
+
+### `api/`
+Standalone FBPA REST API sourced from [`josephmabbinante-a11y/FBPA-api`](https://github.com/josephmabbinante-a11y/FBPA-api). See [`api/README.md`](./api/README.md) for sync instructions.
+
+---
 
 ## Documentation
 
-- [Deployment Guide](./DEPLOYMENT.md) - Production deployment and security best practices
+- [Deployment Guide](./DEPLOYMENT.md)
+- [Pre-Flight Checklist](./Pre-Flight-Deployment-Checklist.md)
+- [API README](./api/README.md)
+- [Structure Notes](./FBPA_v1.2_structure.md)
 
-## Contributing
+---
 
-1. Create a feature branch
-2. Make your changes
-3. Run linting and tests
-4. Submit a pull request
+## Postman collections
+
+Postman collections for API testing are in the [`postman/`](./postman/) directory.
+
+---
+
+## Tech Stack
+
+- **Frontend:** React 19, Vite, React Router, Recharts
+- **Backend:** Node.js, Express 4, Socket.IO
+- **API:** Node.js, Express 5, Mongoose
+- **Database:** MongoDB (Mongoose), PostgreSQL (pg)
+- **Auth:** JWT, bcryptjs
+- **Infrastructure:** Docker Compose, Render, Vercel
 
 ## License
 
-Private - All Rights Reserved
+Private — All Rights Reserved
 
----
-
-## Original Vite Template Info
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
----
-
-## Debugging Authentication (Login/Register/Forgot Password)
-
-### Backend (Node/Express)
-- All authentication endpoints (`/auth/login`, `/auth/register`, `/auth/forgot-password`) now log incoming request bodies and errors to the server console.
-- If you get a 400 or 401 error, check the server logs for details (e.g., missing fields, invalid credentials).
-- If you get a 500 error, check for stack traces or error messages in the server logs.
-
-### Frontend (React)
-- The login and register forms now display backend error messages directly in the UI.
-- The frontend also logs all payloads and errors to the browser console for easier debugging.
-
-### Postman/Curl Testing
-- Use the provided `FBPA-auth-api.postman_collection.json` to test endpoints directly.
-- Always set `Content-Type: application/json` and provide the required fields in the request body.
-
-### Common Issues
-- **400 Bad Request:** Usually means a required field (like `email` or `password`) is missing or empty.
-- **401 Unauthorized:** Invalid credentials for login.
-- **409 Conflict:** User already exists (register endpoint).
-- **500 Server Error:** Check backend logs for details.
-
-### Example Curl for Login
-```sh
-curl -X POST http://localhost:4000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"your@email.com","password":"yourpassword"}'
-```
-
-### Example Curl for Forgot Password
-```sh
-curl -X POST http://localhost:4000/auth/forgot-password \
-  -H "Content-Type: application/json" \
-  -d '{"email":"your@email.com"}'
-```
-
----
-
-## Saia Rate Quote API Integration
-
-
-## Saia Rate Quote API Integration (Auction Board)
-
-**Auction Board endpoints:**
-- `POST /auction/saia/quote` — normalized Saia quote for auction board
-- `GET /auction/saia/circuit` — Saia circuit breaker state for auction board
-
-**Legacy endpoints (for reference):**
-- `POST /api/rate-logic/saia/quote` for normalized Saia quote + pricing inputs
-- `GET /api/rate-logic/health/saia` and `GET /health/saia` for carrier health monitoring
-- `GET /api/rate-logic/saia/logs` for audit log retrieval
-
-**Integration location:**
-- All Saia quoting logic for the auction board is now under `server/multitenant/services/carriers/saia/` and wired via `server/multitenant/src/modules/auction/`.
-
-
-Required environment variables (never hardcode):
-- `SAIA_RATE_QUOTE_URL`
-- `SAIA_SUBSCRIPTION_KEY`
-- `SAIA_ACCOUNT_NUMBER`
-- `SAIA_API_USERNAME` (if required by your Saia tenant)
-- `SAIA_API_PASSWORD` (if required by your Saia tenant)
-- `SAIA_TIMEOUT_MS` (recommended 5000–8000, default 7000)
-
-Security guidance:
-- Store credentials in encrypted environment variables.
-- Use a secrets manager in production (Azure Key Vault, AWS Secrets Manager, etc.).
-- Do not expose subscription keys, account credentials, or raw carrier responses to frontend users.
 
