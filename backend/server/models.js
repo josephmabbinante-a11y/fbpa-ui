@@ -201,7 +201,7 @@ carrierRateLogSchema.index({ originZip: 1, destinationZip: 1, createdAt: -1 });
 // Shipment Schema
 // NOTE: load_id index is defined inline only to avoid duplicate index warnings.
 const shipmentSchema = new mongoose.Schema({
-  load_id: { type: String, index: true, required: true },
+  load_id: { type: String, unique: true, required: true },
   status: { type: String, enum: ['Pending', 'In Transit', 'Delivered', 'Cancelled'], default: 'Pending' },
   origin: String,
   destination: String,
@@ -218,7 +218,7 @@ const shipmentSchema = new mongoose.Schema({
 // CarrierProfile Schema
 // NOTE: carrier_mc index is defined inline only to avoid duplicate index warnings.
 const carrierProfileSchema = new mongoose.Schema({
-  carrier_mc: { type: String, index: true, required: true },
+  carrier_mc: { type: String, unique: true, required: true },
   name: String,
   dotNumber: String,
   email: String,
