@@ -674,7 +674,7 @@ export async function verifyInvoiceImage(payload) {
 
 export async function uploadInvoiceFile(payload) {
   if (isMockModeEnabled()) {
-    const fileName = payload instanceof File ? payload.name : (payload?.fileName || 'upload.csv');
+    const fileName = payload instanceof File ? payload.name : (payload?.fileName || 'upload');
     const invoiceCount = payload?.invoiceCount || 0;
     return {
       success: true,
