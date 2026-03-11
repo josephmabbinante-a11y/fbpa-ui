@@ -380,6 +380,15 @@ function withAlpha(hex, alpha) {
   return `rgba(${rgb}, ${alpha})`;
 }
 
+function adjustHex(hex, amount) {
+  const normalized = String(hex || '').replace('#', '');
+  if (normalized.length !== 6) return hex;
+  const r = Math.min(255, Math.max(0, Number.parseInt(normalized.slice(0, 2), 16) + amount));
+  const g = Math.min(255, Math.max(0, Number.parseInt(normalized.slice(2, 4), 16) + amount));
+  const b = Math.min(255, Math.max(0, Number.parseInt(normalized.slice(4, 6), 16) + amount));
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 function createThemeMode(paletteId, mode, base) {
   const isDark = mode === 'dark';
   const accent2 = base.secondary || base.accent;
@@ -686,6 +695,25 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--color-accent', theme.accent);
     root.style.setProperty('--color-text', theme.text);
     root.style.setProperty('--color-border', theme.border);
+
+    // Bridge semantic CSS variables used by sidebar, cards, and layout components
+    root.style.setProperty('--bg-primary', theme.bg);
+    root.style.setProperty('--bg-secondary', theme.bgAlt);
+    root.style.setProperty('--surface-elevated', theme.surfaceStrong);
+    root.style.setProperty('--text-primary', theme.text);
+    root.style.setProperty('--text-secondary', theme.textSecondary);
+    root.style.setProperty('--border-subtle', theme.borderLight);
+    root.style.setProperty('--border-strong', adjustHex(theme.border, effectiveMode === 'dark' ? 25 : -15));
+    root.style.setProperty('--accent-hover', withAlpha(theme.accent, 0.25));
+    root.style.setProperty('--accent-soft', withAlpha(theme.accent, 0.12));
+    root.style.setProperty('--danger', theme.error);
+    root.style.setProperty('--sidebar-shadow', effectiveMode === 'dark' ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.08)');
+    root.style.setProperty('--accent-shadow', withAlpha(theme.accent, 0.12));
+
+    // Sync body background variables so body gradient responds to theme changes
+    root.style.setProperty('--color-primary', theme.bg);
+    root.style.setProperty('--color-secondary', theme.surface);
+    root.style.setProperty('--color-muted-text', theme.textSecondary);
 
     root.style.setProperty('color-scheme', effectiveMode === 'dark' ? 'dark' : 'light');
     body.style.setProperty('color-scheme', effectiveMode === 'dark' ? 'dark' : 'light');
