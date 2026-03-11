@@ -8,6 +8,12 @@ import DefaultMarginTargets from '../components/admin/DefaultMarginTargets';
 import RoutingDefaults from '../components/admin/RoutingDefaults';
 import NotificationSettings from '../components/admin/NotificationSettings';
 import WorkflowAutomationEnginePanel from '../components/admin/WorkflowAutomationEnginePanel';
+import PermissionGroupManagement from '../components/admin/PermissionGroupManagement';
+import CommissionOverrideManagement from '../components/admin/CommissionOverrideManagement';
+import BranchManagementPanel from '../components/admin/BranchManagementPanel';
+import RateLogicPanel from '../components/admin/RateLogicPanel';
+import InvoiceAuditPanel from '../components/admin/InvoiceAuditPanel';
+import CarrierOverchargePanel from '../components/admin/CarrierOverchargePanel';
 import {
   createEmailTemplate,
   deleteEmailTemplate,
@@ -806,41 +812,11 @@ function ActionPanel({ action, t, theme, setTheme }) {
     case 'Manage Roles':
       return <RoleManagement t={t} />;
     case 'Permission Groups':
-      return (
-        <div style={sectionStyle}>
-          {title('Permission Groups')}
-          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
-            { key: 'name', label: 'Group Name', placeholder: 'e.g. Finance Team' },
-            { key: 'description', label: 'Description', type: 'textarea' },
-            { key: 'access', label: 'Access Level', type: 'select', options: ['Read Only', 'Standard', 'Admin', 'Full Access'], default: 'Standard' },
-          ]} />
-        </div>
-      );
+      return <PermissionGroupManagement t={t} />;
     case 'Commission Overrides':
-      return (
-        <div style={sectionStyle}>
-          {title('Commission Overrides')}
-          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
-            { key: 'agent', label: 'Agent Name', placeholder: 'e.g. Sarah Martinez' },
-            { key: 'baseRate', label: 'Base Commission Rate (%)', type: 'number', placeholder: '10' },
-            { key: 'overrideRate', label: 'Override Rate (%)', type: 'number', placeholder: '12' },
-            { key: 'effectiveDate', label: 'Effective Date', type: 'date' },
-          ]} />
-        </div>
-      );
+      return <CommissionOverrideManagement t={t} />;
     case 'Branch Management':
-      return (
-        <div style={sectionStyle}>
-          {title('Branch Management')}
-          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
-            { key: 'name', label: 'Branch Name', placeholder: 'e.g. Chicago Office' },
-            { key: 'code', label: 'Branch Code', placeholder: 'e.g. CHI-01' },
-            { key: 'address', label: 'Address', placeholder: '123 Main St' },
-            { key: 'manager', label: 'Branch Manager', placeholder: 'Full name' },
-            { key: 'phone', label: 'Phone', type: 'tel', placeholder: '+1 (555) 000-0000' },
-          ]} />
-        </div>
-      );
+      return <BranchManagementPanel t={t} />;
 
     // ── Load & Freight ────────────────────────────────────────────────────────
     case 'Load Numbering Rules':
@@ -884,18 +860,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
     case 'Workflow Automation Rules':
       return <WorkflowAutomationEnginePanel t={t} onSave={save} />;
     case 'Rate Logic Configuration':
-      return (
-        <div style={sectionStyle}>
-          {title('Rate Logic Configuration')}
-          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
-            { key: 'baseMethod', label: 'Base Rate Method', type: 'select', options: ['Per Mile', 'Flat Rate', 'Percentage of Linehaul'], default: 'Per Mile' },
-            { key: 'fuelSurcharge', label: 'Fuel Surcharge (%)', type: 'number', placeholder: '8.5' },
-            { key: 'detentionRate', label: 'Detention Rate ($/hr)', type: 'number', placeholder: '75' },
-            { key: 'layoverRate', label: 'Layover Rate ($/day)', type: 'number', placeholder: '250' },
-            { key: 'tolerancePct', label: 'Overcharge Tolerance (%)', type: 'number', placeholder: '3' },
-          ]} />
-        </div>
-      );
+      return <RateLogicPanel t={t} onSave={save} />;
 
     // ── Audit & Financial ─────────────────────────────────────────────────────
     case 'Accessorial Validation Rules':
@@ -912,29 +877,9 @@ function ActionPanel({ action, t, theme, setTheme }) {
         </div>
       );
     case 'Carrier Overcharge Thresholds':
-      return (
-        <div style={sectionStyle}>
-          {title('Carrier Overcharge Thresholds')}
-          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
-            { key: 'warnPct', label: 'Warning Threshold (%)', type: 'number', placeholder: '5', default: '5' },
-            { key: 'flagPct', label: 'Flag for Review (%)', type: 'number', placeholder: '10', default: '10' },
-            { key: 'blockPct', label: 'Block Payment (%)', type: 'number', placeholder: '20', default: '20' },
-            { key: 'notifyEmail', label: 'Notify Email on Flag', type: 'email', placeholder: 'billing@company.com' },
-          ]} />
-        </div>
-      );
+      return <CarrierOverchargePanel t={t} onSave={save} />;
     case 'Invoice Audit Settings':
-      return (
-        <div style={sectionStyle}>
-          {title('Invoice Audit Settings')}
-          <ToggleList t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} items={[
-            { key: 'dupeCheck', label: 'Duplicate Invoice Detection', desc: 'Flag invoices with same carrier + amount within 30 days', default: true },
-            { key: 'rateConf', label: 'Rate Confirmation Matching', desc: 'Require matching rate confirmation on file', default: true },
-            { key: 'podRequired', label: 'POD Required for Payment', desc: 'Block payment until POD uploaded', default: true },
-            { key: 'autoApprove', label: 'Auto-Approve Clean Invoices', desc: 'Auto-approve if no exceptions detected', default: false },
-          ]} />
-        </div>
-      );
+      return <InvoiceAuditPanel t={t} onSave={save} />;
     case 'Profit Margin Alerts':
       return (
         <div style={sectionStyle}>
