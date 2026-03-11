@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage } from '../api/client';
 import mockInvoices from '../mock/invoices';
 import mockInvoiceImages from '../mock/invoiceImages';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
 
@@ -67,7 +67,7 @@ export default function Invoices() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const t = theme;
   const [query, setQuery] = useState('');
 
   const mockMode = isMockModeEnabled();

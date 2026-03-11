@@ -194,7 +194,7 @@ export default function Shipments() {
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4, flexWrap: 'wrap', minHeight: -52, padding: '0 4px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4, flexWrap: 'wrap', minHeight: 52, padding: '0 4px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 26 }}>Shipments</h1>
           <div style={{ fontSize: 12, color: t.textSecondary }}>Core workflow engine with status, routing, and margin visibility.</div>
