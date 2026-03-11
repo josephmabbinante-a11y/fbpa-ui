@@ -328,7 +328,7 @@ export default function AuditDrillDown({ auditMetrics }) {
             Total Bills Audited
           </div>
           <div style={{ fontSize: '18px', fontWeight: '700', color: t.positive }}>
-            {auditMetrics.freightBillAudit?.[0]?.value ?? 'N/A'}
+            {auditMetrics.freightBillAudit?.[0]?.value ?? 0}
           </div>
         </div>
         <div>
