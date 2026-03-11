@@ -6,8 +6,7 @@
   "workspaces": [
     "frontend",
     "server",
-    "api",
-    "server"
+    "api"
   ],
   "scripts": {
     "dev:frontend": "npm --workspace=frontend run dev",
