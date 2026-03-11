@@ -6,6 +6,11 @@ import mockInvoiceImages from '../mock/invoiceImages';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
+import { PageHeader, PrimaryButton, InlineAlert } from '../components/ui/Primitives';
+import KPIWithTrend from '../components/KPIWithTrend';
+import CollapsibleSection from '../components/CollapsibleSection';
+import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
+import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 
 function normalizeInvoicesResponse(response) {
   // Safely extract invoices array from response
