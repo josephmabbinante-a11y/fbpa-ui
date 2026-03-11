@@ -35,7 +35,6 @@ export default function InvoiceAuditPanel({ t, onSave }) {
   const themeSurface = (t && t.surface) || '#fff';
   const themeSuccess = (t && t.success) || '#16a34a';
   const themeWarning = (t && t.warning) || '#f59e0b';
-  const themeError = (t && t.error) || '#ef4444';
 
   function update(key, value) {
     setConfig((prev) => ({ ...prev, [key]: value }));
