@@ -85,10 +85,33 @@ function hasUsableSavings(items) {
   return Array.isArray(items) && items.length > 0 && items.some((item) => Number(item?.savings ?? item?.total ?? item?.value ?? 0) > 0);
 }
 
-function mergeDashboardData(incoming, demoMode = false) {
-  const fallback = demoMode ? dashboardEnhanced : {
-    summary: {}, trends: {}, exceptionBreakdown: [], savingsByCarrier: [], recentActivity: [],
+const toCurrency = (value) => `$${Number(value || 0).toLocaleString()}`;
+
+function mapLoadToRow(load) {
+  const revenue = Number(load?.revenue || 0);
+  const carrierCost = Number(load?.carrierCost || 0);
+  const margin = revenue - carrierCost;
+  return {
+    id: load?.id || `L-${Date.now()}`,
+    customer: typeof load?.customer === 'object' ? (load.customer?.name || '—') : (load?.customer || '—'),
+    carrier: typeof load?.carrier === 'object' ? (load.carrier?.name || 'Pending') : (load?.carrier || 'Pending'),
+    origin: typeof load?.origin === 'object'
+      ? `${load.origin?.city || '—'}${load.origin?.state ? `, ${load.origin.state}` : ''}`
+      : (load?.origin || '—'),
+    destination: typeof load?.destination === 'object'
+      ? `${load.destination?.city || '—'}${load.destination?.state ? `, ${load.destination.state}` : ''}`
+      : (load?.destination || '—'),
+    status: String(load?.status || 'open').replaceAll('_', ' '),
+    revenue: toCurrency(revenue),
+    cost: toCurrency(carrierCost),
+    margin: toCurrency(margin),
+    dueDate: load?.deliveryAt ? new Date(load.deliveryAt).toLocaleString() : (load?.dueDate || '—'),
+    raw: load,
   };
+}
+
+function mergeDashboardData(incoming, demoMode = false) {
+  const fallback = demoMode ? dashboardEnhanced : EMPTY_DASHBOARD_DATA;
   if (!incoming || typeof incoming !== 'object') return fallback;
 
   const fallbackTrends = fallback.trends || {};
@@ -123,9 +146,14 @@ function mergeDashboardData(incoming, demoMode = false) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
+  const { settings } = useTheme();
   const { demoMode } = useDemo();
-  const t = themes[theme];
+  const resolvedMode = settings?.modePreference === 'dark' ? 'dark'
+    : settings?.modePreference === 'light' ? 'light'
+    : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const t = themes[`${settings?.palette ?? 'opscale-blue'}-${resolvedMode}`]
+    ?? themes['opscale-blue-dark']
+    ?? {};
 
   const { data: rawData, loading, error } = useApi(getDashboard, demoMode ? dashboardEnhanced : null, [demoMode]);
   const data = useMemo(
@@ -135,7 +163,7 @@ export default function Dashboard() {
 
   const [dashboardPrefs] = useState(() => readDashboardPrefs());
   const [variant, setVariant] = useState(() => readDashboardVariant());
-  const [todayShipments, setTodayShipments] = useState(() => Array.isArray(mockShipments) ? mockShipments : []);
+  const [todayShipments, setTodayShipments] = useState(() => Array.isArray(mockShipments) ? mockShipments.map(mapLoadToRow) : []);
   const [shipmentsSource, setShipmentsSource] = useState('fallback');
   const [shipmentsUpdatedAt, setShipmentsUpdatedAt] = useState(null);
 
@@ -151,28 +179,6 @@ export default function Dashboard() {
         && date.getDate() === now.getDate();
     };
 
-    const toCurrency = (value) => `$${Number(value || 0).toLocaleString()}`;
-
-    const mapLoadToRow = (load) => {
-      const revenue = Number(load?.revenue || 0);
-      const carrierCost = Number(load?.carrierCost || 0);
-      const margin = revenue - carrierCost;
-
-      return {
-        id: load?.id || `L-${Date.now()}`,
-        customer: load?.customer?.name || '—',
-        carrier: load?.carrier?.name || 'Pending',
-        origin: `${load?.origin?.city || '—'}${load?.origin?.state ? `, ${load.origin.state}` : ''}`,
-        destination: `${load?.destination?.city || '—'}${load?.destination?.state ? `, ${load.destination.state}` : ''}`,
-        status: String(load?.status || 'open').replaceAll('_', ' '),
-        revenue: toCurrency(revenue),
-        cost: toCurrency(carrierCost),
-        margin: toCurrency(margin),
-        dueDate: load?.deliveryAt ? new Date(load.deliveryAt).toLocaleString() : '—',
-        raw: load,
-      };
-    };
-
     const refreshShipments = async () => {
       const result = await listLoads({ tab: 'all', page: 1, pageSize: 100, sort: '-updatedAt' });
 
@@ -182,7 +188,7 @@ export default function Dashboard() {
         setShipmentsSource('fallback');
         setShipmentsUpdatedAt(new Date());
         if (!Array.isArray(todayShipments) || todayShipments.length === 0) {
-          setTodayShipments(Array.isArray(mockShipments) ? mockShipments : []);
+          setTodayShipments(Array.isArray(mockShipments) ? mockShipments.map(mapLoadToRow) : []);
         }
         return;
       }
