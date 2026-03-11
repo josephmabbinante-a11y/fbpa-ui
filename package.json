@@ -5,13 +5,16 @@
   "description": "FBPA (Freight Bill Payment & Audit) - Monorepo",
   "workspaces": [
     "frontend",
+    "server",
     "api"
   ],
   "scripts": {
     "dev:frontend": "npm --workspace=frontend run dev",
+    "dev:server": "npm --workspace=server run dev",
     "dev:api": "npm --workspace=api run dev",
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:api\"",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:server\" \"npm run dev:api\"",
     "build:frontend": "npm --workspace=frontend run build",
+    "start:server": "npm --workspace=server run start",
     "start:api": "npm --workspace=api run start",
     "lint": "npm --workspace=frontend run lint"
   },

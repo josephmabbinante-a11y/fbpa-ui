@@ -16,8 +16,9 @@ services:
     build: ./api
     ports:
       - "5000:5000"
+    # Copy api/.env.example to api/.env and fill in values before running docker-compose
     env_file:
-      - ./api/.env
+      - ./api/.env.example
     depends_on:
       - postgres
   route-intelligence-service:

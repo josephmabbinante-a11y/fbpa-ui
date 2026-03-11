@@ -20,6 +20,8 @@ This is the FBPA monorepo containing the frontend app, backend services, and API
 
 ### Run Everything with Docker
 
+> **Before running:** copy `api/.env.example` to `api/.env` and fill in the values.
+
 ```bash
 docker-compose up
 ```
@@ -48,8 +50,9 @@ This repo uses npm workspaces. From the root you can run:
 
 ```bash
 npm run dev:frontend   # Start the Vite frontend
+npm run dev:server     # Start the Express server with nodemon
 npm run dev:api        # Start the API with nodemon
-npm run dev            # Start both concurrently
+npm run dev            # Start all three concurrently
 ```
 
 ## Notes
