@@ -243,8 +243,13 @@ app.use('/api/trips', tripsRouter);
 app.use('/api/tracker', trackerRouter);
 
 app.get('/api/health', (req, res) => {
-  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-  res.json({ status: 'ok', dbStatus });
+  const dbConnected = mongoose.connection.readyState === 1;
+  res.json({
+    status: 'ok',
+    database: dbConnected ? 'connected' : 'disconnected',
+    uptime: Math.floor(process.uptime()),
+    dbStatus: dbConnected ? 'connected' : 'disconnected',
+  });
 });
 
 app.get('/api/health/saia', async (_req, res) => {

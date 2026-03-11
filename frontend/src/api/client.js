@@ -2,6 +2,8 @@ import mockInvoices from '../mock/invoices';
 import mockExceptions from '../mock/exceptions';
 import mockDashboard from '../mock/dashboard';
 import mockReports from '../mock/reports';
+import mockInvoiceImages from '../mock/invoiceImages';
+import { mockRateData } from '../mock/mockRateData';
 import { getAccessToken } from '../utils/authToken';
 import { isMockModeEnabled } from '../utils/mockMode';
 
@@ -53,11 +55,10 @@ export async function sendCustomerMessage({ message, customer, invoice, exceptio
   }
 }
 
-// Unify mock mode: check both env and DemoContext/localStorage.
+// Unify mock mode: delegates to the shared utility in utils/mockMode.js
+// which checks VITE_MOCK_MODE, VITE_USE_MOCK_API, and localStorage demoMode.
 function isMockMode() {
-  // Only enable mock mode if VITE_MOCK_MODE or demoMode is true
-  return import.meta.env.VITE_MOCK_MODE === 'true' ||
-    (typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true');
+  return isMockModeEnabled();
 }
 
 const seedMockCarriers = [
@@ -624,6 +625,12 @@ export async function connectEdiIntegration(payload) {
 }
 
 export function getInvoiceImages(invoiceId) {
+  if (isMockModeEnabled()) {
+    if (invoiceId) {
+      return Promise.resolve(mockInvoiceImages.filter(img => img.invoiceId === invoiceId));
+    }
+    return Promise.resolve(mockInvoiceImages);
+  }
   const query = invoiceId ? `?invoiceId=${encodeURIComponent(invoiceId)}` : '';
   return safeFetch(`/api/invoice-images${query}`);
 }
@@ -666,6 +673,16 @@ export async function verifyInvoiceImage(payload) {
 }
 
 export async function uploadInvoiceFile(payload) {
+  if (isMockModeEnabled()) {
+    const fileName = payload instanceof File ? payload.name : (payload?.fileName || 'upload');
+    const invoiceCount = payload?.invoiceCount || 0;
+    return {
+      success: true,
+      fileName,
+      invoiceCount,
+      uploadedAt: new Date().toISOString(),
+    };
+  }
   // payload can be a File object (legacy) or an object { fileName, invoiceCount }
   try {
     let body;
@@ -739,6 +756,9 @@ export async function listQuoteOutcomes(limit = 100) {
 }
 
 export async function getRateLogicMetrics() {
+  if (isMockModeEnabled()) {
+    return mockRateData;
+  }
   return safeFetch('/api/rate-logic/metrics');
 }
 
