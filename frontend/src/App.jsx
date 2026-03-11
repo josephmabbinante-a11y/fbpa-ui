@@ -150,7 +150,7 @@ function AppRoutes() {
             <Route path="/invoices" element={<CombinedPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />
             <Route path="/exceptions" element={<ExceptionsUploads />} />
-            <Route path="/uploads" element={<ExceptionsUploads />} />
+            <Route path="/uploads" element={<Uploads />} />
             <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/:reportId" element={<ReportDetail />} />
@@ -164,11 +164,6 @@ function AppRoutes() {
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/finance/ar" element={<AR />} />
             <Route path="/finance/ap" element={<AP />} />
-            <Route path="/uploads" element={<Uploads />} />
-            <Route path="/exceptions" element={<ExceptionDrilldown />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/reports/:reportId" element={<ReportDetail />} />
-            <Route path="/settings" element={<Settings />} />
             <Route path="/finance/aging" element={<Aging />} />
             <Route path="/lane-intelligence" element={<LaneIntelligence />} />
             <Route path="/carriers" element={<Carriers />} />
@@ -187,7 +182,6 @@ function AppRoutes() {
             <Route path="/route-optimization" element={<RouteOptimization />} />
             <Route path="/fsm-demo" element={<LoadStatusDemo />} />
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />
-            <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/auction-board" element={<AuctionBoard />} />
             <Route path="/exceptions-uploads" element={<ExceptionsUploads />} />
           </Routes>

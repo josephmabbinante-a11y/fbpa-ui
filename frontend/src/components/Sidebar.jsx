@@ -190,6 +190,14 @@ export default function Sidebar() {
                   cursor: 'pointer',
                   transition: 'all 180ms ease',
                 }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = `${theme.accent}14`;
+                  e.currentTarget.style.color = theme.text;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--surface)';
+                  e.currentTarget.style.color = theme.textSecondary;
+                }}
                 aria-expanded={false}
               >
                 <span
@@ -200,7 +208,7 @@ export default function Sidebar() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     borderRadius: 8,
-                    backgroundColor: 'var(--surface)',
+                    backgroundColor: `${theme.accent}14`,
                     border: `1px solid ${theme.border}`,
                     fontSize: 11,
                     letterSpacing: 0.4,
@@ -224,7 +232,7 @@ export default function Sidebar() {
                       borderRadius: 10,
                       border: `1px solid ${isActive ? theme.accent : theme.border}`,
                       background: isActive
-                        ? `linear-gradient(140deg, rgba(24, 210, 255, 0.18), rgba(95, 140, 255, 0.14))`
+                        ? `linear-gradient(140deg, ${theme.accent}28, ${theme.accent}18)`
                         : 'transparent',
                       color: isActive ? theme.text : theme.textSecondary,
                       padding: collapsed ? '8px 8px' : '8px 12px',
@@ -242,7 +250,7 @@ export default function Sidebar() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: 6,
-                        backgroundColor: 'var(--surface)',
+                        backgroundColor: `${theme.accent}14`,
                         border: `1px solid ${theme.border}`,
                         fontSize: 10,
                         letterSpacing: 0.3,
@@ -267,8 +275,9 @@ export default function Sidebar() {
                 gap: 10,
                 borderRadius: 12,
                 border: `1px solid ${isActive ? theme.accent : theme.border}`,
+                borderLeft: `3px solid ${isActive ? theme.accent : 'transparent'}`,
                 background: isActive
-                  ? 'var(--surface-elevated)'
+                  ? `${theme.accent}1a`
                   : 'var(--surface)',
                 color: isActive ? theme.text : theme.textSecondary,
                 padding: collapsed ? '10px 8px' : '10px 12px',
@@ -286,7 +295,7 @@ export default function Sidebar() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: 8,
-                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  backgroundColor: `${theme.accent}14`,
                   border: `1px solid ${theme.border}`,
                   fontSize: 11,
                   letterSpacing: 0.4,
@@ -464,6 +473,7 @@ export default function Sidebar() {
           className="neon-outline"
           onClick={() => {
             clearAccessToken();
+            window.dispatchEvent(new Event('storage'));
             navigate('/login');
           }}
           style={{
