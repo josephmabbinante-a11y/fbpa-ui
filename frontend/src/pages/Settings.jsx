@@ -1,6 +1,5 @@
 import RoleManagement from '../components/admin/RoleManagement';
 import { useEffect, useMemo, useState } from 'react';
-import AdminControlCard from '../components/admin/AdminControlCard';
 import CompanyInfoForm from '../components/admin/CompanyInfoForm';
 import LogoUpload from '../components/admin/LogoUpload';
 import CurrencyUnitsForm from '../components/admin/CurrencyUnitsForm';
@@ -96,12 +95,38 @@ const adminSections = [
     description: 'Manage subscription plan and feature access.',
     actions: ['View Current Plan', 'Upgrade Plan', 'Payment Methods', 'Usage Limits', 'Feature Access Controls'],
   },
+  {
+    icon: 'carrier',
+    title: 'Carrier Management',
+    description: 'Control carrier onboarding rules, compliance validation, and fraud prevention.',
+    actions: [
+      'Carrier Onboarding Rules',
+      'Compliance & Insurance Rules',
+      'Fraud Prevention Settings',
+      'Factoring & Payment Config',
+    ],
+  },
+  {
+    icon: 'automation',
+    title: 'System Automation',
+    description: 'Configure automation rules, data retention policies, and system behaviors.',
+    actions: [
+      'Load Automation Rules',
+      'Invoice Automation',
+      'Data Retention Policy',
+      'Audit Log Settings',
+    ],
+  },
 ];
 
 // ── Inline form components for each action ──────────────────────────────────
 
-function SimpleForm({ fields, onSave, t }) {
-  const [vals, setVals] = useState(() => Object.fromEntries(fields.map(f => [f.key, f.default || ''])));
+function SimpleForm({ fields, onSave, t, storageKey }) {
+  const [vals, setVals] = useState(() => {
+    const defaults = Object.fromEntries(fields.map(f => [f.key, f.default || '']));
+    if (!storageKey) return defaults;
+    return readStorage(storageKey, defaults);
+  });
   const s = {
     label: { fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' },
     input: { padding: '8px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 13, fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' },
@@ -109,7 +134,7 @@ function SimpleForm({ fields, onSave, t }) {
     btn: { marginTop: 8, padding: '9px 20px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' },
   };
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave(vals); }}>
+    <form onSubmit={e => { e.preventDefault(); if (storageKey) writeStorage(storageKey, vals); onSave(vals); }}>
       {fields.map(f => (
         <div key={f.key} style={s.row}>
           <label style={s.label}>{f.label}</label>
@@ -129,13 +154,24 @@ function SimpleForm({ fields, onSave, t }) {
   );
 }
 
-function ToggleList({ items, t }) {
-  const [enabled, setEnabled] = useState(() => Object.fromEntries(items.map(i => [i.key, i.default !== false])));
+function ToggleList({ items, t, storageKey }) {
+  const [enabled, setEnabled] = useState(() => {
+    const defaults = Object.fromEntries(items.map(i => [i.key, i.default !== false]));
+    if (!storageKey) return defaults;
+    return readStorage(storageKey, defaults);
+  });
   const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}`, fontSize: 13 };
   const toggle = (active) => ({
     width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
     background: active ? t.accent : t.border, position: 'relative', transition: 'background 0.2s',
   });
+  const handleToggle = (key) => {
+    setEnabled(v => {
+      const next = { ...v, [key]: !v[key] };
+      if (storageKey) writeStorage(storageKey, next);
+      return next;
+    });
+  };
   return (
     <div>
       {items.map(item => (
@@ -144,7 +180,7 @@ function ToggleList({ items, t }) {
             <div style={{ fontWeight: 600 }}>{item.label}</div>
             {item.desc && <div style={{ fontSize: 12, color: t.textSecondary }}>{item.desc}</div>}
           </div>
-          <button type="button" style={toggle(enabled[item.key])} onClick={() => setEnabled(v => ({ ...v, [item.key]: !v[item.key] }))}>
+          <button type="button" style={toggle(enabled[item.key])} onClick={() => handleToggle(item.key)}>
             <span style={{ position: 'absolute', top: 3, left: enabled[item.key] ? 18 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
           </button>
         </div>
@@ -168,7 +204,7 @@ function OperatorEmailTemplatesPanel({ t }) {
     borderRadius: 6,
     border: `1px solid ${t.border}`,
     background: t.surface,
-    color: t.textPrimary,
+    color: t.text,
     fontSize: 13,
     fontFamily: 'inherit',
     width: '100%',
@@ -411,6 +447,12 @@ function OperatorEmailTemplatesPanel({ t }) {
 
 function ActionPanel({ action, t, theme, setTheme }) {
   const [saveMessage, setSaveMessage] = useState('');
+
+  useEffect(() => {
+    if (!saveMessage) return;
+    const timer = setTimeout(() => setSaveMessage(''), 4000);
+    return () => clearTimeout(timer);
+  }, [saveMessage]);
   const [companyBranding, setCompanyBranding] = useState(() => readStorage(COMPANY_BRANDING_STORAGE_KEY, {
     companyName: 'Opscale Supply Chain',
     logoUrl: '',
@@ -487,8 +529,9 @@ function ActionPanel({ action, t, theme, setTheme }) {
   const selectedListRows = companyLists[selectedCompanyList] || [];
 
   const save = (data) => {
+    const key = `fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`;
+    writeStorage(key, data);
     setSaveMessage('Settings saved.');
-    alert('Saved: ' + JSON.stringify(data, null, 2));
   };
 
   const persistCompanyBranding = (updates, message = 'Company branding saved.') => {
@@ -583,6 +626,12 @@ function ActionPanel({ action, t, theme, setTheme }) {
             address: companyBranding.address,
             phone: companyBranding.phone,
             email: companyBranding.email,
+            mc: companyBranding.mc || '',
+            dot: companyBranding.dot || '',
+            ein: companyBranding.ein || '',
+            billingContact: companyBranding.billingContact || '',
+            billingEmail: companyBranding.billingEmail || '',
+            paymentTerms: companyBranding.paymentTerms || 'Net 30',
           }}
           onSave={(data) => {
             persistCompanyBranding({
@@ -590,6 +639,12 @@ function ActionPanel({ action, t, theme, setTheme }) {
               address: data.address,
               phone: data.phone,
               email: data.email,
+              mc: data.mc,
+              dot: data.dot,
+              ein: data.ein,
+              billingContact: data.billingContact,
+              billingEmail: data.billingEmail,
+              paymentTerms: data.paymentTerms,
             });
           }}
         />
@@ -598,7 +653,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Company Insurance Coverage')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'provider', label: 'Insurance Provider', placeholder: 'Carrier name' },
             { key: 'policyNumber', label: 'Policy Number', placeholder: 'POL-00012345' },
             { key: 'coverageLimit', label: 'Coverage Limit ($)', type: 'number', placeholder: '1000000' },
@@ -735,7 +790,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Driver Pay Settings')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'payModel', label: 'Default Pay Model', type: 'select', options: ['Per Mile', 'Percentage', 'Hourly'], default: 'Per Mile' },
             { key: 'baseRate', label: 'Base Pay Rate', type: 'number', placeholder: '0.65' },
             { key: 'detentionPay', label: 'Detention Pay ($/hr)', type: 'number', placeholder: '25' },
@@ -749,12 +804,12 @@ function ActionPanel({ action, t, theme, setTheme }) {
     case 'Add/Edit Users':
       return <UserManagement />;
     case 'Manage Roles':
-      return <RoleManagement />;
+      return <RoleManagement t={t} />;
     case 'Permission Groups':
       return (
         <div style={sectionStyle}>
           {title('Permission Groups')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'name', label: 'Group Name', placeholder: 'e.g. Finance Team' },
             { key: 'description', label: 'Description', type: 'textarea' },
             { key: 'access', label: 'Access Level', type: 'select', options: ['Read Only', 'Standard', 'Admin', 'Full Access'], default: 'Standard' },
@@ -765,7 +820,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Commission Overrides')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'agent', label: 'Agent Name', placeholder: 'e.g. Sarah Martinez' },
             { key: 'baseRate', label: 'Base Commission Rate (%)', type: 'number', placeholder: '10' },
             { key: 'overrideRate', label: 'Override Rate (%)', type: 'number', placeholder: '12' },
@@ -777,7 +832,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Branch Management')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'name', label: 'Branch Name', placeholder: 'e.g. Chicago Office' },
             { key: 'code', label: 'Branch Code', placeholder: 'e.g. CHI-01' },
             { key: 'address', label: 'Address', placeholder: '123 Main St' },
@@ -792,7 +847,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Load Numbering Rules')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'prefix', label: 'Prefix', placeholder: 'e.g. LD-' },
             { key: 'startNum', label: 'Starting Number', type: 'number', placeholder: '1000' },
             { key: 'padding', label: 'Zero Padding (digits)', type: 'number', placeholder: '6' },
@@ -804,7 +859,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Manifest Settings')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'autoGenerate', label: 'Auto-Generate Manifests', type: 'select', options: ['On Load Create', 'On Dispatch', 'Manual Only'], default: 'On Dispatch' },
             { key: 'includeDriver', label: 'Include Driver Signature Line', type: 'select', options: ['Yes', 'No'], default: 'Yes' },
             { key: 'copies', label: 'Default Print Copies', type: 'number', placeholder: '2' },
@@ -816,7 +871,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Default Equipment Types')}
-          <ToggleList t={t} items={[
+          <ToggleList t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} items={[
             { key: 'van', label: 'Dry Van', desc: 'Standard enclosed trailer' },
             { key: 'reefer', label: 'Refrigerated (Reefer)', desc: 'Temperature-controlled' },
             { key: 'flatbed', label: 'Flatbed', desc: 'Open-deck trailer' },
@@ -832,7 +887,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Rate Logic Configuration')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'baseMethod', label: 'Base Rate Method', type: 'select', options: ['Per Mile', 'Flat Rate', 'Percentage of Linehaul'], default: 'Per Mile' },
             { key: 'fuelSurcharge', label: 'Fuel Surcharge (%)', type: 'number', placeholder: '8.5' },
             { key: 'detentionRate', label: 'Detention Rate ($/hr)', type: 'number', placeholder: '75' },
@@ -847,7 +902,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Accessorial Validation Rules')}
-          <ToggleList t={t} items={[
+          <ToggleList t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} items={[
             { key: 'liftgate', label: 'Validate Liftgate Charges', desc: 'Flag if liftgate billed without appointment note' },
             { key: 'detention', label: 'Validate Detention Charges', desc: 'Cross-check against ELD data' },
             { key: 'fuel', label: 'Validate Fuel Surcharge', desc: 'Compare against weekly DOE index' },
@@ -860,7 +915,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Carrier Overcharge Thresholds')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'warnPct', label: 'Warning Threshold (%)', type: 'number', placeholder: '5', default: '5' },
             { key: 'flagPct', label: 'Flag for Review (%)', type: 'number', placeholder: '10', default: '10' },
             { key: 'blockPct', label: 'Block Payment (%)', type: 'number', placeholder: '20', default: '20' },
@@ -872,7 +927,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Invoice Audit Settings')}
-          <ToggleList t={t} items={[
+          <ToggleList t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} items={[
             { key: 'dupeCheck', label: 'Duplicate Invoice Detection', desc: 'Flag invoices with same carrier + amount within 30 days', default: true },
             { key: 'rateConf', label: 'Rate Confirmation Matching', desc: 'Require matching rate confirmation on file', default: true },
             { key: 'podRequired', label: 'POD Required for Payment', desc: 'Block payment until POD uploaded', default: true },
@@ -884,7 +939,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Profit Margin Alerts')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'targetMargin', label: 'Target Margin (%)', type: 'number', placeholder: '18', default: '18' },
             { key: 'warnBelow', label: 'Warn Below (%)', type: 'number', placeholder: '12', default: '12' },
             { key: 'alertBelow', label: 'Alert Below (%)', type: 'number', placeholder: '8', default: '8' },
@@ -896,7 +951,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Payment Terms Settings')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'carrierTerms', label: 'Default Carrier Payment Terms', type: 'select', options: ['Net 15', 'Net 30', 'Net 45', 'QuickPay 2%/10'], default: 'Net 30' },
             { key: 'customerTerms', label: 'Default Customer Invoice Terms', type: 'select', options: ['Net 15', 'Net 30', 'Net 45', 'Net 60'], default: 'Net 30' },
             { key: 'lateFee', label: 'Late Fee (%)', type: 'number', placeholder: '1.5' },
@@ -985,7 +1040,7 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Reporting Configuration')}
-          <SimpleForm t={t} onSave={save} fields={[
+          <SimpleForm t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} onSave={save} fields={[
             { key: 'defaultPeriod', label: 'Default Report Period', type: 'select', options: ['Last 7 Days', 'Last 30 Days', 'Last Quarter', 'YTD'], default: 'Last 30 Days' },
             { key: 'exportFormat', label: 'Default Export Format', type: 'select', options: ['CSV', 'XLSX', 'PDF'], default: 'XLSX' },
             { key: 'scheduledEmail', label: 'Scheduled Report Email', type: 'email', placeholder: 'reports@company.com' },
@@ -1076,13 +1131,115 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return (
         <div style={sectionStyle}>
           {title('Feature Access Controls')}
-          <ToggleList t={t} items={[
+          <ToggleList t={t} storageKey={`fbpa_settings_${action.toLowerCase().replace(/[^a-z0-9]+/g, '_')}`} items={[
             { key: 'rateLogic', label: 'Rate Logic Tool', desc: 'Access to rate calculation engine' },
             { key: 'laneIntel', label: 'Lane Intelligence', desc: 'Market data and lane analytics' },
             { key: 'fleetDash', label: 'Fleet Dashboard', desc: 'Driver and vehicle management' },
             { key: 'apiAccess', label: 'API Access', desc: 'External API key generation' },
             { key: 'bulkExport', label: 'Bulk Export', desc: 'Export large datasets as CSV/XLSX' },
             { key: 'aiBot', label: 'AI Assistant', desc: 'Copilot chat assistant' },
+          ]} />
+        </div>
+      );
+
+    // ── Carrier Management ────────────────────────────────────────────────────
+    case 'Carrier Onboarding Rules':
+      return (
+        <div style={sectionStyle}>
+          {title('Carrier Onboarding Rules')}
+          <ToggleList t={t} storageKey="fbpa_carrier_onboarding" items={[
+            { key: 'requireInsurance', label: 'Require Insurance Certificate', desc: 'Block dispatch until active certificate on file', default: true },
+            { key: 'requireW9', label: 'Require W9', desc: 'Require W9 before carrier payment', default: true },
+            { key: 'requireAuthority', label: 'Require Operating Authority Verification', desc: 'Verify MC/DOT authority active status', default: true },
+            { key: 'requireFactoring', label: 'Require Factoring Company Verification', desc: 'Verify factoring company before ACH', default: false },
+            { key: 'requireSignedRateConf', label: 'Require Signed Rate Confirmation', desc: 'Block dispatch until rate conf signed', default: true },
+          ]} />
+        </div>
+      );
+    case 'Compliance & Insurance Rules':
+      return (
+        <div style={sectionStyle}>
+          {title('Compliance & Insurance Rules')}
+          <SimpleForm t={t} storageKey="fbpa_compliance_insurance" onSave={save} fields={[
+            { key: 'minInsuranceAmount', label: 'Minimum Insurance Coverage ($)', type: 'number', placeholder: '1000000', default: '1000000' },
+            { key: 'safetyRatingThreshold', label: 'Minimum Safety Rating', type: 'select', options: ['Satisfactory', 'Conditional', 'Unsatisfactory'], default: 'Satisfactory' },
+            { key: 'authorityAgeMinDays', label: 'Minimum MC Authority Age (days)', type: 'number', placeholder: '180', default: '180' },
+            { key: 'insuranceExpiryWarningDays', label: 'Insurance Expiry Warning (days before)', type: 'number', placeholder: '30', default: '30' },
+          ]} />
+        </div>
+      );
+    case 'Fraud Prevention Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Fraud Prevention Settings')}
+          <ToggleList t={t} storageKey="fbpa_fraud_prevention" items={[
+            { key: 'blockNewMC', label: 'Block Carriers with Recently Activated MC Numbers', desc: 'Flag MC numbers activated within minimum age threshold', default: true },
+            { key: 'requireCarrierPacket', label: 'Require Carrier Packet Before Dispatch', desc: 'Block dispatch until packet complete', default: true },
+            { key: 'bankMismatchAlert', label: 'Bank Account Mismatch Alert', desc: 'Flag if bank account differs from onboarding record', default: true },
+            { key: 'rateAnomalyCheck', label: 'Rate Anomaly Detection', desc: 'Alert if carrier rate deviates >20% from lane average', default: true },
+            { key: 'duplicateCarrierCheck', label: 'Duplicate Carrier Detection', desc: 'Flag duplicate MC/EIN registrations', default: true },
+          ]} />
+        </div>
+      );
+    case 'Factoring & Payment Config':
+      return (
+        <div style={sectionStyle}>
+          {title('Factoring & Payment Config')}
+          <SimpleForm t={t} storageKey="fbpa_factoring_config" onSave={save} fields={[
+            { key: 'quickPayDiscount', label: 'Quick Pay Discount (%)', type: 'number', placeholder: '3', default: '3' },
+            { key: 'standardTerms', label: 'Standard Payment Terms', type: 'select', options: ['Net 15', 'Net 30', 'Net 45'], default: 'Net 30' },
+            { key: 'factoringCompany', label: 'Default Factoring Company', placeholder: 'e.g. Triumph Business Capital' },
+            { key: 'remitEmail', label: 'Remittance Email', type: 'email', placeholder: 'remit@carrier.com' },
+          ]} />
+        </div>
+      );
+
+    // ── System Automation ─────────────────────────────────────────────────────
+    case 'Load Automation Rules':
+      return (
+        <div style={sectionStyle}>
+          {title('Load Automation Rules')}
+          <ToggleList t={t} storageKey="fbpa_load_automation" items={[
+            { key: 'autoPostDAT', label: 'Auto Post Loads to DAT', desc: 'Automatically post open loads to DAT board', default: false },
+            { key: 'autoArchiveDelivered', label: 'Auto Archive Completed Loads', desc: 'Archive loads after 90 days of delivery', default: true },
+            { key: 'autoCreateTracking', label: 'Auto Create Tracking Entry on Dispatch', desc: 'Start tracking when load dispatched', default: true },
+            { key: 'autoNotifyCarrier', label: 'Auto Notify Carrier on Assignment', desc: 'Send rate confirmation on carrier assignment', default: true },
+          ]} />
+        </div>
+      );
+    case 'Invoice Automation':
+      return (
+        <div style={sectionStyle}>
+          {title('Invoice Automation')}
+          <ToggleList t={t} storageKey="fbpa_invoice_automation" items={[
+            { key: 'autoGenerateOnDelivery', label: 'Auto Generate Invoice After Delivery', desc: 'Create invoice draft when load marked Delivered', default: true },
+            { key: 'autoSendOnApproval', label: 'Auto Send Invoice to Shipper on Approval', desc: 'Email invoice when approved in system', default: false },
+            { key: 'autoCloseAfterPOD', label: 'Auto Close Load After POD Upload', desc: 'Mark load closed when POD document received', default: true },
+            { key: 'autoApproveClean', label: 'Auto Approve Clean Invoices', desc: 'Auto-approve invoices with no audit exceptions', default: false },
+          ]} />
+        </div>
+      );
+    case 'Data Retention Policy':
+      return (
+        <div style={sectionStyle}>
+          {title('Data Retention Policy')}
+          <SimpleForm t={t} storageKey="fbpa_data_retention" onSave={save} fields={[
+            { key: 'archiveLoadsDays', label: 'Archive Loads Older Than (days)', type: 'number', placeholder: '90', default: '90' },
+            { key: 'deleteDocsDays', label: 'Delete Temporary Documents After (days)', type: 'number', placeholder: '30', default: '30' },
+            { key: 'auditLogRetentionDays', label: 'Audit Log Retention (days)', type: 'number', placeholder: '365', default: '365' },
+            { key: 'exportBeforeDelete', label: 'Export Data Before Deletion', type: 'select', options: ['Always', 'On Request', 'Never'], default: 'On Request' },
+          ]} />
+        </div>
+      );
+    case 'Audit Log Settings':
+      return (
+        <div style={sectionStyle}>
+          {title('Audit Log Settings')}
+          <ToggleList t={t} storageKey="fbpa_audit_log_settings" items={[
+            { key: 'logUserLogins', label: 'Log User Login Events', desc: 'Track all login/logout activity', default: true },
+            { key: 'logSettingsChanges', label: 'Log Settings Changes', desc: 'Audit trail for all settings modifications', default: true },
+            { key: 'logInvoiceActions', label: 'Log Invoice Actions', desc: 'Track approval, rejection, and payment events', default: true },
+            { key: 'logCarrierChanges', label: 'Log Carrier Record Changes', desc: 'Track updates to carrier profiles', default: true },
           ]} />
         </div>
       );
@@ -1107,6 +1264,11 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAd
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', password: '', role: 'user' });
   const [editingUserId, setEditingUserId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', role: 'user' });
+  const [profileForm, setProfileForm] = useState(() => readStorage('fbpa_profile_personal', { firstName: 'Joseph', lastName: 'Abbinante', email: 'joseph@opscale.ai', phone: '' }));
+  const [companyForm, setCompanyForm] = useState(() => readStorage('fbpa_profile_company', { companyName: 'Opscale Supply Chain', website: 'https://opscale.ai', ein: '', address: '' }));
+  const [securityForm, setSecurityForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [profileMessage, setProfileMessage] = useState('');
+  const [securityError, setSecurityError] = useState('');
   // Theme Center section open states
   const [isModeOpen, setIsModeOpen] = useState(true);
   const [isPaletteOpen, setIsPaletteOpen] = useState(true);
@@ -1275,35 +1437,44 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAd
               </div>
             </div>
             {secTitle('Personal Information')}
+            {profileMessage && <div style={{ marginBottom: 10, fontSize: 12, color: '#16a34a' }}>{profileMessage}</div>}
             <div style={fg2}>
-              <div><label style={lbl}>First Name</label><input type="text" style={inp} defaultValue="Joseph" /></div>
-              <div><label style={lbl}>Last Name</label><input type="text" style={inp} defaultValue="Abbinante" /></div>
+              <div><label style={lbl}>First Name</label><input type="text" style={inp} value={profileForm.firstName} onChange={e => setProfileForm(v => ({ ...v, firstName: e.target.value }))} /></div>
+              <div><label style={lbl}>Last Name</label><input type="text" style={inp} value={profileForm.lastName} onChange={e => setProfileForm(v => ({ ...v, lastName: e.target.value }))} /></div>
             </div>
             <div style={fg2}>
-              <div><label style={lbl}>Email</label><input type="email" style={inp} defaultValue="joseph@opscale.ai" /></div>
-              <div><label style={lbl}>Phone</label><input type="tel" style={inp} placeholder="+1 (555) 000-0000" /></div>
+              <div><label style={lbl}>Email</label><input type="email" style={inp} value={profileForm.email} onChange={e => setProfileForm(v => ({ ...v, email: e.target.value }))} /></div>
+              <div><label style={lbl}>Phone</label><input type="tel" style={inp} value={profileForm.phone} onChange={e => setProfileForm(v => ({ ...v, phone: e.target.value }))} placeholder="+1 (555) 000-0000" /></div>
             </div>
-            <button style={primaryBtn}>Save Changes</button>
+            <button style={primaryBtn} onClick={() => { writeStorage('fbpa_profile_personal', profileForm); setProfileMessage('Personal information saved.'); setTimeout(() => setProfileMessage(''), 4000); }}>Save Changes</button>
           </div>
           <div style={sec}>
             {secTitle('Company Information')}
             <div style={fg2}>
-              <div><label style={lbl}>Company Name</label><input type="text" style={inp} defaultValue="Opscale Supply Chain" /></div>
-              <div><label style={lbl}>Website</label><input type="url" style={inp} defaultValue="https://opscale.ai" /></div>
+              <div><label style={lbl}>Company Name</label><input type="text" style={inp} value={companyForm.companyName} onChange={e => setCompanyForm(v => ({ ...v, companyName: e.target.value }))} /></div>
+              <div><label style={lbl}>Website</label><input type="url" style={inp} value={companyForm.website} onChange={e => setCompanyForm(v => ({ ...v, website: e.target.value }))} /></div>
             </div>
             <div style={fg2}>
-              <div><label style={lbl}>EIN</label><input type="text" style={inp} placeholder="XX-XXXXXXX" /></div>
-              <div><label style={lbl}>Address</label><input type="text" style={inp} placeholder="123 Business St" /></div>
+              <div><label style={lbl}>EIN</label><input type="text" style={inp} value={companyForm.ein} onChange={e => setCompanyForm(v => ({ ...v, ein: e.target.value }))} placeholder="XX-XXXXXXX" /></div>
+              <div><label style={lbl}>Address</label><input type="text" style={inp} value={companyForm.address} onChange={e => setCompanyForm(v => ({ ...v, address: e.target.value }))} placeholder="123 Business St" /></div>
             </div>
-            <button style={primaryBtn}>Save Changes</button>
+            <button style={primaryBtn} onClick={() => { writeStorage('fbpa_profile_company', companyForm); setProfileMessage('Company information saved.'); setTimeout(() => setProfileMessage(''), 4000); }}>Save Changes</button>
           </div>
           <div style={sec}>
             {secTitle('Security')}
+            {securityError && <div style={{ marginBottom: 10, fontSize: 12, color: '#ef4444' }}>{securityError}</div>}
             <div style={fg2}>
-              <div><label style={lbl}>Current Password</label><input type="password" style={inp} placeholder="••••••••" /></div>
-              <div><label style={lbl}>New Password</label><input type="password" style={inp} placeholder="••••••••" /></div>
+              <div><label style={lbl}>Current Password</label><input type="password" style={inp} value={securityForm.currentPassword} onChange={e => setSecurityForm(v => ({ ...v, currentPassword: e.target.value }))} placeholder="••••••••" /></div>
+              <div><label style={lbl}>New Password</label><input type="password" style={inp} value={securityForm.newPassword} onChange={e => setSecurityForm(v => ({ ...v, newPassword: e.target.value }))} placeholder="••••••••" /></div>
             </div>
-            <button style={primaryBtn}>Update Password</button>
+            <div style={{ marginBottom: 14 }}><label style={lbl}>Confirm New Password</label><input type="password" style={inp} value={securityForm.confirmPassword} onChange={e => setSecurityForm(v => ({ ...v, confirmPassword: e.target.value }))} placeholder="••••••••" /></div>
+            <button style={primaryBtn} onClick={() => {
+              setSecurityError('');
+              if (securityForm.newPassword.length < 8) { setSecurityError('New password must be at least 8 characters.'); return; }
+              if (securityForm.newPassword !== securityForm.confirmPassword) { setSecurityError('Passwords do not match.'); return; }
+              setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              setProfileMessage('Password updated successfully.'); setTimeout(() => setProfileMessage(''), 4000);
+            }}>Update Password</button>
           </div>
         </>
       )}
@@ -1690,7 +1861,7 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAd
           </div>
           <div style={sec}>
             {secTitle('Notifications')}
-            <ToggleList t={t} items={[
+            <ToggleList t={t} storageKey="fbpa_settings_preferences_notifications" items={[
               { key: 'emailExceptions', label: 'Email Alerts on Exceptions', desc: 'Get notified when rate issues are detected' },
               { key: 'weeklyReports', label: 'Weekly Summary Reports', desc: 'Summary of loads, revenue, and margins' },
               { key: 'invoiceReady', label: 'Invoice Ready Notifications', desc: 'Alert when new invoices are awaiting review' },
@@ -1801,7 +1972,7 @@ export default function Settings() {
         <nav style={{ width: 220, flexShrink: 0, borderRight: `1px solid ${t.border}`, background: t.surface, padding: '16px 10px' }}>
           {adminSections.map((section) => {
             const isActive = section.title === activeSection.title;
-            const iconMap = { account: '👤', company: '🏢', users: '👥', freight: '🚛', audit: '📋', documents: '📄', billing: '💳' };
+            const iconMap = { account: '👤', company: '🏢', users: '👥', freight: '🚛', audit: '📋', documents: '📄', billing: '💳', carrier: '🚚', automation: '⚡' };
             return (
               <button
                 key={section.title}

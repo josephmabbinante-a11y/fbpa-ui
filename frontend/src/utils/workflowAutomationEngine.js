@@ -164,7 +164,8 @@ export function evaluateWorkflowActions(event, config = getWorkflowAutomationCon
 export function recordLifecycleShadowEvent(payload) {
   try {
     const raw = localStorage.getItem(AI_SHADOW_EVENTS_STORAGE_KEY);
-    const existing = Array.isArray(raw ? JSON.parse(raw) : null) ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : null;
+    const existing = Array.isArray(parsed) ? parsed : [];
     const next = [
       {
         ...payload,

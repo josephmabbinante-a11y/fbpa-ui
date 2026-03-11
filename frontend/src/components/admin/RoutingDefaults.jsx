@@ -1,12 +1,32 @@
 import React, { useState } from 'react';
 
+const STORAGE_KEY = 'fbpa_routing_defaults_v1';
+const DEFAULTS = { defaultOrigin: '', defaultDestination: '', autoRoute: true };
+
+function loadInitial(initial) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') return { ...DEFAULTS, ...parsed };
+  } catch { /* ignore */ }
+  return { ...DEFAULTS, ...initial };
+}
+
 export default function RoutingDefaults({ initial, onSave }) {
-  const [defaultOrigin, setDefaultOrigin] = useState(initial?.defaultOrigin || '');
-  const [defaultDestination, setDefaultDestination] = useState(initial?.defaultDestination || '');
-  const [autoRoute, setAutoRoute] = useState(initial?.autoRoute ?? true);
+  const init = loadInitial(initial);
+  const [defaultOrigin, setDefaultOrigin] = useState(init.defaultOrigin);
+  const [defaultDestination, setDefaultDestination] = useState(init.defaultDestination);
+  const [autoRoute, setAutoRoute] = useState(init.autoRoute);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const data = { defaultOrigin, defaultDestination, autoRoute };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    onSave(data);
+  }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave({ defaultOrigin, defaultDestination, autoRoute }); }}>
+    <form onSubmit={handleSubmit}>
       <div>
         <label>Default Origin</label>
         <input value={defaultOrigin} onChange={e => setDefaultOrigin(e.target.value)} placeholder="e.g. Chicago, IL" />

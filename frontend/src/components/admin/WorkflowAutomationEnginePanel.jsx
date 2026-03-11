@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { LOAD_STATUSES } from '../../utils/loadLifecycle';
 import {
   getWorkflowAutomationConfig,
@@ -39,6 +39,12 @@ export default function WorkflowAutomationEnginePanel({ t, onSave }) {
   const [config, setConfig] = useState(() => getWorkflowAutomationConfig());
   const [draft, setDraft] = useState(() => buildDraft('company'));
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(''), 4000);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   const allRules = useMemo(
     () => [

@@ -1,13 +1,33 @@
 import React, { useState } from 'react';
 
+const STORAGE_KEY = 'fbpa_notification_settings_v1';
+const DEFAULTS = { emailEnabled: true, smsEnabled: false, pushEnabled: false, dailySummary: true };
+
+function loadInitial(initial) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed && typeof parsed === 'object') return { ...DEFAULTS, ...parsed };
+  } catch { /* ignore */ }
+  return { ...DEFAULTS, ...initial };
+}
+
 export default function NotificationSettings({ initial, onSave }) {
-  const [emailEnabled, setEmailEnabled] = useState(initial?.emailEnabled ?? true);
-  const [smsEnabled, setSmsEnabled] = useState(initial?.smsEnabled ?? false);
-  const [pushEnabled, setPushEnabled] = useState(initial?.pushEnabled ?? false);
-  const [dailySummary, setDailySummary] = useState(initial?.dailySummary ?? true);
+  const init = loadInitial(initial);
+  const [emailEnabled, setEmailEnabled] = useState(init.emailEnabled);
+  const [smsEnabled, setSmsEnabled] = useState(init.smsEnabled);
+  const [pushEnabled, setPushEnabled] = useState(init.pushEnabled);
+  const [dailySummary, setDailySummary] = useState(init.dailySummary);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const data = { emailEnabled, smsEnabled, pushEnabled, dailySummary };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    onSave(data);
+  }
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave({ emailEnabled, smsEnabled, pushEnabled, dailySummary }); }}>
+    <form onSubmit={handleSubmit}>
       <div>
         <label>
           <input type="checkbox" checked={emailEnabled} onChange={e => setEmailEnabled(e.target.checked)} />
