@@ -1,6 +1,4 @@
 # ⚠️ SECURITY WARNING:
-# The MongoDB credentials that were previously in this file have been exposed publicly.
-# These credentials MUST be rotated immediately in MongoDB Atlas.
 # DO NOT commit credentials to this file - use Render's environment variable dashboard instead.
 
 services:
@@ -10,6 +8,7 @@ services:
     env: node
     region: oregon
     plan: free
+    rootDir: backend
     buildCommand: npm install
     startCommand: node server/index.js
     envVars:
@@ -19,20 +18,12 @@ services:
         sync: false  # Set this in Render dashboard - use a strong random secret
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "4000"
       - key: CORS_ORIGIN
-        sync: false  # Set this in Render dashboard to your frontend URL (e.g., https://your-app.onrender.com)
+        sync: false  # Set this in Render dashboard to your frontend URL (e.g., https://hdhtransport.com)
       - key: SERVE_STATIC
-        value: "true"
-        sync: false  # Set in dashboard
-        value: mongodb+srv://Vercel-Admin-FBPA-Platform:RXKnQPyNad7lOFkF@fbpa-platform.rut6g2t.mongodb.net/?retryWrites=true&w=majority
-      - key: JWT_SECRET
-        sync: false  # Set in dashboard
-      - key: NODE_ENV
-        value: production
-      - key: CORS_ORIGIN
-        sync: false  # Set in dashboard
-      - key: SERVE_STATIC
-        value: "false"  # Backend doesn't serve static in this setup
+        value: "false"
 
   # Frontend Static Site
   - type: web
@@ -40,6 +31,7 @@ services:
     env: static
     region: oregon
     plan: free
+    rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     headers:
