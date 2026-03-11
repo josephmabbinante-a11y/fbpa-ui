@@ -4,7 +4,6 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DemoProvider, useDemo } from './demo/DemoContext';
 import DemoGuide from './demo/DemoGuide';
-import AIBot from './components/AIBot';
 import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
 import LoginTest from './components/LoginTest';
@@ -230,7 +229,6 @@ function App() {
             <AppRoutes />
             <MockModeBadge />
             <DemoGuide />
-            <AIBot />
           </BrowserRouter>
         </ErrorBoundary>
       </DemoProvider>
