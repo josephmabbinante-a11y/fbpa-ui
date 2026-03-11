@@ -1,5 +1,6 @@
 // src/components/AIBot.jsx
 import { useState } from 'react';
+import { getAccessToken } from '../utils/authToken';
 
 export default function AIBot() {
   const [messages, setMessages] = useState([]);
@@ -18,8 +19,7 @@ export default function AIBot() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Auth headers would be needed here, e.g., from localStorage
-          // 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${getAccessToken()}`,
         },
         body: JSON.stringify({
           messages: [...messages, userMessage],
