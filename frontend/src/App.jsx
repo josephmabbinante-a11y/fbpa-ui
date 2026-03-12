@@ -3,6 +3,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { DemoProvider, useDemo } from './demo/DemoContext';
+import { MultitenantProvider } from './contexts/MultitenantContext';
 import DemoGuide from './demo/DemoGuide';
 import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
@@ -55,6 +56,7 @@ const AuditIQ = lazy(() => import('./pages/AuditIQ'));
 const FraudPrevention = lazy(() => import('./pages/FraudPrevention'));
 const RiskScoring = lazy(() => import('./pages/RiskScoring'));
 const RouteOptimization = lazy(() => import('./pages/RouteOptimization'));
+const TenantAdmin = lazy(() => import('./pages/TenantAdmin'));
 
 function LoadingFallback() {
   return (
@@ -183,6 +185,7 @@ function AppRoutes() {
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />
             <Route path="/auction-board" element={<AuctionBoard />} />
             <Route path="/exceptions-uploads" element={<ExceptionsUploads />} />
+            <Route path="/tenant-admin" element={<TenantAdmin />} />
           </Routes>
         </Suspense>
       </Layout>
@@ -224,6 +227,7 @@ function App() {
   return (
     <ThemeProvider>
       <DemoProvider>
+        <MultitenantProvider>
         <ErrorBoundary>
           <BrowserRouter>
             <AppRoutes />
@@ -231,6 +235,7 @@ function App() {
             <DemoGuide />
           </BrowserRouter>
         </ErrorBoundary>
+        </MultitenantProvider>
       </DemoProvider>
 
       </ThemeProvider>
