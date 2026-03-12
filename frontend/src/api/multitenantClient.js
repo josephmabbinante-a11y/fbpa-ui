@@ -24,11 +24,33 @@ function clearMtToken() {
   } catch { /* ignore */ }
 }
 
+function getMtImpersonatedTenantId() {
+  try {
+    return localStorage.getItem('mt_impersonatedTenantId') || null;
+  } catch {
+    return null;
+  }
+}
+
+function setMtImpersonatedTenantId(tenantId) {
+  try {
+    localStorage.setItem('mt_impersonatedTenantId', tenantId);
+  } catch { /* ignore */ }
+}
+
+function clearMtImpersonatedTenantId() {
+  try {
+    localStorage.removeItem('mt_impersonatedTenantId');
+  } catch { /* ignore */ }
+}
+
 async function mtFetch(path, options = {}) {
   const token = getMtToken();
+  const impersonateTenantId = getMtImpersonatedTenantId();
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(impersonateTenantId ? { 'x-impersonate-tenant': impersonateTenantId } : {}),
     ...(options.headers || {}),
   };
 
@@ -118,12 +140,12 @@ export async function mtUpdateSettings(data) {
 // ── Features ─────────────────────────────────────────────────────────────────
 
 export async function mtGetFeatures(tenantId) {
-  return mtFetch(`/admin/tenants/${encodeURIComponent(tenantId)}/features`);
+  return mtFetch(`/admin/tenant/${encodeURIComponent(tenantId)}/features`);
 }
 
 export async function mtSetFeature(tenantId, featureName, enabled) {
-  return mtFetch(`/admin/tenants/${encodeURIComponent(tenantId)}/features`, {
-    method: 'POST',
+  return mtFetch(`/admin/tenant/${encodeURIComponent(tenantId)}/feature`, {
+    method: 'PATCH',
     body: JSON.stringify({ featureName, enabled }),
   });
 }
@@ -153,10 +175,18 @@ export async function mtListCarriers() {
 // ── Impersonation (SUPER_ADMIN only) ─────────────────────────────────────────
 
 export async function mtImpersonateTenant(tenantId) {
-  return mtFetch('/auth/impersonate', {
+  const result = await mtFetch('/auth/impersonate', {
     method: 'POST',
     body: JSON.stringify({ tenantId }),
   });
+  if (!result.error) {
+    setMtImpersonatedTenantId(tenantId);
+  }
+  return result;
 }
 
-export { setMtToken, clearMtToken };
+export function mtStopImpersonation() {
+  clearMtImpersonatedTenantId();
+}
+
+export { getMtImpersonatedTenantId, setMtToken, clearMtToken };
