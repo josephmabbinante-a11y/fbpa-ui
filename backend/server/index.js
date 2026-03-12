@@ -593,6 +593,16 @@ if (process.env.SERVE_STATIC === 'true') {
   });
 }
 
+// Global error-handling middleware — returns JSON for all API errors
+app.use((err, req, res, _next) => {
+  if (res.headersSent) return;
+  const statusCode = err.statusCode || err.status || 500;
+  res.status(statusCode).json({
+    error: err.message || 'Internal server error',
+    code: err.code || 'INTERNAL_ERROR',
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`[DEBUG] Auth server running on http://localhost:${PORT}`);
   console.log(`[DEBUG] NODE_ENV: ${process.env.NODE_ENV}`);

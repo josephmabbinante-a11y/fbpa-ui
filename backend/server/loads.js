@@ -1,10 +1,27 @@
 import express from 'express';
-import { authenticate } from './multitenant/src/middleware/auth.middleware.js';
+import jwt from 'jsonwebtoken';
 const router = express.Router();
 // Simple test route for debugging
 router.get('/test', (req, res) => {
   res.json({ ok: true, message: 'Loads router is working.' });
 });
+
+// Local auth middleware using the main JWT_SECRET (consistent with auth routes)
+function authenticate(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing or invalid authorization header' });
+  }
+  const token = authHeader.slice(7);
+  try {
+    const secret = process.env.JWT_SECRET || 'dev_secret_change_me';
+    const payload = jwt.verify(token, secret);
+    req.user = payload;
+    return next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
 
 // Require authentication for all loads endpoints
 router.use(authenticate);
