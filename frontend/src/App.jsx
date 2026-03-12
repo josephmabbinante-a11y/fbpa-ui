@@ -98,11 +98,10 @@ function AppRoutes() {
     };
   }, []);
 
-
   if (isLogin || location.pathname.startsWith('/verify-email')) {
     const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
     return (
-      <Suspense fallback={<LoadingFallback />}>
+      <Suspense fallback={<LoadingFallback />}> 
         <Routes>
           <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
@@ -123,7 +122,7 @@ function AppRoutes() {
     <>
       <Sidebar />
       <Layout>
-        <Suspense fallback={<LoadingFallback />}>
+        <Suspense fallback={<LoadingFallback />}> 
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -222,24 +221,23 @@ function MockModeBadge() {
     </div>
   );
 }
- 
+
 function App() {
   return (
     <ThemeProvider>
       <DemoProvider>
         <MultitenantProvider>
-        <ErrorBoundary>
-          <BrowserRouter>
-            <AppRoutes />
-            <MockModeBadge />
-            <DemoGuide />
-          </BrowserRouter>
-        </ErrorBoundary>
+          <ErrorBoundary>
+            <BrowserRouter>
+              <AppRoutes />
+              <MockModeBadge />
+              <DemoGuide />
+            </BrowserRouter>
+          </ErrorBoundary>
         </MultitenantProvider>
       </DemoProvider>
+    </ThemeProvider>
+  );
+}
 
-      </ThemeProvider>
-    );
-  }
-
-  export default App;
+export default App;
