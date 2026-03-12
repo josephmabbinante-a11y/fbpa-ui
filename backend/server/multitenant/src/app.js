@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { notFound, errorHandler } from './utils/errorHandler.js';
+import { ENV } from './config/env.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import tenantRoutes from './modules/tenants/tenant.routes.js';
 import userRoutes from './modules/users/user.routes.js';
@@ -12,7 +13,7 @@ import adminRoutes from './modules/admin/admin.routes.js';
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: ENV.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'opscale-multitenant' }));

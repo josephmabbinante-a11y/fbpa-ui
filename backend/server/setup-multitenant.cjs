@@ -171,10 +171,11 @@ dotenv.config();
 
 export const ENV = {
   PORT: process.env.MT_PORT || 4001,
-  JWT_SECRET: process.env.MT_JWT_SECRET || 'opscale_multitenant_secret_change_me',
+  JWT_SECRET: process.env.MT_JWT_SECRET || (() => { throw new Error('MT_JWT_SECRET must be set'); })(),
   JWT_EXPIRES_IN: process.env.MT_JWT_EXPIRES_IN || '8h',
-  DATABASE_URL: process.env.MT_DATABASE_URL || '',
+  DATABASE_URL: process.env.MT_DATABASE_URL || (() => { throw new Error('MT_DATABASE_URL must be set'); })(),
   NODE_ENV: process.env.NODE_ENV || 'development',
+  CORS_ORIGIN: process.env.MT_CORS_ORIGIN || 'http://localhost:5173',
 };
 `);
 
@@ -1128,6 +1129,7 @@ export default router;
 w('src/app.js', `import express from 'express';
 import cors from 'cors';
 import { notFound, errorHandler } from './utils/errorHandler.js';
+import { ENV } from './config/env.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import tenantRoutes from './modules/tenants/tenant.routes.js';
 import userRoutes from './modules/users/user.routes.js';
@@ -1139,7 +1141,7 @@ import adminRoutes from './modules/admin/admin.routes.js';
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: ENV.CORS_ORIGIN, credentials: true }));
 app.use(express.json());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'opscale-multitenant' }));
