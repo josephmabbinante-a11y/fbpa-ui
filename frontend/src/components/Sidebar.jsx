@@ -49,6 +49,7 @@ const navItems = [
   { id: 'uploads', label: 'Uploads', icon: 'UP', path: '/uploads' },
   { id: 'exceptions-uploads', label: 'Uploads Exceptions', icon: 'UE', path: '/exceptions-uploads' },
   { id: 'settings', label: 'Settings', icon: 'ST', path: '/settings' },
+  { id: 'tenant-admin', label: 'Tenant Admin', icon: 'TA', path: '/tenant-admin' },
 ];
 
 export default function Sidebar() {
