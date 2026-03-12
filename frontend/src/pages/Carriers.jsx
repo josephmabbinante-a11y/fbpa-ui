@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { getCarriers, importCarrierFromSafer, purgeCarriers, searchCarrierSafer } from '../api/client';
+import EmptyState from '../components/EmptyState';
 
 function toMoney(value) {
   return `$${Number(value || 0).toLocaleString()}`;
@@ -726,8 +727,14 @@ export default function Carriers() {
                 })}
                 {displayedCarriers.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ padding: 14, textAlign: 'center', color: t.textSecondary, borderTop: `1px solid ${t.border}` }}>
-                      {filteredCarriers.length === 0 ? 'No carriers match current filters.' : 'No carriers available for this view.'}
+                    <td colSpan={6}>
+                      <EmptyState
+                        icon="🚛"
+                        headline="No carriers yet"
+                        category="carriers"
+                        actionLabel="Add Carrier"
+                        onAction={() => navigate('/carriers/new')}
+                      />
                     </td>
                   </tr>
                 )}

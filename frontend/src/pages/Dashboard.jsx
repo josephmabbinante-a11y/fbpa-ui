@@ -11,6 +11,7 @@ import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
 import { useApi } from '../hooks/useApi';
 import mockShipments from '../mock/shipments';
 import { listLoads } from '../api/loadsClient';
+import EmptyState from '../components/EmptyState';
 
 const DASH_PREFS_KEY = 'dashboardPrefs';
 const DASH_VARIANT_KEY = 'dashboardVariant';
@@ -317,6 +318,19 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
+              {(todayShipments || []).length === 0 ? (
+                <tr>
+                  <td colSpan={10}>
+                    <EmptyState
+                      icon="🚚"
+                      headline="No shipments today"
+                      category="logistics"
+                      actionLabel="Create Load"
+                      onAction={() => navigate('/loadcenter', { state: { source: 'dashboard', action: 'create-shipment' } })}
+                    />
+                  </td>
+                </tr>
+              ) : null}
               {(todayShipments || []).map((ship) => (
                 <tr
                   key={ship.id}

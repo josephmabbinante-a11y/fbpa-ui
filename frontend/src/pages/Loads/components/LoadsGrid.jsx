@@ -1,5 +1,6 @@
 import React from 'react';
 import LoadRow from './LoadRow';
+import EmptyState from '../../../components/EmptyState';
 
 function LoadsGrid({ items = [], selectedId, onSelect, onContextMenuAction, onQuickAction }) {
   return (
@@ -32,8 +33,12 @@ function LoadsGrid({ items = [], selectedId, onSelect, onContextMenuAction, onQu
           ))}
           {items.length === 0 && (
             <tr>
-              <td colSpan={10} style={{ padding: 16, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                No loads match current filters.
+              <td colSpan={10}>
+                <EmptyState
+                  icon="🚚"
+                  headline="No loads yet"
+                  category="logistics"
+                />
               </td>
             </tr>
           )}

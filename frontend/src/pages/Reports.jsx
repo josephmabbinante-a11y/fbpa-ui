@@ -8,6 +8,7 @@ import TrendLineChart from '../components/TrendLineChart';
 import AuditDrillDown from '../components/AuditDrillDown';
 import CategoryDrilldown from '../components/CategoryDrilldown';
 import { useApi } from '../hooks/useApi';
+import EmptyState from '../components/EmptyState';
 
 const reportCards = [
   { id: 'monthly', title: 'Monthly Summary', description: 'Invoice and savings summary by month' },
@@ -147,6 +148,19 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody>
+                  {monthlyRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={4}>
+                        <EmptyState
+                          icon="📊"
+                          headline="No report data yet"
+                          category="analytics"
+                          actionLabel="Import Data"
+                          onAction={() => navigate('/uploads')}
+                        />
+                      </td>
+                    </tr>
+                  ) : null}
                   {monthlyRows.map((row) => (
                     <tr key={row.month}>
                       <td>{row.month}</td>
