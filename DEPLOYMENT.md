@@ -23,6 +23,60 @@ This guide covers deploying the FBPA UI application to Render.com and other host
    - Check MongoDB Atlas access logs for any suspicious activity
    - Review application logs for unauthorized access attempts
 
+## Deployment to Vercel (Frontend)
+
+The frontend is a static Vite/React SPA deployed on **Vercel**. The backend API runs separately on Railway.
+
+### Vercel project settings
+
+| Setting | Value |
+|---------|-------|
+| **Framework Preset** | Vite (or Other) |
+| **Build Command** | `npm run build:frontend` |
+| **Output Directory** | `frontend/dist` |
+| **Root Directory** | *(leave empty — repo root)* |
+
+### `vercel.json` — SPA rewrite
+
+The repository ships a `vercel.json` that tells Vercel to serve the Vite output directory and fall back to `index.html` for client-side routes:
+
+```json
+{
+  "version": 2,
+  "buildCommand": "npm run build:frontend",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+Vercel serves static files (including `/assets/*.css` and `/assets/*.js`) **before** applying rewrites, so the SPA fallback never intercepts built assets.
+
+### Environment variable — API URL
+
+Set the following variable in the Vercel dashboard under **Project → Settings → Environment Variables**:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `VITE_API_URL` | Backend API base URL (no trailing slash) | `https://fbpa-api-production.up.railway.app` |
+
+> **Do not** set `VITE_API_URL` to a path that should serve frontend assets. Vite's `base` is independently set to `/` in `vite.config.js`, ensuring all asset URLs are relative to the Vercel domain.
+
+### How API calls work
+
+The frontend fetches data using the `VITE_API_URL` env var **only for API requests** (e.g. `${VITE_API_URL}/api/shipments`). Asset files (`/assets/*.css`, `/assets/*.js`) are always served by Vercel from its own CDN — they never go to the Railway domain.
+
+### Local development
+
+```bash
+cp frontend/.env.example frontend/.env.local
+# Edit frontend/.env.local and set VITE_API_URL=http://localhost:4000
+cd frontend && npm run dev
+```
+
+---
+
 ## Deployment to Render
 
 ### Prerequisites
