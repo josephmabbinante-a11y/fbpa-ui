@@ -1,7 +1,7 @@
 # Database Configuration
 MONGODB_URI=mongodb+srv://FBPADB:FBPA2020@cluster0.fvycshx.mongodb.net/fbpa-db?appName=Cluster0
 # Authentication
-JWT_SECRET=J8H798yh78654JK345$%%56$^Yyunsgte5
+JWT_SECRET=9b6cfa8e4e7e9c74f3aef3c69c2b9e43b6e1f98c0c2c6d8f9a1b2c3d4e5f6a7
 JWT_EXPIRES_IN=1h
 
 # Server Configuration
@@ -15,8 +15,7 @@ CORS_ORIGIN=https://hdhtransport.com, https://www.hdhtransport.com, https://expr
 SERVE_STATIC=false
 
 # Frontend build configuration (used by Vite; set to the backend API URL for production builds)
-VITE_API_URL=https://fbpa-api-production.up.railway.app/
-
+VITE_API_URL=https://fbpaapi.up.railway.app/
 # Optional: Email/SMTP Configuration (for sending notifications)
 # SMTP_HOST=smtp.gmail.com
 # SMTP_USER=your-email@gmail.com
