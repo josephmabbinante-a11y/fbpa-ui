@@ -75,6 +75,25 @@ cp frontend/.env.example frontend/.env.local
 cd frontend && npm run dev
 ```
 
+### Docker Compose
+
+When running with Docker Compose, the frontend container cannot reach `localhost:4000` (that resolves to the frontend container itself). Set `VITE_API_URL` to the backend service name instead:
+
+```yaml
+# docker-compose.yml — already configured correctly:
+frontend:
+  environment:
+    VITE_API_URL: http://backend:4000
+```
+
+Start all services with:
+
+```bash
+docker compose up --build
+```
+
+The frontend will be available at `http://localhost:3000` and will proxy API calls to the `backend` service at port 4000.
+
 ---
 
 ## Deployment to Render
