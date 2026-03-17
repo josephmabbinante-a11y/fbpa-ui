@@ -927,41 +927,43 @@ export default function FleetDashboard() {
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 30 }}>Fleet Command Center</h1>
-          <div style={{ fontSize: 12, color: t.textSecondary }}>
-            Source: {source === 'api' ? 'Live API' : 'Simulated realtime feed'} • Updated {lastUpdated.toLocaleTimeString()} • Fleet health {fleetHealthIndex}/100
+      <CollapsibleSection title="Fleet Command Center" defaultOpen>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 30 }}>Fleet Command Center</h1>
+            <div style={{ fontSize: 12, color: t.textSecondary }}>
+              Source: {source === 'api' ? 'Live API' : 'Simulated realtime feed'} • Updated {lastUpdated.toLocaleTimeString()} • Fleet health {fleetHealthIndex}/100
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search unit, driver, load, compliance"
+              style={{ minWidth: 260, minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px' }}
+            />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              style={{ minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px' }}
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="idle">Idle</option>
+              <option value="breakdown">Breakdown</option>
+              <option value="yard">In Yard</option>
+              <option value="maintenance">Maintenance</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => navigate('/fleet/assets')}
+              style={{ minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px', cursor: 'pointer', fontWeight: 700 }}
+            >
+              Asset Management
+            </button>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search unit, driver, load, compliance"
-            style={{ minWidth: 260, minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px' }}
-          />
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            style={{ minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px' }}
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="idle">Idle</option>
-            <option value="breakdown">Breakdown</option>
-            <option value="yard">In Yard</option>
-            <option value="maintenance">Maintenance</option>
-          </select>
-          <button
-            type="button"
-            onClick={() => navigate('/fleet/assets')}
-            style={{ minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px', cursor: 'pointer', fontWeight: 700 }}
-          >
-            Asset Management
-          </button>
-        </div>
-      </div>
+      </CollapsibleSection>
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10 }}>
         {stripCards.map((card) => (
@@ -1250,7 +1252,34 @@ export default function FleetDashboard() {
               })}
               {filteredVehicles.length === 0 && (
                 <tr>
-                  <td colSpan={15} style={{ padding: 12, textAlign: 'center', color: t.textSecondary }}>No units match current filters.</td>
+                  <td colSpan={15} style={{ padding: 24, textAlign: 'center', color: t.textSecondary }}>
+                    <div style={{ marginBottom: 12, fontSize: 16, fontWeight: 600 }}>No units match current filters.</div>
+                    <div style={{ marginBottom: 16, fontSize: 13 }}>
+                      Try adjusting your filters or search terms. If you believe this is an error, click Reset Filters below to show all units.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearch('');
+                        setStatusFilter('all');
+                        setTableQuickFilter('all');
+                        setSavedView('default');
+                      }}
+                      style={{
+                        borderRadius: 8,
+                        border: `1px solid ${t.accent}`,
+                        background: t.bgAlt,
+                        color: t.accent,
+                        padding: '8px 18px',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        marginTop: 8,
+                      }}
+                    >
+                      Reset Filters
+                    </button>
+                  </td>
                 </tr>
               )}
             </tbody>

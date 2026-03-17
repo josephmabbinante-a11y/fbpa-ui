@@ -24,7 +24,6 @@ process.on('unhandledRejection', (reason, promise) => {
 import crypto from 'crypto';
 import express from 'express';
 import cors from 'cors';
-import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
@@ -63,7 +62,7 @@ import { getSaiaHealthStatus } from './services/carriers/saia/saiaRateService.js
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4001;
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -522,7 +521,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
   const token = Math.random().toString(36).slice(2) + Date.now();
   resetTokens[email] = { token, expires: Date.now() + 1000 * 60 * 15 };
-  const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4000'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+  const resetUrl = `${process.env.VITE_API_URL || 'http://localhost:4001'}/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
 
   try {
     await transporter.sendMail({

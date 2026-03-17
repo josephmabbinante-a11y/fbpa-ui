@@ -36,10 +36,46 @@ async function getCarrierAggregates() {
 }
 
 // Get all carriers with aggregates
+// Enhanced search/filter for CRM
 router.get('/', async (req, res) => {
   try {
+    const {
+      commodity,
+      equipment,
+      area,
+      active,
+      baseState,
+      status,
+      rating,
+      recruitmentStatus,
+      q,
+    } = req.query;
+
+    // Build filter object
+    const filter = {};
+    if (commodity) filter.commodityTypes = { $in: [commodity] };
+    if (equipment) filter.equipmentTypes = { $in: [equipment] };
+    if (area) filter.areasServiced = { $in: [area] };
+    if (active !== undefined) filter.active = active === 'true';
+    if (baseState) filter.baseState = baseState;
+    if (status) filter.status = status;
+    if (rating) filter.rating = Number(rating);
+    if (recruitmentStatus) filter.recruitmentStatus = recruitmentStatus;
+    if (q) {
+      const regex = new RegExp(q, 'i');
+      filter.$or = [
+        { name: regex },
+        { mcNumber: regex },
+        { dotNumber: regex },
+        { email: regex },
+        { phone: regex },
+        { baseState: regex },
+        { areasServiced: regex },
+      ];
+    }
+
     const [carriers, aggregates] = await Promise.all([
-      Carrier.find().sort({ updatedAt: -1 }),
+      Carrier.find(filter).sort({ updatedAt: -1 }),
       getCarrierAggregates(),
     ]);
 
@@ -107,6 +143,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update carrier profile
+// Update carrier profile and CRM fields
 router.patch('/:id', async (req, res) => {
   try {
     const updates = req.body || {};
@@ -127,6 +164,23 @@ router.patch('/:id', async (req, res) => {
     if (updates.insuranceExpiry !== undefined) carrier.insuranceExpiry = updates.insuranceExpiry ? new Date(updates.insuranceExpiry) : undefined;
     if (updates.taxId !== undefined) carrier.taxId = normalizeString(updates.taxId);
     if (updates.status) carrier.status = updates.status;
+    if (updates.rating !== undefined) carrier.rating = Number(updates.rating);
+    if (updates.recruitmentStatus) carrier.recruitmentStatus = updates.recruitmentStatus;
+    if (updates.commodityTypes) carrier.commodityTypes = Array.isArray(updates.commodityTypes) ? updates.commodityTypes : [updates.commodityTypes];
+    if (updates.equipmentTypes) carrier.equipmentTypes = Array.isArray(updates.equipmentTypes) ? updates.equipmentTypes : [updates.equipmentTypes];
+    if (updates.areasServiced) carrier.areasServiced = Array.isArray(updates.areasServiced) ? updates.areasServiced : [updates.areasServiced];
+    if (updates.baseState) carrier.baseState = updates.baseState;
+    if (updates.active !== undefined) carrier.active = !!updates.active;
+    if (updates.creditsUsed !== undefined) carrier.creditsUsed = Number(updates.creditsUsed);
+    if (updates.notes && Array.isArray(updates.notes)) carrier.notes = updates.notes;
+    if (updates.addNote) {
+      carrier.notes = carrier.notes || [];
+      carrier.notes.push({
+        text: updates.addNote.text,
+        author: updates.addNote.author || 'system',
+        createdAt: new Date(),
+      });
+    }
 
     carrier.updatedAt = new Date();
     await carrier.save();

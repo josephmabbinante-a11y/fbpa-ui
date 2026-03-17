@@ -1,3 +1,6 @@
+import CustomerSection from '../components/CustomerSection';
+import '../components/CustomerSection.compact.css';
+import StopsSection from '../components/StopsSection';
 import { useEffect, useMemo, useState } from 'react';
 import React from 'react';
 // Top-level error boundary component
@@ -28,11 +31,17 @@ import {
   generateLoadDocument,
   getCarriers,
 } from '../api/client';
-import { getLoadDetail } from '../api/loadsClient';
+import { getLoadDetail, updateLoad } from '../api/loadsClient';
+import { LOAD_STATUSES, formatLoadStatusLabel, canTransitionStatus } from '../utils/loadLifecycle';
 import { mockLocations } from '../mock/mockLocations';
+
+
 import LaneIntelligencePanel from '../components/LaneIntelligencePanel';
 import CarrierSection from '../components/CarrierSection';
 import FinancialSection from '../components/FinancialSection';
+import CollapsibleSection from '../components/CollapsibleSection';
+import BookLoadButton from '../components/BookLoadButton';
+import StickyLoadHeader from '../components/StickyLoadHeader';
 
 const COMPANY_BRANDING_STORAGE_KEY = 'fbpa_company_branding';
 const DOCUMENT_WHITELABEL_STORAGE_KEY = 'fbpa_document_whitelabel';
@@ -96,6 +105,14 @@ function safeString(val) {
 }
 
 function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basics' }) {
+        // Status update state
+        const [statusUpdating, setStatusUpdating] = useState(false);
+        const [statusError, setStatusError] = useState('');
+
+      // Load lifecycle checkpoints data structure
+      const [loadSnapshot, setLoadSnapshot] = useState(null);
+    // Defensive checks for key props
+    const safeLoadSnapshot = loadSnapshot || {};
   const navigate = useNavigate();
   const { loadId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,6 +127,25 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const [carrierLoading, setCarrierLoading] = useState(false);
   const [carrierError, setCarrierError] = useState('');
   const [selectedCarrier, setSelectedCarrier] = useState(null);
+  const [bookedLoad, setBookedLoad] = useState(null);
+  const [bookingMessage, setBookingMessage] = useState('');
+  // Dummy carriers list for booking dialog (replace with real data as needed)
+  const carriersList = selectedCarrier ? [{ id: selectedCarrier.id || selectedCarrier.name, name: selectedCarrier.name || selectedCarrier.companyName || 'Carrier' }] : [];
+  // Dummy load object for booking dialog (replace with real data as needed)
+  const loadObj = { id: loadId || 'new', ...safeLoadSnapshot };
+  // Booking handler
+  const handleBookLoad = async ({ carrierId, rate, notes }) => {
+    // Here you would call your backend API to book the load
+    setBookingMessage('');
+    try {
+      // Simulate API call
+      setBookedLoad({ carrierId, rate, notes });
+      setBookingMessage('Load successfully booked!');
+    } catch (err) {
+      setBookingMessage('Booking failed. Please try again.');
+    }
+  };
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [carrierActionMessage, setCarrierActionMessage] = useState('');
   const [carrierSort, setCarrierSort] = useState({ key: 'companyName', dir: 'asc' });
   const [selectedCarrierRowKeys, setSelectedCarrierRowKeys] = useState([]);
@@ -151,7 +187,7 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const [newLocationForm, setNewLocationForm] = useState({ city: '', state: '', zip: '' });
   const [locationMessage, setLocationMessage] = useState('');
   // Load lifecycle checkpoints data structure
-  const [loadSnapshot, setLoadSnapshot] = useState(null);
+  // ...existing code...
   // Example structure for operational checkpoints
   const [loadCheckpoints, setLoadCheckpoints] = useState({
     intake: {
@@ -324,16 +360,80 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
   const progress = getLoadProgress(loadCheckpoints);
   const progressBarColor = getProgressBarColor(progress, loadCheckpoints);
 
-  // Defensive checks for key props
-  const safeLoadSnapshot = loadSnapshot || {};
   const safeStopsData = Array.isArray(stopsData) ? stopsData : [];
+
+  // Dynamic section state for animation and expansion
+  const [expandedSection, setExpandedSection] = useState('Customer');
+
+  // Helper for section card
+  function DynamicSection({ title, complete, children }) {
+    const isOpen = expandedSection === title;
+    return (
+      <div
+        style={{
+          marginBottom: 18,
+          borderRadius: 14,
+          boxShadow: isOpen ? '0 4px 24px rgba(0,0,0,0.08)' : '0 1px 4px rgba(0,0,0,0.04)',
+          background: isOpen ? 'linear-gradient(180deg, #f8fbff 80%, #eaf6ff 100%)' : '#f8fbff',
+          border: `2px solid ${complete ? '#27ae60' : '#2980b9'}`,
+          transition: 'all 0.3s',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            padding: '14px 20px',
+            background: isOpen ? '#eaf6ff' : '#f8fbff',
+            borderBottom: isOpen ? '1px solid #d0e6fa' : 'none',
+            fontWeight: 700,
+            fontSize: 16,
+            color: complete ? '#27ae60' : '#2980b9',
+            letterSpacing: 0.2,
+            userSelect: 'none',
+          }}
+          onClick={() => setExpandedSection(isOpen ? '' : title)}
+        >
+          <span>{title}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: complete ? '#27ae60' : '#bbb' }}>
+            {complete ? 'Complete' : 'In Progress'}
+            <span style={{ marginLeft: 8, fontSize: 18 }}>{isOpen ? '▼' : '▶'}</span>
+          </span>
+        </div>
+        <div
+          style={{
+            maxHeight: isOpen ? 1000 : 0,
+            overflow: 'hidden',
+            transition: 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)',
+            background: isOpen ? '#f8fbff' : '#f8fbff',
+            padding: isOpen ? '18px 24px' : '0 24px',
+            opacity: isOpen ? 1 : 0,
+          }}
+        >
+          {isOpen && children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
-      <div style={{ display: 'grid', gap: 16, padding: 16, background: `linear-gradient(180deg, rgba(var(--glow), 0.08), transparent 30%)`, borderRadius: 14 }}>
-        {/* Sticky Load Header */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14,
+        padding: 18,
+        background: '#f4f8fb',
+        borderRadius: 18,
+        minHeight: '100vh',
+        maxWidth: 1400,
+        margin: '0 auto',
+      }}>
+        {/* Sticky Load Header with Status Dropdown */}
         <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-          {/* StickyLoadHeader with live color logic */}
           {typeof StickyLoadHeader === 'function' ? (
             <StickyLoadHeader
               loadNumber={safeString(safeLoadSnapshot.number || '123456')}
@@ -345,104 +445,246 @@ function LoadManagement({ pageTitle = 'Load Management', activeTab = 'load-basic
               grossMargin={safeString((safeLoadSnapshot.sellRate || 5000) - (safeLoadSnapshot.buyRate || 4300))}
               marginPct={safeString(((safeLoadSnapshot.sellRate || 5000) - (safeLoadSnapshot.buyRate || 4300)) / (safeLoadSnapshot.sellRate || 5000) * 100)}
               riskIndicator={safeString(safeLoadSnapshot.riskIndicator || 'Medium')}
+              statusDropdown={
+                <>
+                  <select
+                    value={safeLoadSnapshot.status || 'DRAFT'}
+                    disabled={statusUpdating || !loadId}
+                    style={{ fontSize: 15, padding: '4px 8px', borderRadius: 6, border: '1px solid #bfc9d9', minWidth: 120 }}
+                    onChange={async (e) => {
+                      const nextStatus = e.target.value;
+                      setStatusUpdating(true);
+                      setStatusError('');
+                      try {
+                        if (!canTransitionStatus(safeLoadSnapshot.status, nextStatus)) {
+                          setStatusError('Invalid status transition.');
+                          setStatusUpdating(false);
+                          return;
+                        }
+                        const result = await updateLoad(loadId, { status: nextStatus });
+                        if (result?.error) {
+                          setStatusError(result.error);
+                        } else if (result?.load) {
+                          setLoadSnapshot(result.load);
+                          setStatusError('');
+                        }
+                      } catch (err) {
+                        setStatusError(err?.message || 'Status update failed.');
+                      } finally {
+                        setStatusUpdating(false);
+                      }
+                    }}
+                  >
+                    {LOAD_STATUSES.map((status) => (
+                      <option key={status} value={status} disabled={!canTransitionStatus(safeLoadSnapshot.status, status) && status !== safeLoadSnapshot.status}>
+                        {formatLoadStatusLabel(status)}
+                      </option>
+                    ))}
+                  </select>
+                  {statusUpdating && <span style={{ marginLeft: 8, color: '#2980b9', fontSize: 13 }}>Updating...</span>}
+                  {statusError && <div style={{ color: 'red', marginTop: 2, fontSize: 12 }}>{statusError}</div>}
+                </>
+              }
             />
           ) : (
             <div style={{ color: 'red' }}>StickyLoadHeader component missing</div>
           )}
-          {/* Thin Progress Bar UI */}
-          <div
-            style={{
-              width: '100%',
-              height: 6,
-              borderRadius: 3,
-              background: '#ecf0f1',
-              marginTop: 6,
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-            title={`Progress: ${progress.percent}%`}
-          >
-            <div
-              style={{
-                width: `${progress.percent}%`,
-                height: '100%',
-                background: progressBarColor,
-                transition: 'width 0.3s',
-              }}
-            />
-            {/* Progress percent and status */}
-            <span
-              style={{
-                position: 'absolute',
-                right: 8,
-                top: -18,
-                fontSize: 12,
-                fontWeight: 600,
-                color: progressBarColor,
-                background: '#fff',
-                padding: '2px 6px',
-                borderRadius: 6,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              }}
-            >
-              {progress.percent}%
-            </span>
-          </div>
         </div>
-        {/* Expandable Checklist Drawer */}
-        {typeof ChecklistDrawer === 'function' ? (
-          <ChecklistDrawer checkpoints={loadCheckpoints || {}} />
-        ) : (
-          <div style={{ color: 'red' }}>ChecklistDrawer component missing</div>
-        )}
 
-        <CollapsibleSection title="Customer" complete={customerSectionComplete} defaultOpen={true}>
+
+        {/* Customer Section - Compact, 3-column grid */}
+        <DynamicSection title="Customer" complete={customerSectionComplete}>
           {typeof CustomerSection === 'function' ? (
-            <CustomerSection onComplete={() => setCustomerSectionComplete(true)} />
+            <CustomerSection onComplete={customer => { setSelectedCustomer(customer); setCustomerSectionComplete(true); }} />
           ) : (
             <div style={{ color: 'red' }}>CustomerSection component missing</div>
           )}
-        </CollapsibleSection>
+          {/* Customer summary card, compact */}
+          {selectedCustomer && (
+            <div style={{
+              marginTop: 10,
+              background: '#f8fbff',
+              border: '1px solid #e0e6ed',
+              borderRadius: 8,
+              padding: 12,
+              fontSize: 14,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 8,
+            }}>
+              <div>
+                <b>{selectedCustomer.name || selectedCustomer.companyName}</b><br />
+                {selectedCustomer.address && <>{selectedCustomer.address}<br /></>}
+                {selectedCustomer.city && <>{selectedCustomer.city}, {selectedCustomer.state} {selectedCustomer.zip}<br /></>}
+                {selectedCustomer.creditLimit && <>Credit Limit: <b>${selectedCustomer.creditLimit}</b><br /></>}
+                {selectedCustomer.availableCredit && <>Available: <b>${selectedCustomer.availableCredit}</b><br /></>}
+              </div>
+              <div>
+                {selectedCustomer.primaryPhone && <>Primary Phone: {selectedCustomer.primaryPhone}<br /></>}
+                {selectedCustomer.email && <>Email: {selectedCustomer.email}<br /></>}
+                {selectedCustomer.usdot && <>USDOT: {selectedCustomer.usdot}<br /></>}
+                {selectedCustomer.docket && <>Docket: {selectedCustomer.docket}<br /></>}
+              </div>
+              <div>
+                {selectedCustomer.publicNotes && <><b>Public Notes:</b> {selectedCustomer.publicNotes}<br /></>}
+                {selectedCustomer.privateNotes && <><b>Private Notes:</b> {selectedCustomer.privateNotes}<br /></>}
+                {selectedCustomer.ediStatus && <>EDI: {selectedCustomer.ediStatus}<br /></>}
+              </div>
+            </div>
+          )}
+        </DynamicSection>
 
-        <CollapsibleSection title="Stops" complete={stopsSectionComplete} defaultOpen={true}>
+
+        {/* Stops Section - Compact table, expandable rows */}
+        <DynamicSection title="Stops" complete={stopsSectionComplete}>
           {typeof StopsSection === 'function' ? (
             <StopsSection onComplete={() => setStopsSectionComplete(true)} setStopsData={setStopsData} />
           ) : (
             <div style={{ color: 'red' }}>StopsSection component missing</div>
           )}
-        </CollapsibleSection>
+          {/* Stops summary table placeholder */}
+          {Array.isArray(stopsData) && stopsData.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#f4f8fb' }}>
+                  <tr>
+                    <th>Type</th>
+                    <th>Address</th>
+                    <th>Date/Time</th>
+                    <th>Contact</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stopsData.map((stop, idx) => (
+                    <tr key={idx} style={{ borderBottom: '1px solid #e0e6ed' }}>
+                      <td>{stop.type}</td>
+                      <td>{stop.address}</td>
+                      <td>{stop.datetime}</td>
+                      <td>{stop.contact}</td>
+                      <td>{stop.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </DynamicSection>
 
-        <CollapsibleSection title="Lane Intelligence" complete={laneIntelligenceComplete} defaultOpen={true}>
+
+        {/* Lane Intelligence Section - Compact summary */}
+        <DynamicSection title="Lane Intelligence" complete={laneIntelligenceComplete}>
           {typeof LaneIntelligencePanel === 'function' ? (
             <LaneIntelligencePanel stops={safeStopsData} carrierAssigned={false} onComplete={() => setLaneIntelligenceComplete(true)} />
           ) : (
             <div style={{ color: 'red' }}>LaneIntelligencePanel component missing</div>
           )}
-        </CollapsibleSection>
+        </DynamicSection>
 
-        <CollapsibleSection title="Carrier" complete={carrierSectionComplete} defaultOpen={true}>
+
+        {/* Carrier Section - Compact, 3-column grid and summary */}
+        <DynamicSection title="Carrier" complete={carrierSectionComplete}>
           {typeof CarrierSection === 'function' ? (
-            <CarrierSection enabled={laneIntelligenceComplete} onComplete={() => setCarrierSectionComplete(true)} />
+            <CarrierSection enabled={laneIntelligenceComplete} onComplete={carrier => { setSelectedCarrier(carrier); setCarrierSectionComplete(true); }} />
           ) : (
             <div style={{ color: 'red' }}>CarrierSection component missing</div>
           )}
-        </CollapsibleSection>
+          {/* Carrier summary card, compact */}
+          {selectedCarrier && (
+            <div style={{
+              marginTop: 10,
+              background: '#f8fbff',
+              border: '1px solid #e0e6ed',
+              borderRadius: 8,
+              padding: 12,
+              fontSize: 14,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 8,
+            }}>
+              <div>
+                <b>{selectedCarrier.name || selectedCarrier.companyName}</b><br />
+                {selectedCarrier.address && <>{selectedCarrier.address}<br /></>}
+                {selectedCarrier.city && <>{selectedCarrier.city}, {selectedCarrier.state} {selectedCarrier.zip}<br /></>}
+                {selectedCarrier.docket && <>Docket: {selectedCarrier.docket}<br /></>}
+              </div>
+              <div>
+                {selectedCarrier.primaryContact && <>Contact: {selectedCarrier.primaryContact}<br /></>}
+                {selectedCarrier.phone && <>Phone: {selectedCarrier.phone}<br /></>}
+                {selectedCarrier.email && <>Email: {selectedCarrier.email}<br /></>}
+                {selectedCarrier.usdot && <>USDOT: {selectedCarrier.usdot}<br /></>}
+              </div>
+              <div>
+                {selectedCarrier.publicNotes && <><b>Public Notes:</b> {selectedCarrier.publicNotes}<br /></>}
+                {selectedCarrier.privateNotes && <><b>Private Notes:</b> {selectedCarrier.privateNotes}<br /></>}
+                {selectedCarrier.insuranceStatus && <>Insurance: {selectedCarrier.insuranceStatus}<br /></>}
+              </div>
+            </div>
+          )}
+        </DynamicSection>
 
-        <CollapsibleSection title="Financials" complete={financialSectionComplete} defaultOpen={true}>
+
+        {/* Financials Section - Compact table and summary */}
+        <DynamicSection title="Financials" complete={financialSectionComplete}>
           {typeof FinancialSection === 'function' ? (
             <FinancialSection enabled={stopsSectionComplete && carrierSectionComplete} laneData={laneIntelligenceData || {}} onComplete={() => setFinancialSectionComplete(true)} />
           ) : (
             <div style={{ color: 'red' }}>FinancialSection component missing</div>
           )}
-        </CollapsibleSection>
+          {/* Financials summary table placeholder */}
+          <div style={{ marginTop: 10 }}>
+            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+              <thead style={{ background: '#f4f8fb' }}>
+                <tr>
+                  <th>Type</th>
+                  <th>Company</th>
+                  <th>Description</th>
+                  <th>Rate</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Example rows, replace with real data */}
+                <tr>
+                  <td>Income</td>
+                  <td>Pro Clear Aquatic Systems</td>
+                  <td>Flat Rate</td>
+                  <td>$680.00</td>
+                  <td>1</td>
+                  <td>$680.00</td>
+                </tr>
+                <tr>
+                  <td>Expense</td>
+                  <td>US 1 LOGISTICS</td>
+                  <td>Flat Rate</td>
+                  <td>$300.00</td>
+                  <td>1</td>
+                  <td>$300.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          {/* Book Load Button appears when all sections are complete */}
+          {customerSectionComplete && stopsSectionComplete && laneIntelligenceComplete && carrierSectionComplete && financialSectionComplete && (
+            <div style={{ marginTop: 24 }}>
+              <BookLoadButton
+                carriers={carriersList}
+                load={loadObj}
+                onBook={handleBookLoad}
+              />
+              {bookingMessage && <div style={{ color: bookingMessage.includes('success') ? 'green' : 'red', marginTop: 10 }}>{bookingMessage}</div>}
+            </div>
+          )}
+        </DynamicSection>
 
-        <CollapsibleSection title="Documents & Dispatch" complete={false} defaultOpen={true}>
+        <DynamicSection title="Documents & Dispatch" complete={false}>
           <div>Documents Section Placeholder</div>
-        </CollapsibleSection>
+        </DynamicSection>
 
-        <CollapsibleSection title="Activity Log" complete={false} defaultOpen={true}>
+        <DynamicSection title="Activity Log" complete={false}>
           <div>Activity Log Panel Placeholder</div>
-        </CollapsibleSection>
+        </DynamicSection>
       </div>
     </ErrorBoundary>
   );

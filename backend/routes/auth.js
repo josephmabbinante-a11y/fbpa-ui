@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/Users.js";
 import { loginValidators, validate } from "../middleware/validators.js";
+import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -90,6 +91,15 @@ router.post("/login", authLimiter, loginValidators, validate, async (req, res) =
   } catch (error) {
     console.error('[LOGIN] Error during login:', error);
       res.status(500).json({ success: false, message: error.message });
+  }
+});
+// List all users (protected)
+router.get("/users", verifyToken, async (req, res) => {
+  try {
+    const users = await User.find({}, "id email name roles");
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

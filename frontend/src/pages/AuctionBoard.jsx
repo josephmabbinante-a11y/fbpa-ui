@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { quoteSaiaAuction, getSaiaAuctionCircuit } from '../api/auctionClient';
+import AuctionNotificationManager from '../components/AuctionNotificationManager';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 
@@ -97,6 +98,13 @@ export default function AuctionBoard() {
   const { theme } = useTheme();
   const t = theme;
   const { demoMode } = useDemo();
+
+  // Notification emails state (moved inside component)
+  const [notificationEmails, setNotificationEmails] = useState([]);
+  const handleAddNotificationEmail = (email) => {
+    setNotificationEmails((prev) => [...prev, email]);
+    // TODO: Persist to backend if needed
+  };
 
   const [circuit, setCircuit] = useState(null);
   const [circuitLoading, setCircuitLoading] = useState(true);
@@ -218,12 +226,16 @@ export default function AuctionBoard() {
 
   return (
     <div style={containerStyle}>
+
       <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${t.border}` }}>
         <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 6 }}>🏷️ Auction Board</div>
         <div style={{ fontSize: 14, color: t.textSecondary }}>
           Live freight load auctions • Competitive bidding • Carrier rate discovery • Saia integration
         </div>
       </div>
+
+      {/* Notification Manager */}
+      <AuctionNotificationManager onAdd={handleAddNotificationEmail} emails={notificationEmails} />
 
       {/* KPI Row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>

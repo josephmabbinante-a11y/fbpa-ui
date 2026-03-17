@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import BookLoadDialog from '../../components/BookLoadDialog';
 import { useNavigate } from 'react-router-dom';
 import { PrimaryTabs } from './components/PrimaryTabs';
 import { SubTabs } from './components/SubTabs';
@@ -13,6 +14,7 @@ import useLoadsQuery from './hooks/useLoadsQuery';
 import useLoadActions from './hooks/useLoadActions';
 import useLoadSelection from './hooks/useLoadSelection';
 import { addLoadBotActivity, createLoad, createLoadsBatch, deleteLoad, dispatchLoad, getLoadBotActivity, restoreLoad, sendToBidNetwork as sendToBidNetworkApi, updateLoad, voidLoad } from '../../api/loadsClient';
+import { getCarriers } from '../../api/client';
 import InternalRoutePreview from '../../components/InternalRoutePreview';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
@@ -24,6 +26,81 @@ import {
 } from '../../utils/loadLifecycle';
 
 export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
+  // State for booking dialog and carriers
+  const [showBookDialog, setShowBookDialog] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingError, setBookingError] = useState(null);
+
+  // Carriers state, fetched from backend
+  const [carriers, setCarriers] = useState([]);
+  const [carriersLoading, setCarriersLoading] = useState(true);
+  const [carriersError, setCarriersError] = useState(null);
+
+  // All custom hooks must be called before any usage of their returned values
+  const { filters, selectedId, updateFilters, resetFilters, selectLoad } = useLoadFilters();
+  const { listState, detailState, refreshList, refreshDetail } = useLoadsQuery(filters, selectedId);
+  const { actionState, dispatch, reassign, sendToBidNetwork: sendToBidNetworkAction, markDelivered } = useLoadActions({ selectedId, refreshList, refreshDetail });
+  const { selectedDetail } = useLoadSelection({ selectedId, listState, detailState });
+
+  // (Removed duplicate hook calls here)
+
+  useEffect(() => {
+    setCarriersLoading(true);
+    setCarriersError(null);
+    getCarriers({ limit: 100 })
+      .then((res) => {
+        if (Array.isArray(res?.carriers)) {
+          setCarriers(res.carriers);
+        } else if (Array.isArray(res)) {
+          setCarriers(res);
+        } else {
+          setCarriers([]);
+        }
+      })
+      .catch((err) => setCarriersError(err.message || 'Failed to load carriers'))
+      .finally(() => setCarriersLoading(false));
+  }, []);
+
+  // Compute canBook at top-level for use in render and booking logic
+  const selectedLoad = selectedDetail?.load || null;
+  const canBook = !!selectedLoad &&
+    ['DRAFT', 'QUOTED', 'RATE_LOCKED', 'TENDERED'].includes(normalizeLoadStatus(selectedLoad.status)) &&
+    !selectedLoad.carrier?.assigned;
+
+  // Handler for booking a load
+  const handleBookLoad = async ({ carrierId, rate, notes }) => {
+    if (!selectedLoad?.id) return;
+    setBookingLoading(true);
+    setBookingError(null);
+    try {
+      const carrier = carriers.find(c => c.id === carrierId);
+      const payload = {
+        status: 'BOOKED',
+        carrierId,
+        carrierName: carrier ? carrier.name : '',
+        carrierAssigned: true,
+        revenue: Number(selectedLoad.revenue || 0),
+        carrierCost: Number(rate),
+        notes: notes || '',
+        userId: 'booking_ui',
+        transitionReason: 'Booked via UI',
+      };
+      const result = await updateLoad(selectedLoad.id, payload);
+      if (result?.error) {
+        setBookingError(result.error);
+      } else {
+        setShowBookDialog(false);
+        await Promise.all([refreshList(), refreshDetail(selectedLoad.id)]);
+      }
+    } catch (err) {
+      setBookingError(err.message || 'Booking failed');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  // Show Book button for eligible loads (e.g., not already BOOKED or beyond)
+  // canBook will be recalculated below after selectedLoad is set
   const navigate = useNavigate();
   const { settings, setAdvancedSetting } = useTheme();
   const normalizedTitle = String(pageTitle || '').toLowerCase();
@@ -47,13 +124,19 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
   const [editDraft, setEditDraft] = useState(null);
   const [editState, setEditState] = useState({ saving: false, error: '', success: '' });
   const [quickActionState, setQuickActionState] = useState({ busy: false, error: '', success: '' });
-  const { filters, selectedId, updateFilters, resetFilters, selectLoad } = useLoadFilters();
-  const { listState, detailState, refreshList, refreshDetail } = useLoadsQuery(filters, selectedId);
-  const { actionState, dispatch, reassign, sendToBidNetwork: sendToBidNetworkAction, markDelivered } = useLoadActions({ selectedId, refreshList, refreshDetail });
-  const { selectedDetail } = useLoadSelection({ selectedId, listState, detailState });
   const fontScale = Number.isFinite(Number(settings?.fontScale)) ? Number(settings.fontScale) : 1;
   const fontWeight = Number.isFinite(Number(settings?.fontWeight)) ? Number(settings.fontWeight) : 600;
   const effectsStrength = Number.isFinite(Number(settings?.effectsStrength)) ? Number(settings.effectsStrength) : 1;
+
+  // Reset key UI state on navigation or load change to prevent mixed artifacts
+  useEffect(() => {
+    setContextMenu(null);
+    setShowViewControls(false);
+    setEditMode(false);
+    setEditDraft(null);
+    setEditState({ saving: false, error: '', success: '' });
+    setQuickActionState({ busy: false, error: '', success: '' });
+  }, [pageTitle, selectedId]);
 
   useEffect(() => {
     if (!contextMenu) return undefined;
@@ -257,7 +340,6 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
   }, [selectedDetail?.load?.id]);
 
   const activeLoadId = selectedDetail?.load?.id || '';
-  const selectedLoad = selectedDetail?.load || null;
   const allChatMessages = activeLoadId ? (chatFeedByLoad[activeLoadId] || []) : [];
   const visibleChatMessages = allChatMessages.filter((message) => message.channel === chatChannel);
 
@@ -696,6 +778,15 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
 
   return (
     <div className="ui-page" style={{ display: 'grid', gap: 24, margin: 0, padding: 0, position: 'relative' }}>
+      {/* Book Load Dialog */}
+      <BookLoadDialog
+        open={showBookDialog}
+        onClose={() => setShowBookDialog(false)}
+        onBook={handleBookLoad}
+        carriers={carriers}
+        load={selectedLoad}
+        loading={bookingLoading}
+      />
       {isLoadCenter && (
         <div
           style={{
@@ -714,17 +805,18 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
             title="Text and view controls"
             onClick={() => setShowViewControls((prev) => !prev)}
             style={{
-              width: 30,
-              height: 30,
+              width: 26,
+              height: 26,
               borderRadius: 999,
               border: '1px solid var(--border)',
               background: 'var(--surface)',
               color: 'var(--text)',
               cursor: 'pointer',
-              fontSize: 14,
-              lineHeight: '30px',
+              fontSize: 13,
+              lineHeight: '26px',
               textAlign: 'center',
-              boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.13)',
+              padding: 0,
             }}
           >
             ⚙
@@ -733,15 +825,16 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
           {showViewControls && (
             <div
               style={{
-                width: 180,
-                borderRadius: 10,
+                width: 170,
+                borderRadius: 8,
                 border: '1px solid var(--border)',
                 background: 'var(--surface)',
                 color: 'var(--text)',
-                padding: 8,
+                padding: 6,
                 display: 'grid',
-                gap: 8,
-                boxShadow: '0 10px 24px rgba(0,0,0,0.24)',
+                gap: 6,
+                boxShadow: '0 6px 16px rgba(0,0,0,0.18)',
+                zIndex: 1001,
               }}
             >
               <div style={{ display: 'grid', gap: 4 }}>
@@ -793,18 +886,29 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-        <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>{pageTitle}</div>
-        {isLoadCenter && (
-          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-            Dispatch focus: pre-dispatch readiness, in-transit SLA risk, and exception handling.
-          </div>
-        )}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{pageTitle}</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {canBook && (
+            <button
+              type="button"
+              onClick={() => setShowBookDialog(true)}
+              style={{ padding: '4px 10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 13, cursor: 'pointer', minHeight: 28 }}
+            >
+              Book
+            </button>
+          )}
+          {isLoadCenter && (
+            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+              Dispatch focus: pre-dispatch readiness, in-transit SLA risk, and exception handling.
+            </div>
+          )}
+        </div>
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 24 }}>Load Board execution console</div>
+      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14 }}>Load Board execution console</div>
       {!isLoadCenter && <PrimaryTabs active="loads" />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isLoadCenter ? 'minmax(0,1fr)' : 'minmax(0,1fr) 380px', gap: 24, minHeight: '70vh' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isLoadCenter ? 'minmax(0,1fr)' : 'minmax(0,1fr) 380px', gap: 16, minHeight: '70vh' }}>
         <section style={{ minWidth: 0 }}>
           <SubTabs activeTab={filters.tab} onChange={(tab) => updateFilters({ tab })} />
           <FilterBar

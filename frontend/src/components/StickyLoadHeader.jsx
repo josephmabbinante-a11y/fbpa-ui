@@ -1,6 +1,20 @@
 import React from 'react';
 
-export default function StickyLoadHeader({ loadNumber, status, customer, totalMiles, sellRate, buyRate, grossMargin, marginPct, riskIndicator }) {
+import { LOAD_STATUSES, formatLoadStatusLabel, canTransitionStatus } from '../utils/loadLifecycle';
+
+export default function StickyLoadHeader({
+  loadNumber,
+  status,
+  customer,
+  totalMiles,
+  sellRate,
+  buyRate,
+  grossMargin,
+  marginPct,
+  riskIndicator,
+  statusDropdown,
+  statusDropdownProps = {},
+}) {
   // Color logic for margin
   let marginColor = '#2ecc40'; // green
   if (marginPct < 8) marginColor = '#ff4136'; // red
@@ -20,7 +34,14 @@ export default function StickyLoadHeader({ loadNumber, status, customer, totalMi
       zIndex: 20,
     }}>
       <div><strong>Load #</strong><br />{loadNumber}</div>
-      <div><strong>Status</strong><br />{status}</div>
+      <div>
+        <strong>Status</strong><br />
+        {statusDropdown ? (
+          statusDropdown
+        ) : (
+          <span>{status}</span>
+        )}
+      </div>
       <div><strong>Customer</strong><br />{customer}</div>
       <div><strong>Total Miles</strong><br />{totalMiles}</div>
       <div><strong>Sell Rate</strong><br />${sellRate}</div>

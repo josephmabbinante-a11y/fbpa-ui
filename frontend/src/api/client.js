@@ -112,8 +112,10 @@ let mockCarrierStore = [...seedMockCarriers];
 
 async function safeFetch(path, options) {
   try {
+    const token = getAccessToken && getAccessToken();
     const headers = {
       ...(options && options.headers ? options.headers : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
     const res = await fetch(apiUrl(path), { ...options, headers });
     if (!res.ok) {

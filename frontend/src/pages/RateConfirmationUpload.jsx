@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import logo from '../assets/opscale-logo.svg';
+import { uploadInvoiceFile } from '../api/client';
 
 export default function RateConfirmationUpload() {
   const { theme } = useTheme();
@@ -28,13 +29,20 @@ export default function RateConfirmationUpload() {
       return;
     }
     setLoading(true);
-    // TODO: Implement actual upload logic here
-    setTimeout(() => {
+    try {
+      const res = await uploadInvoiceFile(file);
+      if (res && res.success) {
+        setStatus('Upload successful!');
+        setFile(null);
+        setPreviewUrl(null);
+      } else {
+        setStatus(res?.error || 'Upload failed.');
+      }
+    } catch (err) {
+      setStatus('Upload failed.');
+    } finally {
       setLoading(false);
-      setStatus('Upload successful!');
-      setFile(null);
-      setPreviewUrl(null);
-    }, 1200);
+    }
   };
 
   return (

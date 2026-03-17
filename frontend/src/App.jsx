@@ -1,15 +1,16 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, {lazy, Suspense} from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { DemoProvider, useDemo } from './demo/DemoContext';
+import {BrowserRouter, Navigate, Route, Routes, useLocation} from 'react-router-dom';
+import {ThemeProvider } from './contexts/ThemeContext';
+import {DemoProvider, useDemo} from './demo/DemoContext';
 import { MultitenantProvider } from './contexts/MultitenantContext';
 import DemoGuide from './demo/DemoGuide';
 import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
 import LoginTest from './components/LoginTest';
-import { getAccessToken } from './utils/authToken';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import LoadStatusDemo from './components/LoadStatusDemo';
+import NotFound from './pages/NotFound';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CombinedPage = lazy(() => import('./pages/CombinedPage'));
@@ -73,44 +74,24 @@ function LoadingFallback() {
   );
 }
 
-function NotFound() {
-  return (
-    <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-secondary)' }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>404</div>
-      <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Page not found</div>
-      <div style={{ fontSize: 14 }}>The page you're looking for doesn't exist.</div>
-    </div>
-  );
-}
-
 function AppRoutes() {
   const location = useLocation();
   const isLogin = location.pathname === '/login' || location.pathname === '/login/';
-  const [isAuthed, setIsAuthed] = useState(() => Boolean(getAccessToken()));
-
-  useEffect(() => {
-    const recheck = () => setIsAuthed(Boolean(getAccessToken()));
-    window.addEventListener('storage', recheck);
-    window.addEventListener('focus', recheck);
-    return () => {
-      window.removeEventListener('storage', recheck);
-      window.removeEventListener('focus', recheck);
-    };
-  }, []);
+  const { token } = useAuth();
 
   if (isLogin || location.pathname.startsWith('/verify-email')) {
     const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
     return (
       <Suspense fallback={<LoadingFallback />}> 
         <Routes>
-          <Route path="/login" element={isAuthed ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/login" element={token ? <Navigate to="/dashboard" replace /> : <Login />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
         </Routes>
       </Suspense>
     );
   }
 
-  if (!isAuthed) {
+  if (!token) {
     return (
       <Routes>
         <Route path="*" element={<Navigate to="/login" replace />} />
@@ -224,19 +205,20 @@ function MockModeBadge() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <DemoProvider>
-        <MultitenantProvider>
-          <ErrorBoundary>
-            <BrowserRouter>
-              <AppRoutes />
-              <MockModeBadge />
-              <DemoGuide />
-            </BrowserRouter>
-          </ErrorBoundary>
-        </MultitenantProvider>
-      </DemoProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <DemoProvider>
+          <MultitenantProvider>
+            <AuthProvider>
+              <BrowserRouter>
+                <AppRoutes />
+                <MockModeBadge />
+              </BrowserRouter>
+            </AuthProvider>
+          </MultitenantProvider>
+        </DemoProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

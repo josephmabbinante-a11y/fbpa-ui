@@ -17,6 +17,19 @@ const CarrierSchema = new mongoose.Schema({
   status: { type: String, enum: ['Active', 'Inactive', 'Alert'], default: 'Active' },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  rating: { type: Number, min: 0, max: 5, default: 0 },
+  recruitmentStatus: { type: String, enum: ['none', 'contacted', 'in_progress', 'hired', 'rejected'], default: 'none' },
+  notes: [{
+    text: { type: String },
+    author: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  }],
+  commodityTypes: [{ type: String }],
+  equipmentTypes: [{ type: String }],
+  areasServiced: [{ type: String }],
+  baseState: { type: String },
+  active: { type: Boolean, default: true },
+  creditsUsed: { type: Number, default: 0 },
 });
 
 // Pre-save hook for auto-populating lowercase fields

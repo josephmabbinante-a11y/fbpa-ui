@@ -5,7 +5,7 @@ import logo from "../assets/opscale-logo.svg";
 import shieldLogo from "../assets/opscale-shield.svg";
 import RegisterForm from "../components/Register";
 import { InputField, LinkButton, PrimaryButton } from "../components/ui/Primitives";
-import { setAccessToken } from "../utils/authToken";
+import { useAuth } from "../contexts/AuthContext.jsx";
 
 function ForgotPasswordModal({ onClose }) {
   const [email, setEmail] = useState("");
@@ -52,8 +52,7 @@ function ForgotPasswordModal({ onClose }) {
   );
 }
 
-// ...existing code...
-export default function Login() {
+function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,6 +60,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const { login: authLogin } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,18 +69,14 @@ export default function Login() {
     const res = await login({ email, password });
     setLoading(false);
     if (res && !res.error && res.accessToken) {
-      const tokenSet = setAccessToken(res.accessToken);
-      if (tokenSet) {
-        const needsSetup = localStorage.getItem('fbpa_needs_setup') === 'true';
-        if (needsSetup) {
-          localStorage.removeItem('fbpa_needs_setup');
-          localStorage.setItem('fbpa_show_setup_banner', 'true');
-          navigate("/settings", { replace: true });
-        } else {
-          navigate("/dashboard", { replace: true });
-        }
+      authLogin(res.accessToken, res.user || null);
+      const needsSetup = localStorage.getItem('fbpa_needs_setup') === 'true';
+      if (needsSetup) {
+        localStorage.removeItem('fbpa_needs_setup');
+        localStorage.setItem('fbpa_show_setup_banner', 'true');
+        navigate("/settings", { replace: true });
       } else {
-        setStatus("Login succeeded but session could not be saved. Please allow cookies/storage and try again.");
+        navigate("/dashboard", { replace: true });
       }
     } else {
       // Improved error handling
@@ -144,3 +140,5 @@ export default function Login() {
     </div>
   );
 }
+
+export default Login;

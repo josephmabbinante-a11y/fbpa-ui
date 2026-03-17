@@ -37,7 +37,7 @@ import {
 } from '../api/client';
 import { createLoad, listLoads, sendToBidNetwork as sendLoadToBidNetwork } from '../api/loadsClient';
 import { estimateMileage as estimateMileageService } from '../services/mileageService';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useThemeTokens } from '../contexts/ThemeContext';
 
 const STATE_DEFAULT_ZIP3 = {
   AL: '352', AZ: '850', AR: '722', CA: '900', CO: '802', CT: '061', DE: '198', FL: '331', GA: '303',
@@ -237,8 +237,7 @@ function RateCalculator() {
     };
 
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const t = theme || {};
+  const t = useThemeTokens();
 
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
@@ -1217,44 +1216,7 @@ function RateCalculator() {
         </section>
 
         <section className={styles.centerPanel}>
-          <section
-            style={{
-              border: `1px solid ${t.border}`,
-              borderRadius: 10,
-              padding: '10px 12px',
-              marginBottom: 10,
-              background: t.bgAlt,
-              display: 'grid',
-              gap: 6,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-              <strong style={{ fontSize: 13 }}>Saia Rate Result</strong>
-              <span style={{ fontSize: 11, color: t.textSecondary }}>
-                {quotingSaia ? 'Requesting Saia quote...' : (saiaQuote?.carrier ? 'Live quote' : 'No quote yet')}
-              </span>
-            </div>
-            {!saiaQuote && !quotingSaia && (
-              <div style={{ fontSize: 12, color: t.textSecondary }}>
-                Run Predict Rate to request a Saia quote.
-              </div>
-            )}
-            {saiaQuote?.error && (
-              <div style={{ fontSize: 12, color: t.textSecondary }}>
-                {saiaQuote.error}
-              </div>
-            )}
-            {saiaQuote?.carrier && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6, fontSize: 12 }}>
-                <div><strong>Carrier:</strong> {saiaQuote.carrier}</div>
-                <div><strong>Total Rate:</strong> ${Number(saiaQuote.totalRate || 0).toLocaleString()}</div>
-                <div><strong>Transit Days:</strong> {Number(saiaQuote.transitDays || 0)}</div>
-                <div><strong>Service:</strong> {saiaQuote.serviceType || saiaQuote?.carrierQuote?.serviceLevel || 'STANDARD'}</div>
-                <div><strong>Fuel:</strong> ${Number(saiaQuote?.fuelBreakdown?.fuelSurcharge || 0).toLocaleString()}</div>
-                <div><strong>Fuel %:</strong> {Number(saiaQuote?.fuelBreakdown?.fuelPct || 0).toFixed(2)}%</div>
-              </div>
-            )}
-          </section>
+          {/* Saia Rate Result section removed as requested */}
 
           <RateBreakdown
             kpis={safeKpis}

@@ -1,3 +1,28 @@
+// Placeholder components for missing sections
+function StickyLoadHeader() {
+  return <div style={{ padding: 12, color: 'var(--warning)', fontWeight: 600 }}>StickyLoadHeader component placeholder</div>;
+}
+function CustomerSection() {
+  return <div style={{ padding: 12, color: 'var(--warning)' }}>CustomerSection component placeholder</div>;
+}
+function StopsSection() {
+  return <div style={{ padding: 12, color: 'var(--warning)' }}>StopsSection component placeholder</div>;
+}
+function LaneIntelligenceSection() {
+  return <div style={{ padding: 12, color: 'var(--info)' }}>LaneIntelligenceSection component placeholder</div>;
+}
+function CarrierSection() {
+  return <div style={{ padding: 12, color: 'var(--warning)' }}>CarrierSection component placeholder</div>;
+}
+function FinancialSection() {
+  return <div style={{ padding: 12, color: 'var(--info)' }}>FinancialSection component placeholder</div>;
+}
+function DocumentsSection() {
+  return <div style={{ padding: 12, color: 'var(--info)' }}>DocumentsSection component placeholder</div>;
+}
+function ActivityLogPanel() {
+  return <div style={{ padding: 12, color: 'var(--info)' }}>ActivityLogPanel component placeholder</div>;
+}
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
@@ -217,145 +242,15 @@ export default function BuildLoad() {
   };
 
   return (
-    <div style={{ display: 'grid', gap: 12 }}>
-      <div>
-        <h1 style={{ margin: 0, fontSize: 26 }}>Build a Load</h1>
-        <div style={{ color: t.textSecondary, fontSize: 12 }}>Home / Loads / New</div>
-        {message && <div style={{ color: t.textSecondary, fontSize: 12, marginTop: 6 }}>{message}</div>}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <Panel
-          title="New Load Wizard"
-          subtitle="Use guided flow to build a successful load from scratch."
-          t={t}
-        >
-          <button type="button" style={primaryBtn} onClick={runCreateNewLoad} disabled={Boolean(working)}>
-            {working === 'create-load' ? 'Creating Load...' : 'Use the New Load Wizard'}
-          </button>
-        </Panel>
-
-        <Panel
-          title="Create a Template"
-          subtitle="Save time by creating templates you can reuse for future loads."
-          t={t}
-        >
-          <button type="button" style={ghostBtn} onClick={runCreateTemplate} disabled={Boolean(working)}>
-            {working === 'create-template' ? 'Creating Template...' : 'Create a New Template'}
-          </button>
-        </Panel>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 12 }}>
-        <Panel title="Use a Template" t={t}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-            <div style={{ color: t.textSecondary, fontSize: 12 }}>{loadingTemplates ? 'Loading templates...' : `${templates.length} entries`}</div>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search"
-              style={{
-                minHeight: 34,
-                borderRadius: 8,
-                border: `1px solid ${t.accent2}`,
-                background: t.bgAlt,
-                color: t.text,
-                padding: '7px 10px',
-                fontSize: 12,
-                width: 220,
-              }}
-            />
-          </div>
-
-          <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ background: t.bgAlt, color: t.textSecondary }}>
-                  <th style={{ padding: 10, textAlign: 'left' }}>Template Name</th>
-                  <th style={{ padding: 10, textAlign: 'left' }}>Customer</th>
-                  <th style={{ padding: 10, textAlign: 'right' }}>Picks</th>
-                  <th style={{ padding: 10, textAlign: 'right' }}>Drops</th>
-                  <th style={{ padding: 10, textAlign: 'left' }}>Branch</th>
-                  <th style={{ padding: 10, textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {templates.map((row) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => setSelectedTemplateId(row.id)}
-                    style={{
-                      background: selectedTemplateId === row.id ? 'rgba(var(--glow), 0.12)' : 'transparent',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{row.name}</td>
-                    <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{row.customer}</td>
-                    <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>{row.picks}</td>
-                    <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>{row.drops}</td>
-                    <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{row.branch}</td>
-                    <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: 8 }}>
-                        <button
-                          type="button"
-                          style={primaryBtn}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            runUseTemplate(row);
-                          }}
-                          disabled={Boolean(working)}
-                        >
-                          {working === `use-${row.id}` ? 'Using...' : 'Use'}
-                        </button>
-                        <button
-                          type="button"
-                          style={ghostBtn}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            runEditTemplate(row);
-                          }}
-                          disabled={Boolean(working)}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {templates.length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ padding: 14, textAlign: 'center', color: t.textSecondary, borderTop: `1px solid ${t.border}` }}>
-                      No templates match this search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Panel>
-
-        <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
-          <Panel title="Financials Snapshot" subtitle={selectedTemplate ? selectedTemplate.name : 'Select a template'} t={t}>
-            <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: t.textSecondary }}>Miles</span><strong>{financialSnapshot.miles.toLocaleString()}</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: t.textSecondary }}>Revenue</span><strong>${financialSnapshot.revenue.toLocaleString()}</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: t.textSecondary }}>Carrier Cost</span><strong>${financialSnapshot.carrierCost.toLocaleString()}</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: t.textSecondary }}>Margin</span><strong>${financialSnapshot.margin.toLocaleString()} ({financialSnapshot.marginPct.toFixed(1)}%)</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: t.textSecondary }}>Revenue / Mile</span><strong>${financialSnapshot.rpm.toFixed(2)}</strong></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: t.textSecondary }}>Cost / Mile</span><strong>${financialSnapshot.cpm.toFixed(2)}</strong></div>
-            </div>
-            <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
-              <button
-                type="button"
-                style={primaryBtn}
-                onClick={() => navigate(lastCreatedLoadId ? `/loads/${encodeURIComponent(lastCreatedLoadId)}/financials` : '/loads/financials')}
-              >
-                Open Financials
-              </button>
-            </div>
-          </Panel>
-        </div>
-      </div>
+    <div style={{ display: 'grid', gap: 18, padding: 18 }}>
+      <StickyLoadHeader />
+      <Panel title="Customer" t={t}><CustomerSection /></Panel>
+      <Panel title="Stops" t={t}><StopsSection /></Panel>
+      <Panel title="Lane Intelligence" t={t}><LaneIntelligenceSection /></Panel>
+      <Panel title="Carrier" t={t}><CarrierSection /></Panel>
+      <Panel title="Financials" t={t}><FinancialSection /></Panel>
+      <Panel title="Documents & Dispatch" t={t}><DocumentsSection /></Panel>
+      <Panel title="Activity Log" t={t}><ActivityLogPanel /></Panel>
     </div>
   );
 }

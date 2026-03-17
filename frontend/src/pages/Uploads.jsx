@@ -45,13 +45,20 @@ export default function Uploads() {
       return;
     }
     setRcLoading(true);
-    // TODO: Implement actual upload logic here
-    setTimeout(() => {
+    try {
+      const res = await uploadInvoiceFile(rcFile);
+      if (res && res.success) {
+        setRcStatus('Upload successful!');
+        setRcFile(null);
+        setRcPreviewUrl(null);
+      } else {
+        setRcStatus(res?.error || 'Upload failed.');
+      }
+    } catch (err) {
+      setRcStatus('Upload failed.');
+    } finally {
       setRcLoading(false);
-      setRcStatus('Upload successful!');
-      setRcFile(null);
-      setRcPreviewUrl(null);
-    }, 1200);
+    }
   };
 
   const handleSubmit = async (e) => {

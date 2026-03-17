@@ -2,7 +2,7 @@
 
 const MT_API_BASE = import.meta.env.VITE_MT_API_URL
   ? import.meta.env.VITE_MT_API_URL.replace(/\/+$/, '')
-  : 'http://localhost:4001';
+  : 'http://localhost:4000';
 
 function getMtToken() {
   try {

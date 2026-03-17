@@ -70,6 +70,8 @@ export default function Carriers() {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [complianceFilter, setComplianceFilter] = useState('all');
+  const [ratingFilter, setRatingFilter] = useState('all');
+  const [recruitmentStatusFilter, setRecruitmentStatusFilter] = useState('all');
   const [selectedId, setSelectedId] = useState('');
   const [saferMode, setSaferMode] = useState('dot');
   const [saferQuery, setSaferQuery] = useState('');
@@ -191,20 +193,24 @@ export default function Carriers() {
 
   const filteredCarriers = useMemo(() => {
     const q = query.trim().toLowerCase();
-
     return carriers.filter((carrier) => {
       const statusLabel = String(getStatusLabel(carrier)).toLowerCase();
       const complianceState = getComplianceState(carrier);
+      const rating = carrier.rating || 0;
+      const recruitmentStatus = carrier.recruitmentStatus || 'none';
 
       if (statusFilter !== 'all' && statusLabel !== statusFilter) return false;
       if (complianceFilter !== 'all' && complianceState !== complianceFilter) return false;
+      if (ratingFilter !== 'all' && String(rating) !== ratingFilter) return false;
+      if (recruitmentStatusFilter !== 'all' && recruitmentStatus !== recruitmentStatusFilter) return false;
 
       if (!q) return true;
-      return [carrier.name, carrier.mcNumber, carrier.taxId, carrier.email, carrier.phone]
+      // Fuzzy/partial match on multiple fields
+      return [carrier.name, carrier.mcNumber, carrier.taxId, carrier.email, carrier.phone, carrier.dotNumber]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(q));
     });
-  }, [carriers, query, statusFilter, complianceFilter]);
+  }, [carriers, query, statusFilter, complianceFilter, ratingFilter, recruitmentStatusFilter]);
 
   const renderedCarriers = useMemo(
     () => filteredCarriers.slice(0, CARRIER_RENDER_LIMIT),
@@ -618,8 +624,8 @@ export default function Carriers() {
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search carrier, MC, tax ID, email, phone"
-            style={{ ...inputStyle, minWidth: 260, flex: 1 }}
+            placeholder="Search carrier, MC, tax ID, email, phone, DOT"
+            style={{ ...inputStyle, minWidth: 200, flex: 1 }}
           />
           <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={inputStyle}>
             <option value="all">All Status</option>
@@ -631,6 +637,23 @@ export default function Carriers() {
             <option value="all">All Compliance</option>
             <option value="compliant">Compliant</option>
             <option value="issues">Issues</option>
+          </select>
+          <select value={ratingFilter} onChange={(event) => setRatingFilter(event.target.value)} style={inputStyle}>
+            <option value="all">All Ratings</option>
+            <option value="5">5 Stars</option>
+            <option value="4">4 Stars</option>
+            <option value="3">3 Stars</option>
+            <option value="2">2 Stars</option>
+            <option value="1">1 Star</option>
+            <option value="0">Unrated</option>
+          </select>
+          <select value={recruitmentStatusFilter} onChange={(event) => setRecruitmentStatusFilter(event.target.value)} style={inputStyle}>
+            <option value="all">All Recruitment</option>
+            <option value="none">None</option>
+            <option value="contacted">Contacted</option>
+            <option value="in_progress">In Progress</option>
+            <option value="hired">Hired</option>
+            <option value="rejected">Rejected</option>
           </select>
           <select value={listMode} onChange={(event) => setListMode(event.target.value)} style={inputStyle}>
             <option value="top">Top Performers</option>
@@ -674,6 +697,7 @@ export default function Carriers() {
                   <th style={{ padding: 10, textAlign: 'left' }}>Carrier</th>
                   <th style={{ padding: 10, textAlign: 'left' }}>MC #</th>
                   <th style={{ padding: 10, textAlign: 'left' }}>Tax ID</th>
+                  <th style={{ padding: 10, textAlign: 'center' }}>Rating</th>
                   <th style={{ padding: 10, textAlign: 'right' }}>Spend</th>
                   <th style={{ padding: 10, textAlign: 'right' }}>Open AP</th>
                   <th style={{ padding: 10, textAlign: 'center' }}>Status</th>
@@ -707,6 +731,15 @@ export default function Carriers() {
                       </td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{carrier.mcNumber || '—'}</td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{carrier.taxId || 'Missing'}</td>
+                      <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'center' }}>
+                        {carrier.rating ? (
+                          <span title={`Rating: ${carrier.rating} / 5`} style={{ color: '#f5b50a', fontWeight: 700 }}>
+                            {'★'.repeat(carrier.rating)}{'☆'.repeat(5 - carrier.rating)}
+                          </span>
+                        ) : (
+                          <span style={{ color: t.textSecondary }}>Unrated</span>
+                        )}
+                      </td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>{toMoney(carrier.totalSpend)}</td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>{toMoney(carrier.openAP)}</td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'center' }}>

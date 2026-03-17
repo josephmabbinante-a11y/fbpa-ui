@@ -1,17 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getDashboard } from '../api/client';
-import dashboardEnhanced from '../mock/dashboardEnhanced';
-import { useTheme, themes } from '../contexts/ThemeContext';
-import { useDemo } from '../demo/DemoContext';
+import {useEffect, useMemo, useState } from 'react';
+import {useNavigate } from 'react-router-dom';
+import {getDashboard } from '../api/client';
+import {useTheme, themes} from '../contexts/ThemeContext';
 import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
-import { useApi } from '../hooks/useApi';
-import mockShipments from '../mock/shipments';
-import { listLoads } from '../api/loadsClient';
+import {useApi}from '../hooks/useApi';
+import {listLoads} from '../api/loadsClient';
 import EmptyState from '../components/EmptyState';
+
+import mockShipments from '../mock/mockShipments';
 
 const DASH_PREFS_KEY = 'dashboardPrefs';
 const DASH_VARIANT_KEY = 'dashboardVariant';
@@ -96,12 +95,8 @@ function mapLoadToRow(load) {
     id: load?.id || `L-${Date.now()}`,
     customer: typeof load?.customer === 'object' ? (load.customer?.name || '—') : (load?.customer || '—'),
     carrier: typeof load?.carrier === 'object' ? (load.carrier?.name || 'Pending') : (load?.carrier || 'Pending'),
-    origin: typeof load?.origin === 'object'
-      ? `${load.origin?.city || '—'}${load.origin?.state ? `, ${load.origin.state}` : ''}`
-      : (load?.origin || '—'),
-    destination: typeof load?.destination === 'object'
-      ? `${load.destination?.city || '—'}${load.destination?.state ? `, ${load.destination.state}` : ''}`
-      : (load?.destination || '—'),
+    origin: typeof load?.origin === 'object' ? `${load.origin?.city || '—'}${load.origin?.state ? `, ${load.origin.state}` : ''}` : (load?.origin || '—'),
+    destination: typeof load?.destination === 'object' ? `${load.destination?.city || '—'}${load.destination?.state ? `, ${load.destination.state}` : ''}` : (load?.destination || '—'),
     status: String(load?.status || 'open').replaceAll('_', ' '),
     revenue: toCurrency(revenue),
     cost: toCurrency(carrierCost),
@@ -147,8 +142,8 @@ function mergeDashboardData(incoming, demoMode = false) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { settings } = useTheme();
-  const { demoMode } = useDemo();
+  const {settings} = useTheme();
+  const {demoMode} = useDemo();
   const resolvedMode = settings?.modePreference === 'dark' ? 'dark'
     : settings?.modePreference === 'light' ? 'light'
     : (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -156,7 +151,7 @@ export default function Dashboard() {
     ?? themes['opscale-blue-dark']
     ?? {};
 
-  const { data: rawData, loading, error } = useApi(getDashboard, demoMode ? dashboardEnhanced : null, [demoMode]);
+  const {data: rawData, loading, error} = useApi(getDashboard, demoMode ? dashboardEnhanced : null, [demoMode]);
   const data = useMemo(
     () => mergeDashboardData(rawData, demoMode),
     [demoMode, rawData]

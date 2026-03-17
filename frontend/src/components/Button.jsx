@@ -1,15 +1,23 @@
 import React from 'react';
-import { useThemeTokens } from '../contexts/ThemeContext';
+import {useThemeTokens} from '../contexts/ThemeContext';
 
 const Button = ({ children, onClick, variant = 'primary', icon, ...props }) => {
-  const theme = useThemeTokens();
+
+  const fallbackTheme = {
+    gradients: { primaryButton: '#007bff' },
+    colors: { surface: '#fff', textPrimary: '#000', textSecondary: '#333' },
+    borderRadius: '4px',
+    shadow: '0 2px 8px rgba(0,0,0,0.08)',
+    hoverGlow: '0 0 8px rgba(0,123,255,0.18)',
+  };
+  const theme = useThemeTokens() || fallbackTheme;
 
   const styles = {
-    background: variant === 'primary' ? theme.gradients.primaryButton : theme.colors.surface,
-    color: variant === 'primary' ? theme.colors.textPrimary : theme.colors.textSecondary,
-    borderRadius: theme.borderRadius,
+    background: variant === 'primary' ? theme.gradients?.primaryButton || fallbackTheme.gradients.primaryButton : theme.colors?.surface || fallbackTheme.colors.surface,
+    color: variant === 'primary' ? theme.colors?.textPrimary || fallbackTheme.colors.textPrimary : theme.colors?.textSecondary || fallbackTheme.colors.textSecondary,
+    borderRadius: theme.borderRadius || fallbackTheme.borderRadius,
     border: 'none',
-    boxShadow: theme.shadow,
+    boxShadow: theme.shadow || fallbackTheme.shadow,
     fontWeight: 600,
     padding: '10px 20px',
     transition: 'transform 0.18s, box-shadow 0.18s',

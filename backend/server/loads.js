@@ -1,31 +1,13 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
+import { verifyToken } from '../middleware/auth.js';
 const router = express.Router();
 // Simple test route for debugging
 router.get('/test', (req, res) => {
   res.json({ ok: true, message: 'Loads router is working.' });
 });
 
-// Local auth middleware using the main JWT_SECRET (consistent with auth routes)
-function authenticate(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or invalid authorization header' });
-  }
-  const token = authHeader.slice(7);
-  try {
-    const secret = process.env.JWT_SECRET || 'dev_secret_change_me';
-    const payload = jwt.verify(token, secret);
-    req.user = payload;
-    return next();
-  } catch (err) {
-    console.warn('[loads/auth] Token verification failed:', err.message);
-    return res.status(401).json({ error: 'Invalid or expired token' });
-  }
-}
-
 // Require authentication for all loads endpoints
-router.use(authenticate);
+router.use(verifyToken);
 // import fs from 'fs';
 // import path from 'path';
 import { buildMileageLaneKey, estimateMileage } from './mileage.js';
@@ -334,7 +316,7 @@ function buildLoadFromTemplate(template) {
 }
 
 function applyCreateOverrides(load, payload = {}) {
-  const next = { ...load };
+  const next = { ...load};
 
   if (payload.customerName !== undefined) {
     next.customer = { id: null, name: String(payload.customerName || '').trim() || 'Not set' };
