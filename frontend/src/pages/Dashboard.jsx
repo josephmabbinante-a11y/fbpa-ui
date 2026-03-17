@@ -1,3 +1,4 @@
+import { useDemo } from '../demo/DemoContext';
 import {useEffect, useMemo, useState } from 'react';
 import {useNavigate } from 'react-router-dom';
 import {getDashboard } from '../api/client';
@@ -10,7 +11,9 @@ import {useApi}from '../hooks/useApi';
 import {listLoads} from '../api/loadsClient';
 import EmptyState from '../components/EmptyState';
 
+
 import mockShipments from '../mock/mockShipments';
+import dashboardEnhanced from '../mock/dashboardEnhanced';
 
 const DASH_PREFS_KEY = 'dashboardPrefs';
 const DASH_VARIANT_KEY = 'dashboardVariant';
