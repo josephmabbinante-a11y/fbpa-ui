@@ -195,11 +195,13 @@ const mockLoadTemplates = [];
 
 async function safeFetch(path, options) {
   try {
+    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     const res = await fetch(apiUrl(path), {
       ...(options || {}),
       headers: {
         'Content-Type': 'application/json',
         ...(options?.headers || {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 

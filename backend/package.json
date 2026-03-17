@@ -8,7 +8,9 @@
     "setup-multitenant": "node server/setup-multitenant.cjs",
     "load:transit": "node scripts/load-transit-flow.js",
     "customer:add": "node scripts/add-customers.js",
-    "carrier:add": "node scripts/add-carriers.js"
+    "carrier:add": "node scripts/add-carriers.js",
+    "seed:prod-sample": "node server/seedProductionSample.js",
+    "schema:verify": "node server/verifySchemaParity.js"
   },
   "dependencies": {
     "argon2": "^0.44.0",

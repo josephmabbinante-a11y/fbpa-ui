@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { listLocations, createLocation } from '../src/api/locationsClient';
 
-export default function StopsSection({ onComplete, setStopsData }) {
+export default function StopsSection({ load, setLoad, onComplete }) {
   const [locations, setLocations] = useState([]);
-  const [selectedStops, setSelectedStops] = useState([]);
+  const [selectedStops, setSelectedStops] = useState(load.stops || []);
   const [newStop, setNewStop] = useState({ name: '', address: '', locationTypes: 'Pickup' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +22,7 @@ export default function StopsSection({ onComplete, setStopsData }) {
     if (!selectedStops.includes(value)) {
       const updated = [...selectedStops, value];
       setSelectedStops(updated);
-      setStopsData && setStopsData(updated);
+      setLoad(prev => ({ ...prev, stops: updated }));
     }
   };
 
@@ -38,6 +38,10 @@ export default function StopsSection({ onComplete, setStopsData }) {
       setLocations([res.location, ...locations]);
       setNewStop({ name: '', address: '', locationTypes: 'Pickup' });
       setError('');
+      // Add new stop to selectedStops and update load
+      const updated = [...selectedStops, res.location.id];
+      setSelectedStops(updated);
+      setLoad(prev => ({ ...prev, stops: updated }));
     }
     setLoading(false);
   };
@@ -90,7 +94,7 @@ export default function StopsSection({ onComplete, setStopsData }) {
         </div>
       )}
       {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
-      <button style={{ marginTop: 12 }} onClick={onComplete}>Mark Stops Complete</button>
+      <button style={{ marginTop: 12 }} onClick={() => { setLoad(prev => ({ ...prev, stops: selectedStops })); onComplete(); }}>Mark Stops Complete</button>
     </div>
   );
 }

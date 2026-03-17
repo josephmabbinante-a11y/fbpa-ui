@@ -26,7 +26,12 @@ export default function CarrierSection({ enabled, onComplete }) {
   }
 
   return (
-    <form style={{ display: 'grid', gap: 12 }}>
+    <>
+      <div style={{ marginBottom: 16, background: '#f4f8ff', padding: 12, borderRadius: 6, color: '#234', fontSize: 15 }}>
+        <strong>Carrier Information Section</strong><br />
+        Enter and verify carrier details here, including compliance status, insurance, and safety records. Accurate carrier information is essential for regulatory compliance and ensuring the safe, timely delivery of your load.
+      </div>
+      <form style={{ display: 'grid', gap: 12 }}>
       <label>
         Carrier Search (MC, DOT, Name)
         <input value={carrier} onChange={e => handleCarrierSelect(e.target.value)} placeholder="Search carrier..." />
@@ -53,5 +58,6 @@ export default function CarrierSection({ enabled, onComplete }) {
       </label>
       {isComplete && <div style={{ color: 'green', fontWeight: 600 }}>Carrier section complete</div>}
     </form>
+    </>
   );
 }

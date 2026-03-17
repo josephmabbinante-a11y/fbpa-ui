@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { calculateRateLogic, createInvoice } from '../src/api/client';
 
 
-export default function FinancialSection({ onComplete }) {
+export default function FinancialSection({ load, setLoad, onComplete }) {
   const [form, setForm] = useState({
     origin: '',
     destination: '',
@@ -27,6 +27,14 @@ export default function FinancialSection({ onComplete }) {
   const handleInput = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
+    // Update load.financials as user types
+    setLoad(prev => ({
+      ...prev,
+      financials: {
+        ...prev.financials,
+        [e.target.name]: e.target.value
+      }
+    }));
   };
 
   const handleRate = async () => {
@@ -77,25 +85,7 @@ export default function FinancialSection({ onComplete }) {
         <label style={{ marginLeft: 8 }}>
           Destination: <input name="destination" value={form.destination} onChange={handleInput} />
         </label>
-        <label style={{ marginLeft: 8 }}>
-          Equipment:
-          <select name="equipment" value={form.equipment} onChange={handleInput}>
-            <option value="Van">Van</option>
-            <option value="Reefer">Reefer</option>
-            <option value="Flatbed">Flatbed</option>
-          </select>
-        </label>
-        <label style={{ marginLeft: 8 }}>
-          Lane Type:
-          <select name="laneType" value={form.laneType} onChange={handleInput}>
-            <option value="Line Haul">Line Haul</option>
-            <option value="Drayage">Drayage</option>
-            <option value="Intermodal">Intermodal</option>
-          </select>
-        </label>
-        <label style={{ marginLeft: 8 }}>
-          Miles: <input name="miles" value={form.miles} onChange={handleInput} type="number" />
-        </label>
+        {/* Equipment, lane type, miles, etc. now belong in Load Details section above */}
         <label style={{ marginLeft: 8 }}>
           Base Rate: <input name="baseRate" value={form.baseRate} onChange={handleInput} type="number" />
         </label>
@@ -155,7 +145,7 @@ export default function FinancialSection({ onComplete }) {
       </div>
       {invoiceStatus && <div style={{ color: 'green', marginBottom: 8 }}>{invoiceStatus}</div>}
       {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
-      <button onClick={onComplete}>Mark Financials Complete</button>
+      <button onClick={() => { setLoad(prev => ({ ...prev, financials: { ...prev.financials, ...form } })); onComplete(); }}>Mark Financials Complete</button>
     </div>
   );
 }

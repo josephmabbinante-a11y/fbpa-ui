@@ -886,7 +886,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
         <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{pageTitle}</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {canBook && (
@@ -915,8 +915,6 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
             filters={filters}
             onChange={updateFilters}
             onReset={resetFilters}
-            onCreateLoad={isLoadCenter ? () => navigate('/build-load') : undefined}
-            onCreateMultipleLoads={isLoadCenter ? createMultipleLoads : undefined}
           />
           <FacetsBar facets={listState.data?.facets} />
           {quickActionState.error && <div style={{ marginBottom: 10, fontSize: 12, color: 'var(--error)' }}>{quickActionState.error}</div>}
@@ -1078,7 +1076,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => navigate(`/loads/${encodeURIComponent(selectedDetail.load.id)}/load-basics`)}
+                        onClick={() => navigate(`/loadcenter?selected=${encodeURIComponent(selectedDetail.load.id)}`)}
                         style={{
                           border: '1px solid var(--accent-2)',
                           background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
@@ -1091,7 +1089,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                           cursor: 'pointer',
                         }}
                       >
-                        Open in Load Management
+                        Open in Load Command Center
                       </button>
                       <button
                         type="button"
@@ -1562,23 +1560,6 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                           <button
                             type="button"
-                            onClick={() => navigate('/build-load')}
-                            style={{
-                              border: '1px solid var(--accent-2)',
-                              background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                              color: 'var(--bg)',
-                              borderRadius: 8,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              minHeight: 40,
-                              padding: '0 20px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Open Create Load
-                          </button>
-                          <button
-                            type="button"
                             onClick={runBotRecommendCarrier}
                             disabled={!selectedLoad || Boolean(botWorking)}
                             style={{
@@ -1718,24 +1699,24 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                   { label: 'View in Panel', key: 'view' },
                   { label: 'Open Load in New Tab', key: 'openTab' },
                   {
-                    label: 'Go to Load Management',
+                    label: 'Go to Load Command Center',
                     key: 'goLoadManagement',
-                    onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/load-basics`),
+                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
                   },
                   {
                     label: 'Go to Customer in Load Management',
                     key: 'goCustomer',
-                    onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/customer-info`),
+                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
                   },
                   {
                     label: 'Go to Carrier in Load Management',
                     key: 'goCarrier',
-                    onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/carrier-asset-info`),
+                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
                   },
                   {
                     label: 'Go to Financials in Load Management',
                     key: 'goFinancials',
-                    onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`),
+                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
                   },
                   {
                     label: 'Open Dispatch Screen',
@@ -1753,7 +1734,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                         if (typeof action.onClick === 'function') {
                           action.onClick(contextMenu.load);
                         } else if (action.key === 'openTab') {
-                          window.open(`/loads/${encodeURIComponent(contextMenu.load.id)}/load-basics`, '_blank', 'noopener,noreferrer');
+                          window.open(`/loadcenter?selected=${encodeURIComponent(contextMenu.load.id)}`, '_blank', 'noopener,noreferrer');
                         } else if (action.key === 'copyId') {
                           navigator.clipboard?.writeText(contextMenu.load.id);
                         } else {

@@ -9,7 +9,7 @@ const TRANSITION_CLASS = 'theme-transition';
 const REDUCE_MOTION_CLASS = 'reduce-motion-theme';
 const TRANSITION_MS = 220;
 
-const DATA_HEAVY_PATHS = ['/dashboard', '/fleet', '/loadcenter', '/load-board', '/loads', '/reports', '/invoices'];
+const DATA_HEAVY_PATHS = ['/dashboard', '/fleet', '/loadcenter', '/load-board', '/auction-board', '/loads', '/reports', '/invoices'];
 
 const PALETTES = [
   {

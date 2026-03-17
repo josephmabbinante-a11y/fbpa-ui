@@ -168,6 +168,14 @@ export async function getCustomers() {
   return safeFetch('/api/customers');
 }
 
+export async function createCustomer(data) {
+  return safeFetch('/api/customers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
 export async function getCustomerDetail(id) {
   if (!id) return { error: 'Customer id is required' };
   return safeFetch(`/api/customers/${encodeURIComponent(id)}`);

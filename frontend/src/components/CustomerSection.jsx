@@ -4,11 +4,6 @@ import React, { useState } from 'react';
 export default function CustomerSection({ onComplete }) {
   const [fields, setFields] = useState({
     customer: '',
-    equipmentType: '',
-    serviceLevel: '',
-    commodity: '',
-    poNumber: '',
-    refNumber: '',
   });
   const [isComplete, setIsComplete] = useState(false);
 
@@ -21,14 +16,18 @@ export default function CustomerSection({ onComplete }) {
   }
 
   return (
-    <form style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: 16,
-      marginBottom: 8,
-      alignItems: 'end',
-    }}>
-      {/* Row 1 */}
+    <>
+      <div style={{ marginBottom: 16, background: '#f4f8ff', padding: 12, borderRadius: 6, color: '#234', fontSize: 15 }}>
+        <strong>Customer Information Section</strong><br />
+        This section collects all relevant customer details for the load, including contact information, reference numbers, and any special notes. Please ensure all fields are accurate to facilitate smooth communication and documentation throughout the shipment lifecycle.
+      </div>
+      <form style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(1, minmax(260px, 420px))',
+        gap: 16,
+        marginBottom: 8,
+        alignItems: 'end',
+      }}>
       <div className="form-group">
         <input
           type="text"
@@ -40,62 +39,12 @@ export default function CustomerSection({ onComplete }) {
         />
         <label className="floating-label">Customer</label>
       </div>
-      <div className="form-group">
-        <input
-          type="text"
-          value={fields.equipmentType}
-          onChange={e => handleChange('equipmentType', e.target.value)}
-          className="input-dense"
-          placeholder=" "
-        />
-        <label className="floating-label">Equipment Type</label>
-      </div>
-      <div className="form-group">
-        <input
-          type="text"
-          value={fields.serviceLevel}
-          onChange={e => handleChange('serviceLevel', e.target.value)}
-          className="input-dense"
-          placeholder=" "
-        />
-        <label className="floating-label">Service Level</label>
-      </div>
-      {/* Row 2 */}
-      <div className="form-group">
-        <input
-          type="text"
-          value={fields.commodity}
-          onChange={e => handleChange('commodity', e.target.value)}
-          className="input-dense"
-          placeholder=" "
-        />
-        <label className="floating-label">Commodity</label>
-      </div>
-      <div className="form-group">
-        <input
-          type="text"
-          value={fields.poNumber}
-          onChange={e => handleChange('poNumber', e.target.value)}
-          className="input-dense"
-          placeholder=" "
-        />
-        <label className="floating-label">PO Number</label>
-      </div>
-      <div className="form-group">
-        <input
-          type="text"
-          value={fields.refNumber}
-          onChange={e => handleChange('refNumber', e.target.value)}
-          className="input-dense"
-          placeholder=" "
-        />
-        <label className="floating-label">Ref Number</label>
-      </div>
       {isComplete && (
-        <div style={{ gridColumn: '1 / span 3', color: 'green', fontWeight: 600, marginTop: 8 }}>
+        <div style={{ color: 'green', fontWeight: 600, marginTop: 8 }}>
           Customer section complete
         </div>
       )}
     </form>
+    </>
   );
 }

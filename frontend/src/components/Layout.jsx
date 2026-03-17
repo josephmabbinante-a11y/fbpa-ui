@@ -85,7 +85,8 @@ function Layout({ children }) {
   const effectsStrength = Number.isFinite(Number(settings?.effectsStrength)) ? Number(settings.effectsStrength) : 1;
 
   const pageKey = useMemo(() => String(location.pathname || '/'), [location.pathname]);
-  const hideGlobalViewControls = pathname.startsWith('/load-board') || pathname.startsWith('/loadcenter');
+  const hideGlobalViewControls = pathname.startsWith('/load-board') || pathname.startsWith('/auction-board') || pathname.startsWith('/loadcenter');
+  const isLoadManagementRoute = /^\/loads(\/[^/]+)?\/(load-basics|customer-info|carrier-asset-info|edit-stops|financials)$/.test(pathname);
 
   useEffect(() => {
     const syncWidth = () => {
@@ -324,7 +325,7 @@ function Layout({ children }) {
             flex: 1,
             marginLeft: sidebarWidth,
             transition: 'margin-left 220ms ease',
-            padding: '0 32px 32px 32px', // Standardized page padding
+            padding: isLoadManagementRoute ? 0 : '0 32px 32px 32px',
             background: 'var(--bg-primary)',
             color: 'var(--text-primary)',
           }}
@@ -334,11 +335,11 @@ function Layout({ children }) {
           className="card-surface page-shell"
           data-layout-edit-mode={layoutEditMode ? 'true' : 'false'}
             style={{
-              minHeight: 'calc(100vh - 64px)',
+              minHeight: isLoadManagementRoute ? '100vh' : 'calc(100vh - 64px)',
               gridTemplateColumns: 'minmax(0, 1fr)',
-              background: 'var(--surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius)',
+              background: isLoadManagementRoute ? 'transparent' : 'var(--surface)',
+              border: isLoadManagementRoute ? 'none' : '1px solid var(--border-subtle)',
+              borderRadius: isLoadManagementRoute ? 0 : 'var(--radius)',
               color: 'var(--text-primary)',
             }}
         >

@@ -23,7 +23,12 @@ export default function FinancialSection({ enabled, laneData, onComplete }) {
   }
 
   return (
-    <form style={{ display: 'grid', gap: 12 }}>
+    <>
+      <div style={{ marginBottom: 16, background: '#f4f8ff', padding: 12, borderRadius: 6, color: '#234', fontSize: 15 }}>
+        <strong>Financials Section</strong><br />
+        Review and enter all financial details related to this load, including rates, accessorials, and margin calculations. Accurate financial data is critical for billing, profitability analysis, and customer transparency.
+      </div>
+      <form style={{ display: 'grid', gap: 12 }}>
       <label>
         Sell Rate (editable)
         <input type="number" value={sellRate} onChange={e => setSellRate(Number(e.target.value))} />
@@ -42,5 +47,6 @@ export default function FinancialSection({ enabled, laneData, onComplete }) {
       <button type="button" onClick={handleComplete} style={{ marginTop: 8, fontWeight: 600 }}>Mark Financials Complete</button>
       {isComplete && <div style={{ color: 'green', fontWeight: 600 }}>Financial section complete</div>}
     </form>
+    </>
   );
 }

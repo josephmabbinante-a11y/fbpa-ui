@@ -1,6 +1,26 @@
 import React, { useMemo } from 'react';
 import { formatLoadStatusLabel, normalizeLoadStatus } from '../../../utils/loadLifecycle';
 
+function stopRowClick(event) {
+  event.stopPropagation();
+}
+
+function renderProfileLink(label, href) {
+  if (!href) return label;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      onClick={stopRowClick}
+      style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+      title="Open profile in a new tab"
+    >
+      {label}
+    </a>
+  );
+}
+
 function formatCurrency(amount) {
   const n = Number(amount || 0);
   return `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
@@ -48,6 +68,12 @@ export default function LoadRow({ load, selected, onSelect, onContextMenuAction,
   const marketRate = Number(load.revenue || 0) + 650;
   const opportunityGap = marketRate - Number(load.revenue || 0);
   const marginBelowTarget = Number(load.marginPct || 0) < Number(load.targetMarginPct || 12);
+  const customerId = String(load?.customer?.id || '').trim();
+  const carrierId = String(load?.carrier?.id || '').trim();
+  const customerHref = customerId ? `/customers/${encodeURIComponent(customerId)}` : '';
+  const carrierHref = carrierId
+    ? `/carriers/profile/${encodeURIComponent(carrierId)}`
+    : (String(load?.carrier?.name || '').trim() ? `/carriers/profile/${encodeURIComponent(String(load.carrier.name).trim())}` : '');
 
   return (
     <>
@@ -90,8 +116,18 @@ export default function LoadRow({ load, selected, onSelect, onContextMenuAction,
             <span>{formatLoadStatusLabel(normalizedStatus)}</span>
           </span>
         </td>
-        <td style={{ padding: '0 10px' }}>{load.customer?.name || '—'}</td>
-        <td style={{ padding: '0 10px' }}>{load.carrier?.name || '—'}</td>
+        <td style={{ padding: '0 10px' }}>
+          <div>{load.customer?.name || '—'}</div>
+          <div style={{ fontSize: 11, opacity: 0.85 }}>
+            {customerId ? renderProfileLink(customerId, customerHref) : 'No customer ID'}
+          </div>
+        </td>
+        <td style={{ padding: '0 10px' }}>
+          <div>{load.carrier?.name || '—'}</div>
+          <div style={{ fontSize: 11, opacity: 0.85 }}>
+            {carrierId ? renderProfileLink(carrierId, carrierHref) : (carrierHref ? renderProfileLink('Open profile', carrierHref) : 'No carrier ID')}
+          </div>
+        </td>
         <td style={{ padding: '0 10px' }}>{load.origin?.city || '—'}{load.origin?.state ? `, ${load.origin.state}` : ''}</td>
         <td style={{ padding: '0 10px' }}>{load.destination?.city || '—'}{load.destination?.state ? `, ${load.destination.state}` : ''}</td>
         <td style={{ padding: '0 10px', textAlign: 'right' }}>{Number(load.miles || 0).toLocaleString()}</td>

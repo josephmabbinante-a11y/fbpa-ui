@@ -24,6 +24,12 @@ const loadSchema = new mongoose.Schema({
   updatedAtDb: { type: Date, default: Date.now },
 });
 
+loadSchema.index({ id: 1 }, { unique: true });
+loadSchema.index({ status: 1, updatedAtDb: -1 });
+loadSchema.index({ 'customer.id': 1 });
+loadSchema.index({ 'carrier.id': 1 });
+loadSchema.index({ updatedAt: -1 });
+
 // Location Schema
 const locationSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },
@@ -164,7 +170,7 @@ const exceptionSchema = new mongoose.Schema({
 
 const auditTrailSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },
-  entityType: { type: String, enum: ['invoice', 'exception', 'customer', 'carrier'], required: true },
+  entityType: { type: String, enum: ['invoice', 'exception', 'customer', 'carrier', 'load'], required: true },
   entityId: { type: String, required: true },
   action: { type: String, required: true },
   actor: { type: String, default: 'system' },
@@ -173,6 +179,8 @@ const auditTrailSchema = new mongoose.Schema({
   metadata: mongoose.Schema.Types.Mixed,
   createdAt: { type: Date, default: Date.now },
 });
+
+auditTrailSchema.index({ entityType: 1, entityId: 1, createdAt: -1 });
 
 const carrierRateLogSchema = new mongoose.Schema({
   id: { type: String, unique: true, required: true },

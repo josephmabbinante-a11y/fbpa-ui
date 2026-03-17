@@ -7,6 +7,7 @@ import { MultitenantProvider } from './contexts/MultitenantContext';
 import DemoGuide from './demo/DemoGuide';
 import Sidebar from './components/Sidebar';
 import Layout from './components/Layout';
+import GlobalCommandSearch from './components/GlobalCommandSearch';
 import LoginTest from './components/LoginTest';
 import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 import LoadStatusDemo from './components/LoadStatusDemo';
@@ -16,7 +17,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const CombinedPage = lazy(() => import('./pages/CombinedPage'));
 const InvoiceDetail = lazy(() => import('./pages/InvoiceDetail'));
 const ExceptionsUploads = lazy(() => import('./pages/ExceptionsUploads'));
-const Uploads = lazy(() => import('./pages/Uploads'));
 const ExceptionDrilldown = lazy(() => import('./pages/ExceptionDrilldown'));
 const Reports = lazy(() => import('./pages/Reports'));
 const ReportDetail = lazy(() => import('./pages/ReportDetail'));
@@ -38,21 +38,21 @@ const MaintenanceQueueProfile = lazy(() => import('./pages/MaintenanceQueueProfi
 const AssetManagement = lazy(() => import('./pages/AssetManagement'));
 const SystemStatus = lazy(() => import('./pages/SystemStatus'));
 const Login = lazy(() => import('./pages/Login'));
-const LoadBoard = lazy(() => import('./pages/LoadBoard'));
+const UnifiedLoadAuctionBoard = lazy(() => import('./pages/UnifiedLoadAuctionBoard'));
 const LoadManagement = lazy(() => import('./pages/LoadManagement'));
-const Shipments = lazy(() => import('./pages/Shipments'));
+const NewShipment = lazy(() => import('./pages/NewShipment'));
 const AR = lazy(() => import('./pages/AR'));
 const AP = lazy(() => import('./pages/AP'));
 const Aging = lazy(() => import('./pages/Aging'));
 const LaneIntelligence = lazy(() => import('./pages/LaneIntelligence'));
 const Carriers = lazy(() => import('./pages/Carriers'));
 const AddCarrier = lazy(() => import('./pages/AddCarrier'));
+const AddCustomer = lazy(() => import('./pages/AddCustomer'));
 const CarrierBulkImport = lazy(() => import('./pages/CarrierBulkImport'));
 const DriverTracker = lazy(() => import('./pages/DriverTracker'));
 const BuildLoad = lazy(() => import('./pages/BuildLoad'));
 const SearchLoads = lazy(() => import('./pages/SearchLoads'));
 const TruckloadRateCalculator = lazy(() => import('./pages/TruckloadRateCalculator'));
-const AuctionBoard = lazy(() => import('./pages/AuctionBoard'));
 const AuditIQ = lazy(() => import('./pages/AuditIQ'));
 const FraudPrevention = lazy(() => import('./pages/FraudPrevention'));
 const RiskScoring = lazy(() => import('./pages/RiskScoring'));
@@ -108,30 +108,36 @@ function AppRoutes() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/loads" element={<Loads />} />
-            <Route path="/build-load" element={<BuildLoad />} />
+            <Route path="/build-load" element={<Navigate to="/load-board/new-shipment" replace />} />
             <Route path="/search-loads" element={<SearchLoads />} />
-            <Route path="/loadcenter/load-builder" element={<BuildLoad />} />
+            <Route path="/loadcenter/load-builder" element={<Navigate to="/load-board/new-shipment" replace />} />
             <Route path="/loadcenter/search-loads" element={<SearchLoads />} />
-            <Route path="/loads/load-basics" element={<LoadManagement pageTitle="Load Management" activeTab="load-basics" />} />
-            <Route path="/loads/customer-info" element={<LoadManagement pageTitle="Load Management" activeTab="customer-info" />} />
-            <Route path="/loads/carrier-asset-info" element={<LoadManagement pageTitle="Load Management" activeTab="carrier-asset-info" />} />
-            <Route path="/loads/edit-stops" element={<LoadManagement pageTitle="Load Management" activeTab="edit-stops" />} />
-            <Route path="/loads/financials" element={<LoadManagement pageTitle="Load Management" activeTab="financials" />} />
-            <Route path="/loads/:loadId/load-basics" element={<LoadManagement pageTitle="Load Management" activeTab="load-basics" />} />
-            <Route path="/loads/:loadId/customer-info" element={<LoadManagement pageTitle="Load Management" activeTab="customer-info" />} />
-            <Route path="/loads/:loadId/carrier-asset-info" element={<LoadManagement pageTitle="Load Management" activeTab="carrier-asset-info" />} />
-            <Route path="/loads/:loadId/edit-stops" element={<LoadManagement pageTitle="Load Management" activeTab="edit-stops" />} />
-            <Route path="/loads/:loadId/financials" element={<LoadManagement pageTitle="Load Management" activeTab="financials" />} />
+            <Route path="/loads/load-basics" element={<LoadManagement pageTitle="New Shipment" activeTab="load-basics" />} />
+            <Route path="/loads/customer-info" element={<LoadManagement pageTitle="New Shipment" activeTab="customer-info" />} />
+            <Route path="/loads/carrier-asset-info" element={<LoadManagement pageTitle="New Shipment" activeTab="carrier-asset-info" />} />
+            <Route path="/loads/edit-stops" element={<LoadManagement pageTitle="New Shipment" activeTab="edit-stops" />} />
+            <Route path="/loads/financials" element={<LoadManagement pageTitle="New Shipment" activeTab="financials" />} />
+            {/* Template mode routes */}
+            <Route path="/loads/template/load-basics" element={<LoadManagement pageTitle="Create Load Template" activeTab="load-basics" mode="template" />} />
+            <Route path="/loads/template/customer-info" element={<LoadManagement pageTitle="Create Load Template" activeTab="customer-info" mode="template" />} />
+            <Route path="/loads/template/carrier-asset-info" element={<LoadManagement pageTitle="Create Load Template" activeTab="carrier-asset-info" mode="template" />} />
+            <Route path="/loads/template/edit-stops" element={<LoadManagement pageTitle="Create Load Template" activeTab="edit-stops" mode="template" />} />
+            <Route path="/loads/template/financials" element={<LoadManagement pageTitle="Create Load Template" activeTab="financials" mode="template" />} />
+            <Route path="/loads/:loadId/load-basics" element={<LoadManagement pageTitle="New Shipment" activeTab="load-basics" />} />
+            <Route path="/loads/:loadId/customer-info" element={<LoadManagement pageTitle="New Shipment" activeTab="customer-info" />} />
+            <Route path="/loads/:loadId/carrier-asset-info" element={<LoadManagement pageTitle="New Shipment" activeTab="carrier-asset-info" />} />
+            <Route path="/loads/:loadId/edit-stops" element={<LoadManagement pageTitle="New Shipment" activeTab="edit-stops" />} />
+            <Route path="/loads/:loadId/financials" element={<LoadManagement pageTitle="New Shipment" activeTab="financials" />} />
             <Route path="/loadcenter" element={<LoadCenter />} />
             <Route path="/loadcenter/dispatch-screen" element={<DispatchScreen />} />
             <Route path="/customers" element={<Customers />} />
+            <Route path="/customers/new" element={<AddCustomer />} />
             <Route path="/customers/:customerId" element={<CustomerProfile />} />
             <Route path="/locations" element={<Locations />} />
             <Route path="/locations/new" element={<AddLocation />} />
             <Route path="/invoices" element={<CombinedPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />
             <Route path="/exceptions" element={<ExceptionsUploads />} />
-            <Route path="/uploads" element={<Uploads />} />
             <Route path="/exceptions/:id" element={<ExceptionDrilldown />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/:reportId" element={<ReportDetail />} />
@@ -139,8 +145,10 @@ function AppRoutes() {
             <Route path="/rate-logic" element={<RateLogicTool />} />
             <Route path="/system-status" element={<SystemStatus />} />
             <Route path="/smoke-test" element={<LoginTest />} />
-            <Route path="/load-board" element={<LoadBoard />} />
-            <Route path="/shipments" element={<Shipments />} />
+            <Route path="/load-board" element={<UnifiedLoadAuctionBoard />} />
+            <Route path="/load-board/new-shipment" element={<NewShipment />} />
+            <Route path="/load-board/my-activity" element={<UnifiedLoadAuctionBoard />} />
+            <Route path="/load-board/connections" element={<UnifiedLoadAuctionBoard />} />
             <Route path="/fleet" element={<FleetDashboard />} />
             <Route path="/fleet-dashboard" element={<FleetDashboard />} />
             <Route path="/finance/ar" element={<AR />} />
@@ -163,7 +171,7 @@ function AppRoutes() {
             <Route path="/route-optimization" element={<RouteOptimization />} />
             <Route path="/fsm-demo" element={<LoadStatusDemo />} />
             <Route path="/rate-logic-tool" element={<RateLogicTool />} />
-            <Route path="/auction-board" element={<AuctionBoard />} />
+            <Route path="/auction-board" element={<Navigate to="/load-board" replace />} />
             <Route path="/exceptions-uploads" element={<ExceptionsUploads />} />
             <Route path="/tenant-admin" element={<TenantAdmin />} />
           </Routes>
@@ -212,6 +220,7 @@ function App() {
             <AuthProvider>
               <BrowserRouter>
                 <AppRoutes />
+                <GlobalCommandSearch />
                 <MockModeBadge />
               </BrowserRouter>
             </AuthProvider>

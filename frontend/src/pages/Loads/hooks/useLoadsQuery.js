@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { getLoadDetail, getLoadEvents, getLoadRiskSignals, listLoads } from '../../../api/loadsClient';
 import { normalizeLoadStatus } from '../../../utils/loadLifecycle';
 
+const LOAD_LIST_POLL_MS = 12000;
+
 function toCountdownMinutes(value) {
   if (!value) return null;
   const timestamp = new Date(value).getTime();
@@ -113,6 +115,17 @@ export default function useLoadsQuery(filters, selectedId) {
   useEffect(() => {
     refreshList();
   }, [refreshList]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshList();
+        if (selectedId) refreshDetail(selectedId);
+      }
+    }, LOAD_LIST_POLL_MS);
+
+    return () => window.clearInterval(timer);
+  }, [refreshList, refreshDetail, selectedId]);
 
   useEffect(() => {
     refreshDetail(selectedId);

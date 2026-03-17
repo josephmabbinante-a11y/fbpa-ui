@@ -69,14 +69,11 @@ function Sidebar() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '🏠', path: '/' },
     { id: 'invoices', label: 'Invoices', icon: '🧾', path: '/invoices' },
-    { id: 'uploads', label: 'Uploads', icon: '⬆️', path: '/uploads' },
     { id: 'exceptions', label: 'Exceptions', icon: '❗', path: '/exceptions' },
     { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: '🚛', path: '/fleet' },
     {
       id: 'load-center', label: 'Load Center', icon: '🚚', dropdown: true, items: [
-        { id: 'load-board', label: 'Load Board', icon: '📦', path: '/load-board' },
-        { id: 'auction-board', label: 'Auction Board', icon: '🏷️', path: '/auction-board' },
-        { id: 'shipments', label: 'Shipments', icon: '🚢', path: '/shipments' },
+        { id: 'freight-exchange', label: 'Freight Exchange', icon: '🚛', path: '/load-board' },
         { id: 'dispatch', label: 'Dispatch', icon: '🛣️', path: '/loadcenter/dispatch-screen' },
       ]
     },
@@ -102,6 +99,7 @@ function Sidebar() {
       id: 'crm', label: 'CRM', icon: '👥', dropdown: true, items: [
         { id: 'carriers', label: 'Carriers', icon: 'C', path: '/carriers' },
         { id: 'customers', label: 'Customers', icon: 'CU', path: '/customers' },
+        { id: 'locations', label: 'Locations', icon: '📍', path: '/locations' },
       ]
     },
     {

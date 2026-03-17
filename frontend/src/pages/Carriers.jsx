@@ -401,7 +401,7 @@ export default function Carriers() {
   const openCarrierContextMenu = (carrier, x, y) => {
     if (!carrier) return;
     const menuWidth = 220;
-    const menuHeight = 132;
+    const menuHeight = 320;
     const viewportWidth = window.innerWidth || 1280;
     const viewportHeight = window.innerHeight || 720;
 
@@ -877,6 +877,47 @@ export default function Carriers() {
             style={{ ...inputStyle, minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700 }}
           >
             Open AP Exposure
+          </button>
+          <hr style={{ border: 'none', borderTop: `1px solid ${t.border}`, margin: '2px 0' }} />
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/carriers/new');
+              setRowContextMenu(null);
+            }}
+            style={{ ...inputStyle, minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700 }}
+          >
+            + Add Carrier
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/carriers/import');
+              setRowContextMenu(null);
+            }}
+            style={{ ...inputStyle, minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700 }}
+          >
+            Bulk Import
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              loadCarriers();
+              setRowContextMenu(null);
+            }}
+            style={{ ...inputStyle, minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700 }}
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setRowContextMenu(null);
+              runPurgeCarriers();
+            }}
+            style={{ ...inputStyle, minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, color: t.error, borderColor: t.error }}
+          >
+            Purge Carrier List
           </button>
         </div>
       )}

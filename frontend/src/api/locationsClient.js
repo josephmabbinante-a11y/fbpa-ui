@@ -1,4 +1,5 @@
 import { mockLocations } from '../mock/mockLocations';
+import { getAccessToken } from '../utils/authToken';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
@@ -46,11 +47,13 @@ let mockStore = buildMockLocations();
 
 async function safeFetch(path, options) {
   try {
+    const token = getAccessToken();
     const res = await fetch(apiUrl(path), {
       ...(options || {}),
       headers: {
         'Content-Type': 'application/json',
         ...(options?.headers || {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
     });
 
@@ -121,4 +124,27 @@ export async function createLocation(payload = {}) {
   });
   if (result?.networkOffline) return createLocation(payload);
   return result;
+}
+
+export async function getLocation(id) {
+  if (!id) return { error: 'Location id is required' };
+  if (shouldUseMockLocations()) {
+    const found = mockStore.find((loc) => loc.id === id);
+    return found || { error: 'Not found' };
+  }
+  return safeFetch(`/api/locations/${encodeURIComponent(id)}`);
+}
+
+export async function updateLocation(id, payload = {}) {
+  if (!id) return { error: 'Location id is required' };
+  if (shouldUseMockLocations()) {
+    const idx = mockStore.findIndex((loc) => loc.id === id);
+    if (idx === -1) return { error: 'Not found' };
+    mockStore[idx] = { ...mockStore[idx], ...payload, updatedAt: new Date().toISOString() };
+    return mockStore[idx];
+  }
+  return safeFetch(`/api/locations/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
 }

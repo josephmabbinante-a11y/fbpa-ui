@@ -78,6 +78,37 @@ export default function Customers() {
   // Contact modal state
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Right-click context menu state
+  const [rowContextMenu, setRowContextMenu] = useState(null);
+
+  const openCustomerContextMenu = (customer, x, y) => {
+    if (!customer) return;
+    const menuWidth = 240;
+    const menuHeight = 260;
+    const vw = window.innerWidth || 1280;
+    const vh = window.innerHeight || 720;
+    const clampedX = Math.max(8, Math.min(x, vw - menuWidth - 8));
+    const clampedY = Math.max(8, Math.min(y, vh - menuHeight - 8));
+    setRowContextMenu({ customer, x: clampedX, y: clampedY });
+  };
+
+  useEffect(() => {
+    if (!rowContextMenu) return undefined;
+    const handlePointerDown = (event) => {
+      if (event.target?.closest?.('[data-customer-context-menu="true"]')) return;
+      setRowContextMenu(null);
+    };
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') setRowContextMenu(null);
+    };
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [rowContextMenu]);
+
   const handleSendMessage = async ({ message, customer, invoice, exception }) => {
     return await sendCustomerMessage({ message, customer, invoice, exception });
   };
@@ -133,6 +164,14 @@ export default function Customers() {
             >
               Open Profile
             </button>
+            <button
+              type="button"
+              onClick={() => navigate('/customers/new')}
+              className="kpi-card"
+              style={{ cursor: 'pointer', fontWeight: 700, borderColor: t.accent, background: t.accent, color: t.surface }}
+            >
+              + Add Customer
+            </button>
           </div>
         </header>
 
@@ -184,7 +223,16 @@ export default function Customers() {
                 {renderedCustomers.map((customer) => {
                   const isActive = selected === customer.id;
                   return (
-                    <tr key={customer.id} style={{ background: isActive ? t.surfaceStrong : 'transparent' }}>
+                    <tr
+                      key={customer.id}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        setSelected(customer.id);
+                        openCustomerContextMenu(customer, event.clientX, event.clientY);
+                      }}
+                      title="Right-click for customer shortcuts"
+                      style={{ background: isActive ? t.surfaceStrong : 'transparent', cursor: 'pointer' }}
+                    >
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 600 }}>{customer.name || '—'}</td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.company || '—'}</td>
                       <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.email || '—'}</td>
@@ -284,6 +332,65 @@ export default function Customers() {
           invoice={null}
           exception={null}
         />
+
+        {/* Right-click context menu */}
+        {rowContextMenu?.customer && (
+          <div
+            role="menu"
+            data-customer-context-menu="true"
+            style={{
+              position: 'fixed',
+              top: rowContextMenu.y,
+              left: rowContextMenu.x,
+              zIndex: 1200,
+              minWidth: 240,
+              borderRadius: 10,
+              border: `1px solid ${t.border}`,
+              background: t.surface,
+              boxShadow: '0 14px 30px rgba(0,0,0,0.3)',
+              padding: 8,
+              display: 'grid',
+              gap: 6,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => { setSelected(rowContextMenu.customer.id); setRowContextMenu(null); }}
+              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
+            >
+              Preview Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => { navigate(`/customers/${encodeURIComponent(rowContextMenu.customer.id)}`); setRowContextMenu(null); }}
+              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
+            >
+              Open Customer Profile
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelected(rowContextMenu.customer.id); setModalOpen(true); setRowContextMenu(null); }}
+              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
+            >
+              Contact Customer
+            </button>
+            <hr style={{ border: 'none', borderTop: `1px solid ${t.border}`, margin: '2px 0' }} />
+            <button
+              type="button"
+              onClick={() => { navigate('/customers/new'); setRowContextMenu(null); }}
+              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
+            >
+              + Add Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => { loadCustomers(); setRowContextMenu(null); }}
+              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
+            >
+              Refresh
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

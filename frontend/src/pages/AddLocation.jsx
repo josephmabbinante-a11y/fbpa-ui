@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createLocation, listLocations } from '../api/locationsClient';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import PlaceSearchMap from '../components/PlaceSearchMap';
 
 export default function AddLocation() {
   const { theme } = useTheme();
@@ -200,11 +201,25 @@ export default function AddLocation() {
         </div>
       ) : null}
 
+      <PlaceSearchMap
+        label="Location Search & Map"
+        placeholder="Search address, business, or place name…"
+        onPlaceSelected={useCallback((place) => {
+          setForm((prev) => ({
+            ...prev,
+            name: place.name || prev.name,
+            address: place.formattedAddress || prev.address,
+            telephone: prev.telephone,
+          }));
+          setMessage('Address prefilled from map search.');
+        }, [])}
+      />
+
       <section style={sectionStyle}>
-        <div style={sectionHeaderStyle}>Location Search</div>
+        <div style={sectionHeaderStyle}>Existing Location Search</div>
         <div style={sectionBodyStyle}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={labelStyle}>Search for a Location</span>
+            <span style={labelStyle}>Search for an existing Location</span>
             <input
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}

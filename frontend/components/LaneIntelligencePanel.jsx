@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { updateLoad } from '../src/api/loadsClient';
 import { uploadInvoiceImage } from '../src/api/client';
 
-export default function LaneIntelligencePanel({ stops, carrierAssigned, onComplete, loadId }) {
+export default function LaneIntelligencePanel({ load, setLoad, onComplete }) {
   const [delivered, setDelivered] = useState(false);
   const [podFile, setPodFile] = useState(null);
   const [status, setStatus] = useState('');
@@ -10,18 +10,19 @@ export default function LaneIntelligencePanel({ stops, carrierAssigned, onComple
   const [loading, setLoading] = useState(false);
 
   const handleDelivery = async () => {
-    if (!loadId) {
+    if (!load.id) {
       setError('Missing load ID');
       return;
     }
     setLoading(true);
     setError('');
     setStatus('');
-    const res = await updateLoad(loadId, { status: 'DELIVERED', delivered: true });
+    const res = await updateLoad(load.id, { status: 'DELIVERED', delivered: true });
     if (res?.error) setError(res.error);
     else {
       setDelivered(true);
       setStatus('Delivery marked complete!');
+      setLoad(prev => ({ ...prev, status: 'DELIVERED' }));
     }
     setLoading(false);
   };
@@ -38,14 +39,14 @@ export default function LaneIntelligencePanel({ stops, carrierAssigned, onComple
       setError('Select a file to upload.');
       return;
     }
-    if (!loadId) {
+    if (!load.id) {
       setError('Missing load ID');
       return;
     }
     setLoading(true);
     setError('');
     setStatus('');
-    const res = await uploadInvoiceImage({ file: podFile, invoiceId: loadId, notes: 'POD' });
+    const res = await uploadInvoiceImage({ file: podFile, invoiceId: load.id, notes: 'POD' });
     if (res?.error) {
       setError(res.error);
       setLoading(false);
@@ -54,9 +55,12 @@ export default function LaneIntelligencePanel({ stops, carrierAssigned, onComple
     setStatus('POD uploaded!');
     setPodFile(null);
     // Optionally mark as delivered after POD upload
-    const deliveredRes = await updateLoad(loadId, { status: 'DELIVERED', delivered: true, pod_received: true });
+    const deliveredRes = await updateLoad(load.id, { status: 'DELIVERED', delivered: true, pod_received: true });
     if (deliveredRes?.error) setError(deliveredRes.error);
-    else setDelivered(true);
+    else {
+      setDelivered(true);
+      setLoad(prev => ({ ...prev, status: 'DELIVERED', pod_received: true }));
+    }
     setLoading(false);
   };
 
@@ -78,7 +82,7 @@ export default function LaneIntelligencePanel({ stops, carrierAssigned, onComple
       </div>
       {status && <div style={{ color: 'green', marginBottom: 8 }}>{status}</div>}
       {error && <div style={{ color: 'red', marginBottom: 8 }}>{error}</div>}
-      <button onClick={onComplete}>Mark Lane Intelligence Complete</button>
+      <button onClick={() => { setLoad(prev => ({ ...prev, lane: { ...prev.lane, miles: prev.lane?.miles || 0 } })); onComplete(); }}>Mark Lane Intelligence Complete</button>
     </div>
   );
 }

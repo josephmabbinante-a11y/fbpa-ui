@@ -38,6 +38,9 @@ export default function LoadBoard() {
   });
   const [selectedLoadId, setSelectedLoadId] = useState('');
   const [selectedLoadIds, setSelectedLoadIds] = useState([]);
+  const [detailPopover, setDetailPopover] = useState(null);
+  const [rowContextMenu, setRowContextMenu] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState('');
   const [availableSort, setAvailableSort] = useState({ key: 'updatedAt', dir: 'desc' });
   const [botWorking, setBotWorking] = useState('');
   const [showViewControls, setShowViewControls] = useState(false);
@@ -50,10 +53,178 @@ export default function LoadBoard() {
     smartBidBlast: false,
   });
   const [botActivityByLoad, setBotActivityByLoad] = useState({});
+  const copyFeedbackTimerRef = useRef(null);
 
   const fontScale = Number.isFinite(Number(settings?.fontScale)) ? Number(settings.fontScale) : 1;
   const fontWeight = Number.isFinite(Number(settings?.fontWeight)) ? Number(settings.fontWeight) : 600;
   const effectsStrength = Number.isFinite(Number(settings?.effectsStrength)) ? Number(settings.effectsStrength) : 1;
+
+  const interactiveTextStyle = {
+    textDecoration: 'underline',
+    textUnderlineOffset: 2,
+    textDecorationThickness: 1,
+    cursor: 'pointer',
+  };
+
+  const buildFieldDetails = (load, field) => {
+    const origin = load.origin?.city || 'Unknown';
+    const originState = load.origin?.state ? `, ${load.origin.state}` : '';
+    const destination = load.destination?.city || 'Unknown';
+    const destinationState = load.destination?.state ? `, ${load.destination.state}` : '';
+
+    if (field === 'id') {
+      return {
+        title: `Load ${load.id || 'Unknown'}`,
+        lines: [
+          `Status: ${String(load.status || 'Unknown').replace('_', ' ')}`,
+          `Margin: ${Number(load.marginPct || 0).toFixed(1)}%`,
+          `Updated: ${new Date(load.updatedAt || load.createdAt || Date.now()).toLocaleString()}`,
+        ],
+        copyValue: String(load.id || ''),
+      };
+    }
+
+    if (field === 'customer') {
+      return {
+        title: `Customer: ${load.customer?.name || 'Not set'}`,
+        lines: [
+          `Load: ${load.id || 'Unknown'}`,
+          `Carrier: ${load.carrier?.name || 'Unassigned'}`,
+          `Lane: ${origin}${originState} to ${destination}${destinationState}`,
+        ],
+        copyValue: String(load.customer?.name || ''),
+      };
+    }
+
+    if (field === 'carrier') {
+      return {
+        title: `Carrier: ${load.carrier?.name || 'Unassigned'}`,
+        lines: [
+          `Load: ${load.id || 'Unknown'}`,
+          `Customer: ${load.customer?.name || 'Not set'}`,
+          `Status: ${String(load.status || 'Unknown').replace('_', ' ')}`,
+        ],
+        copyValue: String(load.carrier?.name || ''),
+      };
+    }
+
+    if (field === 'lane') {
+      return {
+        title: `${origin}${originState} to ${destination}${destinationState}`,
+        lines: [
+          `Load: ${load.id || 'Unknown'}`,
+          `Miles: ${Number(load.miles || 0).toLocaleString()}`,
+          `Equipment: ${String(load.equipment || 'Not set').toUpperCase()}`,
+        ],
+        copyValue: `${origin}${originState} -> ${destination}${destinationState}`,
+      };
+    }
+
+    if (field === 'status') {
+      return {
+        title: `Status: ${String(load.status || 'Unknown').replace('_', ' ')}`,
+        lines: [
+          `Load: ${load.id || 'Unknown'}`,
+          `Customer: ${load.customer?.name || 'Not set'}`,
+          `Margin: ${Number(load.marginPct || 0).toFixed(1)}%`,
+        ],
+        copyValue: String(load.status || '').replace('_', ' '),
+      };
+    }
+
+    return {
+      title: 'Details',
+      lines: [`Load: ${load.id || 'Unknown'}`],
+      copyValue: '',
+    };
+  };
+
+  const copyToClipboard = async (text) => {
+    const value = String(text || '').trim();
+    if (!value) return;
+
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(value);
+      setCopyFeedback('Copied to clipboard');
+    } catch {
+      setCopyFeedback('Clipboard blocked');
+    }
+
+    window.clearTimeout(copyFeedbackTimerRef.current);
+    copyFeedbackTimerRef.current = window.setTimeout(() => setCopyFeedback(''), 1500);
+  };
+
+  useEffect(() => () => window.clearTimeout(copyFeedbackTimerRef.current), []);
+
+  const toggleFieldDetails = (event, load, field) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const details = buildFieldDetails(load, field);
+    const key = `${load._rowId}-${field}`;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const next = {
+      key,
+      x: bounds.left,
+      y: bounds.bottom + 6,
+      load,
+      field,
+      details,
+    };
+
+    setSelectedLoadId(load._rowId);
+    setRowContextMenu(null);
+    setDetailPopover((current) => (current?.key === key ? null : next));
+  };
+
+  const openFieldContextMenu = (event, load, field) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setSelectedLoadId(load._rowId);
+    setDetailPopover(null);
+    setRowContextMenu({
+      x: event.clientX,
+      y: event.clientY,
+      load,
+      field,
+      details: buildFieldDetails(load, field),
+    });
+  };
+
+  useEffect(() => {
+    if (!detailPopover && !rowContextMenu) return undefined;
+
+    const closeOverlays = (event) => {
+      if (event?.target?.closest?.('[data-loadboard-overlay="true"]')) return;
+      if (event?.target?.closest?.('[data-loadboard-trigger="true"]')) return;
+      setDetailPopover(null);
+      setRowContextMenu(null);
+    };
+
+    const closeOnScroll = () => {
+      setDetailPopover(null);
+      setRowContextMenu(null);
+    };
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setDetailPopover(null);
+        setRowContextMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', closeOverlays);
+    window.addEventListener('scroll', closeOnScroll, true);
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', closeOverlays);
+      window.removeEventListener('scroll', closeOnScroll, true);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [detailPopover, rowContextMenu]);
 
   const tabToApiTab = (tab) => {
     if (tab === 'posted') return 'my';
@@ -707,9 +878,9 @@ export default function LoadBoard() {
             <strong style={{ fontSize: 13 }}>Load Actions</strong>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button type="button" style={primaryBtn} onClick={runCreateNewLoad} disabled={Boolean(working)}>
-                {working === 'create-load' ? 'Creating...' : 'Create New Load'}
+                {working === 'create-load' ? 'Creating...' : '+ New Shipment'}
               </button>
-              <button type="button" style={ghostBtn} onClick={() => navigate('/build-load')}>
+              <button type="button" style={ghostBtn} onClick={() => navigate('/load-board/new-shipment')}>
                 Manage Templates
               </button>
             </div>
@@ -962,6 +1133,9 @@ export default function LoadBoard() {
             {/* Text size control for table/excel elements */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 2 }}>
               <div style={{ fontSize: 12, color: t.textSecondary }}>{sortedAvailableLoads.length} rows</div>
+              <div style={{ fontSize: 11, color: t.textSecondary }}>
+                Underlined values are clickable. Click to toggle details, right-click for menu, and scroll to dismiss.
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 11, color: t.textSecondary }}>Text size</span>
                 <input
@@ -1033,18 +1207,101 @@ export default function LoadBoard() {
                             aria-label={`Select ${load.id}`}
                           />
                         </td>
-                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>{load.id}</td>
-                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>{load.customer?.name || '—'}</td>
-                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>{load.carrier?.name || '—'}</td>
                         <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
-                          {(load.origin?.city || '—')}
-                          {' → '}
-                          {(load.destination?.city || '—')}
+                          <span
+                            data-loadboard-trigger="true"
+                            role="button"
+                            tabIndex={0}
+                            style={interactiveTextStyle}
+                            onClick={(event) => toggleFieldDetails(event, load, 'id')}
+                            onContextMenu={(event) => openFieldContextMenu(event, load, 'id')}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                toggleFieldDetails(event, load, 'id');
+                              }
+                            }}
+                            title="Click for details, right-click for actions"
+                          >
+                            {load.id}
+                          </span>
+                        </td>
+                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
+                          <span
+                            data-loadboard-trigger="true"
+                            role="button"
+                            tabIndex={0}
+                            style={interactiveTextStyle}
+                            onClick={(event) => toggleFieldDetails(event, load, 'customer')}
+                            onContextMenu={(event) => openFieldContextMenu(event, load, 'customer')}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                toggleFieldDetails(event, load, 'customer');
+                              }
+                            }}
+                            title="Click for details, right-click for actions"
+                          >
+                            {load.customer?.name || '—'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
+                          <span
+                            data-loadboard-trigger="true"
+                            role="button"
+                            tabIndex={0}
+                            style={interactiveTextStyle}
+                            onClick={(event) => toggleFieldDetails(event, load, 'carrier')}
+                            onContextMenu={(event) => openFieldContextMenu(event, load, 'carrier')}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                toggleFieldDetails(event, load, 'carrier');
+                              }
+                            }}
+                            title="Click for details, right-click for actions"
+                          >
+                            {load.carrier?.name || '—'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
+                          <span
+                            data-loadboard-trigger="true"
+                            role="button"
+                            tabIndex={0}
+                            style={interactiveTextStyle}
+                            onClick={(event) => toggleFieldDetails(event, load, 'lane')}
+                            onContextMenu={(event) => openFieldContextMenu(event, load, 'lane')}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                toggleFieldDetails(event, load, 'lane');
+                              }
+                            }}
+                            title="Click for details, right-click for actions"
+                          >
+                            {(load.origin?.city || '—')}
+                            {' -> '}
+                            {(load.destination?.city || '—')}
+                          </span>
                         </td>
                         <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>
                           {Number(load.marginPct || 0).toFixed(1)}%
                         </td>
-                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>{String(load.status || '').replace('_', ' ')}</td>
+                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
+                          <span
+                            data-loadboard-trigger="true"
+                            role="button"
+                            tabIndex={0}
+                            style={interactiveTextStyle}
+                            onClick={(event) => toggleFieldDetails(event, load, 'status')}
+                            onContextMenu={(event) => openFieldContextMenu(event, load, 'status')}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                toggleFieldDetails(event, load, 'status');
+                              }
+                            }}
+                            title="Click for details, right-click for actions"
+                          >
+                            {String(load.status || '').replace('_', ' ')}
+                          </span>
+                        </td>
                         <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>
                           <button
                             type="button"
@@ -1141,6 +1398,144 @@ export default function LoadBoard() {
           </div>
         )}
       </div>
+
+      {copyFeedback && (
+        <div
+          data-loadboard-overlay="true"
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 16,
+            zIndex: 1100,
+            border: `1px solid ${t.border}`,
+            background: t.surface,
+            color: t.text,
+            borderRadius: 8,
+            padding: '8px 10px',
+            fontSize: 12,
+            boxShadow: '0 8px 22px rgba(0,0,0,0.22)',
+          }}
+        >
+          {copyFeedback}
+        </div>
+      )}
+
+      {detailPopover && (
+        <div
+          data-loadboard-overlay="true"
+          style={{
+            position: 'fixed',
+            left: detailPopover.x,
+            top: detailPopover.y,
+            zIndex: 1050,
+            width: 280,
+            maxWidth: 'calc(100vw - 16px)',
+            border: `1px solid ${t.border}`,
+            borderRadius: 10,
+            background: t.surface,
+            color: t.text,
+            boxShadow: '0 12px 30px rgba(0,0,0,0.24)',
+            padding: 10,
+            display: 'grid',
+            gap: 8,
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+            <strong style={{ fontSize: 12 }}>{detailPopover.details.title}</strong>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {detailPopover.details.copyValue && (
+                <button
+                  type="button"
+                  style={{ ...ghostBtn, fontSize: 10, padding: '4px 6px' }}
+                  onClick={() => copyToClipboard(detailPopover.details.copyValue)}
+                >
+                  Clipboard
+                </button>
+              )}
+              <button
+                type="button"
+                style={{ ...ghostBtn, fontSize: 10, padding: '4px 6px' }}
+                onClick={() => setDetailPopover(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          {detailPopover.details.lines.map((line) => (
+            <div key={line} style={{ fontSize: 11, color: t.textSecondary }}>{line}</div>
+          ))}
+          <div style={{ fontSize: 10, color: t.textSecondary }}>Click the underlined text again or scroll away to hide.</div>
+        </div>
+      )}
+
+      {rowContextMenu && (
+        <div
+          data-loadboard-overlay="true"
+          style={{
+            position: 'fixed',
+            left: rowContextMenu.x,
+            top: rowContextMenu.y,
+            zIndex: 1060,
+            width: 220,
+            border: `1px solid ${t.border}`,
+            borderRadius: 10,
+            background: t.surface,
+            color: t.text,
+            boxShadow: '0 12px 28px rgba(0,0,0,0.25)',
+            padding: 6,
+            display: 'grid',
+            gap: 4,
+          }}
+        >
+          <div style={{ fontSize: 11, color: t.textSecondary, padding: '4px 6px', borderBottom: `1px solid ${t.border}` }}>
+            {rowContextMenu.details.title}
+          </div>
+          <button
+            type="button"
+            style={{ ...ghostBtn, textAlign: 'left', fontSize: 11, padding: '6px 8px' }}
+            onClick={() => {
+              setDetailPopover({
+                key: `${rowContextMenu.load._rowId}-${rowContextMenu.field}`,
+                x: rowContextMenu.x,
+                y: rowContextMenu.y + 8,
+                load: rowContextMenu.load,
+                field: rowContextMenu.field,
+                details: rowContextMenu.details,
+              });
+              setRowContextMenu(null);
+            }}
+          >
+            Toggle Details
+          </button>
+          <button
+            type="button"
+            style={{ ...ghostBtn, textAlign: 'left', fontSize: 11, padding: '6px 8px' }}
+            onClick={() => {
+              copyToClipboard(rowContextMenu.details.copyValue || rowContextMenu.load.id);
+              setRowContextMenu(null);
+            }}
+          >
+            Copy Value
+          </button>
+          <button
+            type="button"
+            style={{ ...ghostBtn, textAlign: 'left', fontSize: 11, padding: '6px 8px' }}
+            onClick={() => {
+              navigate(`/loads/${encodeURIComponent(rowContextMenu.load.id)}/load-basics`);
+              setRowContextMenu(null);
+            }}
+          >
+            Open Load
+          </button>
+          <button
+            type="button"
+            style={{ ...ghostBtn, textAlign: 'left', fontSize: 11, padding: '6px 8px' }}
+            onClick={() => setRowContextMenu(null)}
+          >
+            Close Menu
+          </button>
+        </div>
+      )}
     </div>
   );
 }

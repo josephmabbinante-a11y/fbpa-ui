@@ -63,14 +63,20 @@ export default function StopsSection({ onComplete, setStopsData }) {
   }
 
   return (
-    <div>
-      {stops.map((stop, idx) => (
-        <div key={idx} draggable onDragStart={e => handleDragStart(e, idx)} onDrop={e => handleDrop(e, idx)} onDragOver={e => e.preventDefault()}>
-          <StopCard stop={stop} onChange={newStop => handleStopChange(idx, newStop)} onRemove={() => handleRemoveStop(idx)} />
-        </div>
-      ))}
-      <button type="button" onClick={handleAddStop} style={{ marginTop: 8, fontWeight: 600 }}>+ Add Stop</button>
-      {isComplete && <div style={{ color: 'green', fontWeight: 600, marginTop: 8 }}>Stops section complete</div>}
-    </div>
+    <>
+      <div style={{ marginBottom: 16, background: '#f4f8ff', padding: 12, borderRadius: 6, color: '#234', fontSize: 15 }}>
+        <strong>Stops Section</strong><br />
+        List all pickup, delivery, and intermediate stops for this load. Include addresses, dates, appointment times, and any special instructions for each stop. Complete and precise stop information helps ensure efficient routing and on-time performance.
+      </div>
+      <div>
+        {stops.map((stop, idx) => (
+          <div key={idx} draggable onDragStart={e => handleDragStart(e, idx)} onDrop={e => handleDrop(e, idx)} onDragOver={e => e.preventDefault()}>
+            <StopCard stop={stop} onChange={newStop => handleStopChange(idx, newStop)} onRemove={() => handleRemoveStop(idx)} />
+          </div>
+        ))}
+        <button type="button" onClick={handleAddStop} style={{ marginTop: 8, fontWeight: 600 }}>+ Add Stop</button>
+        {isComplete && <div style={{ color: 'green', fontWeight: 600, marginTop: 8 }}>Stops section complete</div>}
+      </div>
+    </>
   );
 }

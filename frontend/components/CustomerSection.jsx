@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getCustomers, createCustomer } from '../src/api/client';
 
-export default function CustomerSection({ onComplete }) {
+export default function CustomerSection({ load, setLoad, onComplete }) {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -28,6 +28,9 @@ export default function CustomerSection({ onComplete }) {
     setError('');
     const found = customers.find(c => (c.id || c._id) === id);
     setSelectedCustomer(found || null);
+    if (found) {
+      setLoad(prev => ({ ...prev, customer: found }));
+    }
   };
 
   const handleComplete = () => {
@@ -35,7 +38,8 @@ export default function CustomerSection({ onComplete }) {
       setError('Please select a customer.');
       return;
     }
-    onComplete(selectedCustomer);
+    setLoad(prev => ({ ...prev, customer: selectedCustomer }));
+    onComplete();
   };
 
   const handleInput = (e) => {
@@ -56,6 +60,7 @@ export default function CustomerSection({ onComplete }) {
       setForm({ name: '', email: '', phone: '' });
       setSelectedCustomerId(res.id || res._id);
       setSelectedCustomer(res);
+      setLoad(prev => ({ ...prev, customer: res }));
     }
     setCreating(false);
   };

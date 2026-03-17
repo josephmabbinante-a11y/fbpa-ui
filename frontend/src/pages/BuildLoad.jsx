@@ -1,28 +1,14 @@
 // Placeholder components for missing sections
-function StickyLoadHeader() {
-  return <div style={{ padding: 12, color: 'var(--warning)', fontWeight: 600 }}>StickyLoadHeader component placeholder</div>;
-}
-function CustomerSection() {
-  return <div style={{ padding: 12, color: 'var(--warning)' }}>CustomerSection component placeholder</div>;
-}
-function StopsSection() {
-  return <div style={{ padding: 12, color: 'var(--warning)' }}>StopsSection component placeholder</div>;
-}
-function LaneIntelligenceSection() {
-  return <div style={{ padding: 12, color: 'var(--info)' }}>LaneIntelligenceSection component placeholder</div>;
-}
-function CarrierSection() {
-  return <div style={{ padding: 12, color: 'var(--warning)' }}>CarrierSection component placeholder</div>;
-}
-function FinancialSection() {
-  return <div style={{ padding: 12, color: 'var(--info)' }}>FinancialSection component placeholder</div>;
-}
-function DocumentsSection() {
-  return <div style={{ padding: 12, color: 'var(--info)' }}>DocumentsSection component placeholder</div>;
-}
-function ActivityLogPanel() {
-  return <div style={{ padding: 12, color: 'var(--info)' }}>ActivityLogPanel component placeholder</div>;
-}
+import StickyLoadHeader from '../../components/StickyLoadHeader';
+import CustomerSection from '../../components/CustomerSection';
+import StopsSection from '../../components/StopsSection';
+import LaneIntelligencePanel from '../../components/LaneIntelligencePanel';
+import CarrierSection from '../../components/CarrierSection';
+import FinancialSection from '../../components/FinancialSection';
+import CollapsibleSection from '../../components/CollapsibleSection';
+// TODO: Implement DocumentsSection and ActivityLogPanel as real components if needed
+const DocumentsSection = ({ onComplete }) => <div>Documents & Dispatch section coming soon.<button onClick={onComplete}>Mark Complete</button></div>;
+const ActivityLogPanel = ({ onComplete }) => <div>Activity Log section coming soon.<button onClick={onComplete}>Mark Complete</button></div>;
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
@@ -241,16 +227,66 @@ export default function BuildLoad() {
     cursor: 'pointer',
   };
 
+  // Stepper state
+  const [step, setStep] = useState(0);
+  const [completed, setCompleted] = useState({});
+
+  const steps = [
+    {
+      title: 'Customer',
+      component: <CustomerSection onComplete={() => { setCompleted((c) => ({ ...c, customer: true })); setStep(1); }} />,
+      key: 'customer',
+    },
+    {
+      title: 'Stops',
+      component: <StopsSection onComplete={() => { setCompleted((c) => ({ ...c, stops: true })); setStep(2); }} />,
+      key: 'stops',
+    },
+    {
+      title: 'Lane Intelligence',
+      component: <LaneIntelligencePanel onComplete={() => { setCompleted((c) => ({ ...c, lane: true })); setStep(3); }} />,
+      key: 'lane',
+    },
+    {
+      title: 'Carrier',
+      component: <CarrierSection onComplete={() => { setCompleted((c) => ({ ...c, carrier: true })); setStep(4); }} />,
+      key: 'carrier',
+    },
+    {
+      title: 'Financials',
+      component: <FinancialSection onComplete={() => { setCompleted((c) => ({ ...c, financials: true })); setStep(5); }} />,
+      key: 'financials',
+    },
+    {
+      title: 'Documents & Dispatch',
+      component: <DocumentsSection onComplete={() => { setCompleted((c) => ({ ...c, documents: true })); setStep(6); }} />,
+      key: 'documents',
+    },
+    {
+      title: 'Activity Log',
+      component: <ActivityLogPanel onComplete={() => { setCompleted((c) => ({ ...c, activity: true })); setStep(7); }} />,
+      key: 'activity',
+    },
+  ];
+
   return (
     <div style={{ display: 'grid', gap: 18, padding: 18 }}>
       <StickyLoadHeader />
-      <Panel title="Customer" t={t}><CustomerSection /></Panel>
-      <Panel title="Stops" t={t}><StopsSection /></Panel>
-      <Panel title="Lane Intelligence" t={t}><LaneIntelligenceSection /></Panel>
-      <Panel title="Carrier" t={t}><CarrierSection /></Panel>
-      <Panel title="Financials" t={t}><FinancialSection /></Panel>
-      <Panel title="Documents & Dispatch" t={t}><DocumentsSection /></Panel>
-      <Panel title="Activity Log" t={t}><ActivityLogPanel /></Panel>
+      {steps.map((s, idx) => (
+        <CollapsibleSection
+          key={s.key}
+          title={s.title}
+          complete={!!completed[s.key]}
+          defaultOpen={step === idx}
+        >
+          {step === idx ? s.component : null}
+        </CollapsibleSection>
+      ))}
+      {step === steps.length && (
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <button style={primaryBtn} onClick={runCreateNewLoad}>Create Load</button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getCarriers, createCarrier } from '../src/api/client';
 
-export default function CarrierSection({ onComplete }) {
+export default function CarrierSection({ load, setLoad, onComplete }) {
   const [carriers, setCarriers] = useState([]);
   const [selectedCarrier, setSelectedCarrier] = useState('');
   const [showNew, setShowNew] = useState(false);
@@ -24,6 +24,10 @@ export default function CarrierSection({ onComplete }) {
   const handleSelect = (e) => {
     setSelectedCarrier(e.target.value);
     setError('');
+    const found = carriers.find(c => (c.id || c._id) === e.target.value);
+    if (found) {
+      setLoad(prev => ({ ...prev, carrier: found }));
+    }
   };
 
   const handleComplete = () => {
@@ -32,12 +36,32 @@ export default function CarrierSection({ onComplete }) {
       setError('Please select a carrier.');
       return;
     }
-    onComplete(carrierObj);
+    setLoad(prev => ({ ...prev, carrier: carrierObj }));
+    onComplete();
   };
 
   const handleInput = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError('');
+  };
+
+  const handleCreate = async () => {
+    if (!form.name) {
+      setError('Carrier name is required.');
+      return;
+    }
+    setLoading(true);
+    const res = await createCarrier(form);
+    if (res?.error) setError(res.error);
+    else {
+      setShowNew(false);
+      setForm({ name: '', mcNumber: '', email: '', phone: '' });
+      setSelectedCarrier(res.id || res._id);
+      setLoad(prev => ({ ...prev, carrier: res }));
+      setSuccess('Carrier created!');
+    }
+    setLoading(false);
+  };
   return (
     <div>
       <h3>Carrier Assignment</h3>
@@ -76,24 +100,6 @@ export default function CarrierSection({ onComplete }) {
           <b>Selected Carrier:</b> {carriers.find(c => (c.id || c._id) === selectedCarrier)?.name}<br />
           {carriers.find(c => (c.id || c._id) === selectedCarrier)?.email && <>Email: {carriers.find(c => (c.id || c._id) === selectedCarrier)?.email}<br /></>}
           {carriers.find(c => (c.id || c._id) === selectedCarrier)?.phone && <>Phone: {carriers.find(c => (c.id || c._id) === selectedCarrier)?.phone}<br /></>}
-        </div>
-      )}
-      {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}
-      {success && <div style={{ color: 'green', marginTop: 8 }}>{success}</div>}
-      <button style={{ marginTop: 12 }} onClick={handleComplete}>Mark Carrier Complete</button>
-    </div>
-  );
-}
-          <div>
-            <input name="mcNumber" placeholder="MC Number" value={form.mcNumber} onChange={handleInput} />
-          </div>
-          <div>
-            <input name="email" placeholder="Email" value={form.email} onChange={handleInput} />
-          </div>
-          <div>
-            <input name="phone" placeholder="Phone" value={form.phone} onChange={handleInput} />
-          </div>
-          <button style={{ marginTop: 8 }} onClick={handleCreate}>Create Carrier</button>
         </div>
       )}
       {error && <div style={{ color: 'red', marginTop: 8 }}>{error}</div>}

@@ -169,11 +169,7 @@ export default function Invoices() {
       navigate(`/invoices/${invoiceId}`);
       return;
     }
-    if (type === 'upload') {
-      navigate('/uploads');
-      return;
-    }
-    if (type === 'exception' || type === 'verification') {
+    if (type === 'upload' || type === 'exception' || type === 'verification') {
       navigate('/exceptions');
       return;
     }

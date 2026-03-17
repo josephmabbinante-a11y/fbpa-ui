@@ -137,19 +137,34 @@ export default function AuctionBoard() {
     setQuoting(true);
     setQuoteError('');
     setQuoteResult(null);
+
+    const milesValue = Number(quoteMiles);
+    if (!Number.isFinite(milesValue) || milesValue <= 0) {
+      setQuoteError('Enter a valid miles value greater than 0.');
+      setQuoting(false);
+      return;
+    }
+
+    const weightValue = quoteWeight ? Number(quoteWeight) : undefined;
+    if (quoteWeight && (!Number.isFinite(weightValue) || weightValue <= 0)) {
+      setQuoteError('Weight must be a valid number greater than 0.');
+      setQuoting(false);
+      return;
+    }
+
     try {
       const load = {
         origin: quoteOrigin,
         destination: quoteDestination,
-        miles: Number(quoteMiles),
+        miles: milesValue,
         equipment: quoteEquipment,
-        weight: Number(quoteWeight),
+        weight: weightValue,
         pickupDate: quotePickup,
       };
       const result = await quoteSaiaAuction(load);
       setQuoteResult(result);
     } catch (err) {
-      setQuoteError('Quote request failed. Please try again.');
+      setQuoteError(err?.message || 'Quote request failed. Please try again.');
     } finally {
       setQuoting(false);
     }

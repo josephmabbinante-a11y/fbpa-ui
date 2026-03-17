@@ -29,6 +29,7 @@ import shipmentsRouter from './routes/shipments.js';
 import carrierProfilesRouter from './routes/carrierProfiles.js';
 import auditResultsRouter from './routes/auditResults.js';
 import freightIntelligenceRouter from './routes/freightIntelligence.js';
+import freightExchangeRouter from './routes/freightExchange.js';
 import { verifyToken, requireDatabase } from './middleware/auth.js';
 
 dotenv.config();
@@ -213,6 +214,7 @@ app.use('/api/shipments', verifyToken, requireDatabase, shipmentsRouter);
 app.use('/api/carrier-profiles', verifyToken, requireDatabase, carrierProfilesRouter);
 app.use('/api/audit-results', verifyToken, requireDatabase, auditResultsRouter);
 app.use('/api/freight-intelligence', verifyToken, requireDatabase, freightIntelligenceRouter);
+app.use('/api/freight-exchange', verifyToken, requireDatabase, freightExchangeRouter);
 
 // Root route: serve React SPA when built, otherwise redirect to static login
 app.get('/', (req, res, next) => {

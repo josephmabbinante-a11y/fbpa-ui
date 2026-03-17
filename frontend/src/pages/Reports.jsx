@@ -156,7 +156,7 @@ export default function Reports() {
                           headline="No report data yet"
                           category="analytics"
                           actionLabel="Import Data"
-                          onAction={() => navigate('/uploads')}
+                          onAction={() => navigate('/invoices')}
                         />
                       </td>
                     </tr>
