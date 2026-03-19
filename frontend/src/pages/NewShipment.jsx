@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { listLoadTemplates, createLoadTemplate, createLoad, createLoadsBatch, deleteLoadTemplate, sendToBidNetwork } from '../api/loadsClient';
+import { listLoadTemplates, createLoadTemplate, createLoad, createLoadsBatch, deleteLoadTemplate, sendToBidNetwork, createAuctionLoad, createAuctionLoadsBatch, createAuctionLoadTemplate } from '../api/loadsClient';
 import { postToBoards } from '../api/boardIntegrationClient';
 
 export default function NewShipment() {
@@ -55,8 +55,11 @@ export default function NewShipment() {
     const count = Math.max(1, Math.min(50, batchCount));
     setOpBusy('batch-create');
     setOpMessage('');
+    const isAuctionTemplate = tpl.source === 'auction' || tpl.id?.startsWith('atpl-');
     const payload = { ...(tpl.defaults || {}), count, templateId: tpl.id };
-    const res = count > 1 ? await createLoadsBatch(payload) : await createLoad(payload);
+    const createFn = isAuctionTemplate ? createAuctionLoad : createLoad;
+    const batchFn = isAuctionTemplate ? createAuctionLoadsBatch : createLoadsBatch;
+    const res = count > 1 ? await batchFn(payload) : await createFn(payload);
     if (res?.error) {
       setOpMessage(typeof res.error === 'string' ? res.error : JSON.stringify(res.error));
     } else {

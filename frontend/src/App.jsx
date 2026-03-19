@@ -26,6 +26,7 @@ const CarrierProfile = lazy(() => import('./pages/CarrierProfile'));
 const Loads = lazy(() => import('./pages/Loads'));
 const LoadCenter = lazy(() => import('./pages/LoadCenter'));
 const DispatchScreen = lazy(() => import('./pages/DispatchScreen'));
+const LoadCommandCenterPage = lazy(() => import('./pages/Loads/LoadCommandCenterPage'));
 const Customers = lazy(() => import('./pages/Customers'));
 const CustomerProfile = lazy(() => import('./pages/CustomerProfile'));
 const Locations = lazy(() => import('./pages/Locations'));
@@ -130,6 +131,8 @@ function AppRoutes() {
             <Route path="/loads/:loadId/financials" element={<LoadManagement pageTitle="New Shipment" activeTab="financials" />} />
             <Route path="/loadcenter" element={<LoadCenter />} />
             <Route path="/loadcenter/dispatch-screen" element={<DispatchScreen />} />
+            <Route path="/loadcenter/command-center/:loadId" element={<LoadCommandCenterPage />} />
+            <Route path="/loadcenter/command-center" element={<LoadCommandCenterPage />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/new" element={<AddCustomer />} />
             <Route path="/customers/:customerId" element={<CustomerProfile />} />

@@ -4,6 +4,7 @@ const SUB_TABS = [
   { key: 'all', label: 'All' },
   { key: 'my', label: 'My Loads' },
   { key: 'uncovered', label: 'Uncovered' },
+  { key: 'posted', label: 'Posted to Board' },
   { key: 'at_risk', label: 'At Risk' },
   { key: 'delivered', label: 'Delivered' },
   { key: 'void', label: 'Void' },

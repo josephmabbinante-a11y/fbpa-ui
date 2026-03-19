@@ -8,7 +8,9 @@ function LoadsGrid({ items = [], selectedId, onSelect, onContextMenuAction, onQu
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem' }}>
         <thead>
           <tr style={{ background: 'var(--surface-strong)', color: 'var(--text)', boxShadow: 'inset 0 -1px 0 var(--border), var(--shadow-soft)', height: 34 }}>
+            <th style={{ padding: '0 10px', textAlign: 'left', fontSize: 11 }}>Load #</th>
             <th style={{ padding: '0 10px', textAlign: 'left', fontSize: 11 }}>Status</th>
+            <th style={{ padding: '0 10px', textAlign: 'left', fontSize: 11 }}>Category</th>
             <th style={{ padding: '0 10px', textAlign: 'left', fontSize: 11 }}>Customer</th>
             <th style={{ padding: '0 10px', textAlign: 'left', fontSize: 11 }}>Carrier</th>
             <th style={{ padding: '0 10px', textAlign: 'left', fontSize: 11 }}>Origin</th>
@@ -33,7 +35,7 @@ function LoadsGrid({ items = [], selectedId, onSelect, onContextMenuAction, onQu
           ))}
           {items.length === 0 && (
             <tr>
-              <td colSpan={10}>
+              <td colSpan={12}>
                 <EmptyState
                   icon="🚚"
                   headline="No loads yet"

@@ -380,4 +380,111 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// POST /bundled — create a consolidated invoice that bundles parent load + ancillary charges
+router.post('/bundled', async (req, res) => {
+  try {
+    const { type, parentLoadId, includeAncillaryIds, customer = {}, carrier = {}, invoice = {} } = req.body || {};
+    if (!type) return res.status(400).json({ error: 'Invoice type is required' });
+    if (!parentLoadId) return res.status(400).json({ error: 'parentLoadId is required for bundled invoices' });
+
+    const warnings = [];
+    let linkedCustomer = null;
+    let linkedCarrier = null;
+
+    if (type === 'AR') {
+      if (!customer.name) return res.status(400).json({ error: 'Customer name is required for AR invoices' });
+      linkedCustomer = await findOrCreateCustomer(customer);
+    }
+    if (type === 'AP') {
+      if (!carrier.name) return res.status(400).json({ error: 'Carrier name is required for AP invoices' });
+      linkedCarrier = await findOrCreateCarrier(carrier);
+    }
+
+    // Import Load model dynamically to avoid circular deps
+    const { default: Load } = await import('../models/Loads.js');
+
+    const parentLoad = await Load.findOne({ id: parentLoadId });
+    if (!parentLoad) return res.status(404).json({ error: 'Parent load not found' });
+
+    // Fetch ancillary loads to include
+    let ancillaryLoads = [];
+    if (Array.isArray(includeAncillaryIds) && includeAncillaryIds.length > 0) {
+      ancillaryLoads = await Load.find({ id: { $in: includeAncillaryIds }, parentLoadId, loadType: 'ancillary' });
+    } else {
+      ancillaryLoads = await Load.find({ parentLoadId, loadType: 'ancillary' });
+    }
+
+    // Compute bundled totals
+    const parentRate = Number(parentLoad.rate) || 0;
+    const ancillaryTotal = ancillaryLoads.reduce((sum, al) => sum + (Number(al.rate) || 0), 0);
+    const bundledAmount = toNumber(invoice.amount) || (parentRate + ancillaryTotal);
+
+    // Build accessorial items from ancillary loads
+    const ancillaryAccessorialItems = ancillaryLoads.map((al) => ({
+      type: al.ancillaryType || 'other',
+      amount: Number(al.rate) || 0,
+    }));
+    const combinedAccessorialItems = [
+      ...(Array.isArray(invoice.accessorialItems) ? invoice.accessorialItems : []),
+      ...ancillaryAccessorialItems,
+    ];
+
+    const ancillaryAccessorialsSum = ancillaryAccessorialItems.reduce((sum, a) => sum + a.amount, 0);
+
+    const invoiceNumber = normalizeString(invoice.invoiceNumber) || `BDL-${type}-${Date.now()}`;
+
+    // Duplicate detection
+    const duplicate = await Invoice.findOne({ invoiceNumber, type });
+    if (duplicate) {
+      await createException({
+        invoice: duplicate,
+        type: 'financial',
+        reason: 'Duplicate bundled invoice detected',
+        severity: 'High',
+        customer: linkedCustomer,
+        carrier: linkedCarrier,
+      });
+      return res.status(409).json({ error: 'Duplicate invoice detected', duplicateInvoice: duplicate });
+    }
+
+    const newInvoice = new Invoice({
+      id: `inv-bdl-${Date.now()}`,
+      type,
+      customerId: linkedCustomer?.id,
+      carrierId: linkedCarrier?.id,
+      customerName: linkedCustomer?.name,
+      carrierName: linkedCarrier?.name,
+      carrier: linkedCarrier?.name || linkedCustomer?.name,
+      invoiceNumber,
+      load_id: parentLoadId,
+      amount: bundledAmount,
+      linehaul: toNumber(invoice.linehaul) || parentRate,
+      fuel: toNumber(invoice.fuel),
+      detention: toNumber(invoice.detention),
+      accessorials: toNumber(invoice.accessorials) + ancillaryAccessorialsSum,
+      accessorialItems: combinedAccessorialItems,
+      fuelSurcharge: toNumber(invoice.fuelSurcharge),
+      contractRate: toNumber(invoice.contractRate),
+      status: 'Pending',
+      dueDate: toDate(invoice.dueDate),
+      issueDate: new Date(),
+      paymentTerms: normalizeString(invoice.paymentTerms),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await newInvoice.save();
+
+    res.status(201).json({
+      invoice: newInvoice,
+      customer: linkedCustomer,
+      carrier: linkedCarrier,
+      bundledLoads: [parentLoadId, ...ancillaryLoads.map((al) => al.id)],
+      warnings,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

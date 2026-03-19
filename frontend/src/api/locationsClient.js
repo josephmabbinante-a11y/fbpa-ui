@@ -1,4 +1,3 @@
-import { mockLocations } from '../mock/mockLocations';
 import { getAccessToken } from '../utils/authToken';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
@@ -23,27 +22,7 @@ function shouldUseMockLocations() {
   return isMockMode() || forceMockFromNetwork;
 }
 
-function buildMockLocations() {
-  if (!isMockMode()) return [];
-  return mockLocations.slice(0, 24).map((entry, index) => {
-    const n = index + 1;
-    return {
-      id: `loc-${n}`,
-      name: `${entry.city} Hub ${n}`,
-      address: `${100 + n} ${entry.city} Commerce Dr, ${entry.city}, ${entry.state} ${entry.zip}`,
-      locationTypes: n % 3 === 0 ? 'Pickup, Delivery' : n % 2 === 0 ? 'Delivery' : 'Pickup',
-      locationCodes: `LOC-${String(1000 + n)}`,
-      savingsRate: n % 4 === 0 ? 'No' : `${(2 + (n % 6)).toFixed(1)}%`,
-      primaryContact: 'Primary Contact',
-      primaryPhone: n % 5 === 0 ? '' : `+1 7${(10 + n).toString().padStart(2, '0')}-55${(20 + n).toString().padStart(2, '0')}-${(1200 + n).toString().slice(-4)}`,
-      branch: n % 2 === 0 ? 'Shared' : 'Main',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-  });
-}
-
-let mockStore = buildMockLocations();
+let mockStore = [];
 
 async function safeFetch(path, options) {
   try {

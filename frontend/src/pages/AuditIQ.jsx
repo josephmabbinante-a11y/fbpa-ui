@@ -147,6 +147,7 @@ export default function AuditIQ() {
             {/* This section can be further backend-driven if needed */}
             {[
               { icon: '📦', name: 'Loads', count: 0, detail: 'Rate accuracy, assignment validity, route compliance' },
+              { icon: '🏷️', name: 'Auction Loads (AL-)', count: 0, detail: 'AL- prefixed loads from Post & Auction — bid rate validation, auction rate-to-market comparison' },
               { icon: '🧾', name: 'Invoices', count: 0, detail: 'Duplicates, overcharges, unauthorized accessorials' },
               { icon: '🚛', name: 'Carrier Activity', count: 0, detail: 'Booking velocity, document re-use, identity signals' },
               { icon: '📋', name: 'Dispatch Activity', count: 0, detail: 'Override patterns, off-hours activity, anomalies' },
@@ -172,6 +173,7 @@ export default function AuditIQ() {
               { issue: 'Duplicate Invoices', description: 'Same invoice submitted multiple times across carriers or time periods.', severity: 'High' },
               { issue: 'Reused POD/BOL Documents', description: 'Proof-of-delivery or bill of lading documents reused across different loads.', severity: 'High' },
               { issue: 'Rate Manipulation', description: 'Load rates overridden beyond authorized thresholds by dispatchers or agents.', severity: 'High' },
+              { issue: 'Auction Rate Deviation (AL-)', description: 'Auction load (AL- prefix) awarded bid rate deviates significantly from market or internal rate benchmarks.', severity: 'High' },
               { issue: 'Payment Discrepancies', description: 'Invoice amount differs from agreed contract or quoted rate.', severity: 'Medium' },
               { issue: 'Unauthorized Carrier Approvals', description: 'Carriers approved without proper vetting or risk review.', severity: 'High' },
               { issue: 'Operational Anomalies', description: 'Unusual patterns in load assignments, bookings, or payment timing.', severity: 'Low' },

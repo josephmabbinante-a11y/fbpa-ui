@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import BookLoadDialog from '../../components/BookLoadDialog';
 import { useNavigate } from 'react-router-dom';
 import { PrimaryTabs } from './components/PrimaryTabs';
@@ -9,11 +10,12 @@ import { LoadDetailPanel } from './components/LoadDetailPanel';
 import { FacetsBar } from './components/FacetsBar';
 import { PaginationBar } from './components/PaginationBar';
 import MarketIntelligenceModule from './components/MarketIntelligenceModule';
+import SoftphoneWidget from './components/SoftphoneWidget';
 import useLoadFilters from './hooks/useLoadFilters';
 import useLoadsQuery from './hooks/useLoadsQuery';
 import useLoadActions from './hooks/useLoadActions';
 import useLoadSelection from './hooks/useLoadSelection';
-import { addLoadBotActivity, createLoad, createLoadsBatch, deleteLoad, dispatchLoad, getLoadBotActivity, restoreLoad, sendToBidNetwork as sendToBidNetworkApi, updateLoad, voidLoad } from '../../api/loadsClient';
+import { addLoadBotActivity, createLoad, createLoadsBatch, deleteLoad, dispatchLoad, getLoadBotActivity, listLoads, restoreLoad, sendToBidNetwork as sendToBidNetworkApi, submitCarrierQuote, updateLoad, voidLoad } from '../../api/loadsClient';
 import { getCarriers } from '../../api/client';
 import InternalRoutePreview from '../../components/InternalRoutePreview';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -104,7 +106,8 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
   const navigate = useNavigate();
   const { settings, setAdvancedSetting } = useTheme();
   const normalizedTitle = String(pageTitle || '').toLowerCase();
-  const isLoadCenter = normalizedTitle === 'load center' || normalizedTitle === 'load board';
+  const isLoadCenter = normalizedTitle === 'load center' || normalizedTitle === 'load board' || normalizedTitle === 'dispatch center';
+  const isDispatchCenter = normalizedTitle === 'dispatch center';
   const [contextMenu, setContextMenu] = useState(null);
   const [chatChannel, setChatChannel] = useState('slack');
   const [chatDraft, setChatDraft] = useState('');
@@ -124,6 +127,11 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
   const [editDraft, setEditDraft] = useState(null);
   const [editState, setEditState] = useState({ saving: false, error: '', success: '' });
   const [quickActionState, setQuickActionState] = useState({ busy: false, error: '', success: '' });
+  const [boardLoads, setBoardLoads] = useState([]);
+  const [boardLoadsLoading, setBoardLoadsLoading] = useState(false);
+  const [quoteForm, setQuoteForm] = useState({ loadId: '', carrierName: '', amount: '', notes: '' });
+  const [quoteSubmitting, setQuoteSubmitting] = useState(false);
+  const [quoteMessage, setQuoteMessage] = useState('');
   const fontScale = Number.isFinite(Number(settings?.fontScale)) ? Number(settings.fontScale) : 1;
   const fontWeight = Number.isFinite(Number(settings?.fontWeight)) ? Number(settings.fontWeight) : 600;
   const effectsStrength = Number.isFinite(Number(settings?.effectsStrength)) ? Number(settings.effectsStrength) : 1;
@@ -137,6 +145,43 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
     setEditState({ saving: false, error: '', success: '' });
     setQuickActionState({ busy: false, error: '', success: '' });
   }, [pageTitle, selectedId]);
+
+  // Fetch loads posted to the internal loadboard for carrier quoting
+  const fetchBoardLoads = async () => {
+    setBoardLoadsLoading(true);
+    const result = await listLoads({ tab: 'posted', pageSize: 50, sort: '-updatedAt' });
+    if (!result?.error) {
+      setBoardLoads(Array.isArray(result?.items) ? result.items : []);
+    }
+    setBoardLoadsLoading(false);
+  };
+
+  useEffect(() => {
+    if (isLoadCenter) {
+      fetchBoardLoads();
+      const interval = setInterval(fetchBoardLoads, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [isLoadCenter]);
+
+  const handleSubmitQuote = async () => {
+    if (!quoteForm.loadId || !quoteForm.carrierName || !quoteForm.amount) return;
+    setQuoteSubmitting(true);
+    setQuoteMessage('');
+    const result = await submitCarrierQuote(quoteForm.loadId, {
+      carrierName: quoteForm.carrierName,
+      amount: Number(quoteForm.amount),
+      notes: quoteForm.notes,
+    });
+    setQuoteSubmitting(false);
+    if (result?.error) {
+      setQuoteMessage(typeof result.error === 'string' ? result.error : 'Quote submission failed');
+    } else {
+      setQuoteMessage(`Quote of $${Number(quoteForm.amount).toLocaleString()} submitted for ${quoteForm.loadId}`);
+      setQuoteForm({ loadId: '', carrierName: '', amount: '', notes: '' });
+      fetchBoardLoads();
+    }
+  };
 
   useEffect(() => {
     if (!contextMenu) return undefined;
@@ -625,6 +670,23 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
           origin: load.origin,
           destination: load.destination,
         });
+      } else if (action === 'createAncillary') {
+        const ancillaryType = load._ancillaryType || 'other';
+        const realLoadId = load._ancillaryType ? (load.id || load._id) : load.id;
+        result = await createLoad({
+          customerName: load.customer?.name,
+          equipment: load.equipment,
+          miles: 0,
+          revenue: 0,
+          carrierCost: 0,
+          origin: load.origin,
+          destination: load.destination,
+          loadType: 'ancillary',
+          ancillaryType,
+          parentLoadId: realLoadId,
+          idPrefix: 'AX',
+          notes: `${ancillaryType.replace(/_/g, ' ')} charge for ${realLoadId}`,
+        });
       } else if (action === 'cancel') {
         result = await updateLoad(load.id, {
           status: 'ON_HOLD',
@@ -662,6 +724,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
         assign: `Assigned carrier for ${load.id}`,
         post: `Posted ${load.id} to board`,
         duplicate: `Duplicated ${load.id}`,
+        createAncillary: `Created ancillary load for ${load.id}`,
         cancel: `Moved ${load.id} to On Hold`,
         void: `Voided ${load.id}`,
         restore: `Restored ${load.id} to Draft`,
@@ -900,15 +963,15 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
           )}
           {isLoadCenter && (
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-              Dispatch focus: pre-dispatch readiness, in-transit SLA risk, and exception handling.
+              {isDispatchCenter ? 'Dispatch center: load board, dispatch readiness, SLA risk, and exception handling.' : 'Dispatch focus: pre-dispatch readiness, in-transit SLA risk, and exception handling.'}
             </div>
           )}
         </div>
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14 }}>Load Board execution console</div>
+      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14 }}>{isDispatchCenter ? 'Dispatch Center console' : 'Load Board execution console'}</div>
       {!isLoadCenter && <PrimaryTabs active="loads" />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: isLoadCenter ? 'minmax(0,1fr)' : 'minmax(0,1fr) 380px', gap: 16, minHeight: '70vh' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isDispatchCenter ? 'minmax(0,1fr) 380px' : isLoadCenter ? 'minmax(0,1fr)' : 'minmax(0,1fr) 380px', gap: 16, minHeight: '70vh' }}>
         <section style={{ minWidth: 0 }}>
           <SubTabs activeTab={filters.tab} onChange={(tab) => updateFilters({ tab })} />
           <FilterBar
@@ -948,724 +1011,167 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                 onPageSizeChange={(pageSize) => updateFilters({ pageSize }, { resetPage: true })}
               />
               {isLoadCenter && (
-                selectedDetail?.load ? (
-                <>
-                <div
-                  style={{
-                    border: '1px solid var(--border)',
-                    borderRadius: 12,
-                    background: 'linear-gradient(160deg, var(--surface), var(--surface-strong))',
-                    padding: 24,
-                    display: 'grid',
-                    gap: 24,
-                    marginTop: 32,
-                    marginBottom: 32,
-                  }}
-                  onContextMenu={(event) => {
-                    event.preventDefault();
-                    openLoadContextMenu(selectedDetail.load, event.clientX, event.clientY);
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'grid', gap: 2 }}>
-                      <div style={{ ...sectionLabelStyle, fontSize: 'var(--section-label-preview-size, 11px)', letterSpacing: 'var(--section-label-preview-tracking, 0.4px)' }}>LOAD COMMAND CENTER PREVIEW</div>
-                      <div style={{ fontSize: 16, fontWeight: 700 }}>Load {selectedDetail.load.id}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                        Status:{' '}
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            border: '1px solid var(--border)',
-                            borderRadius: 999,
-                            padding: '2px 10px',
-                            background: 'var(--bg-alt)',
-                            color: 'var(--text)',
-                            fontWeight: 700,
-                            textTransform: 'capitalize',
-                          }}
-                        >
-                          {formatLoadStatusLabel(selectedDetail.load.status)}
-                        </span>
-                      </div>
+                <div style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 12,
+                  background: 'linear-gradient(160deg, var(--surface), var(--surface-strong))',
+                  padding: 24,
+                  display: 'grid',
+                  gap: 16,
+                  marginTop: 24,
+                  marginBottom: 24,
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: 0.3 }}>INTERNAL LOADBOARD FEED</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                      {boardLoadsLoading ? 'Refreshing...' : `${boardLoads.length} load${boardLoads.length !== 1 ? 's' : ''} posted`}
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditMode((prev) => !prev);
-                          setEditState({ saving: false, error: '', success: '' });
-                        }}
-                        style={{
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-alt)',
-                          color: 'var(--text)',
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          minHeight: 40,
-                          padding: '0 20px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {editMode ? 'Cancel Edit' : 'Edit Fields'}
-                      </button>
-                      {editMode && (
-                        <button
-                          type="button"
-                          onClick={saveLoadEdits}
-                          disabled={editState.saving}
+                  </div>
+                  {boardLoads.length === 0 && !boardLoadsLoading && (
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', padding: 12 }}>No loads currently posted to the internal loadboard. Use "Post to Bid Network" on a load to make it available for carrier quoting.</div>
+                  )}
+                  {boardLoads.length > 0 && (
+                    <div style={{ display: 'grid', gap: 10, maxHeight: 360, overflowY: 'auto' }}>
+                      {boardLoads.map((load) => (
+                        <div
+                          key={load.id}
                           style={{
-                            border: '1px solid var(--accent-2)',
-                            background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                            color: 'var(--bg)',
+                            border: quoteForm.loadId === load.id ? '2px solid var(--accent)' : '1px solid var(--border)',
                             borderRadius: 8,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            minHeight: 40,
-                            padding: '0 20px',
+                            background: 'var(--bg-alt)',
+                            padding: '12px 16px',
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            gap: 8,
                             cursor: 'pointer',
                           }}
+                          onClick={() => {
+                            setQuoteForm((prev) => ({ ...prev, loadId: load.id }));
+                            selectLoad(load.id);
+                          }}
                         >
-                          {editState.saving ? 'Saving...' : 'Save Changes'}
-                        </button>
-                      )}
+                          <div style={{ display: 'grid', gap: 4 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{load.id}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                              {load.origin?.city}, {load.origin?.state} → {load.destination?.city}, {load.destination?.state}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                              {load.miles} mi · {load.equipment} · {load.customer?.name || 'Unknown'}
+                            </div>
+                            {Array.isArray(load.carrierQuotes) && load.carrierQuotes.length > 0 && (
+                              <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>
+                                {load.carrierQuotes.length} quote{load.carrierQuotes.length !== 1 ? 's' : ''} received
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 2 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>${Number(load.revenue || 0).toLocaleString()}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                              ${(load.miles > 0 ? (load.revenue / load.miles) : 0).toFixed(2)}/mi
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Quote Submission Form */}
+                  <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 16, display: 'grid', gap: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>SUBMIT CARRIER QUOTE</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Load ID</label>
+                        <input
+                          type="text"
+                          value={quoteForm.loadId}
+                          readOnly
+                          placeholder="Select a load above"
+                          style={{ padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }}
+                        />
+                      </div>
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Carrier Name</label>
+                        <input
+                          type="text"
+                          value={quoteForm.carrierName}
+                          onChange={(e) => setQuoteForm((prev) => ({ ...prev, carrierName: e.target.value }))}
+                          placeholder="Carrier name"
+                          style={{ padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }}
+                        />
+                      </div>
+                      <div style={{ display: 'grid', gap: 4 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Quote Amount ($)</label>
+                        <input
+                          type="number"
+                          value={quoteForm.amount}
+                          onChange={(e) => setQuoteForm((prev) => ({ ...prev, amount: e.target.value }))}
+                          placeholder="0.00"
+                          min="0"
+                          step="0.01"
+                          style={{ padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gap: 4 }}>
+                      <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Notes (optional)</label>
+                      <input
+                        type="text"
+                        value={quoteForm.notes}
+                        onChange={(e) => setQuoteForm((prev) => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Transit time, equipment notes, etc."
+                        style={{ padding: '6px 10px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (!selectedDetail?.load?.id) return;
-                          const confirmed = window.confirm(`Void load ${selectedDetail.load.id}? This marks it as void and unassigns carrier.`);
-                          if (!confirmed) return;
-                          runQuickAction('void', selectedDetail.load);
-                        }}
-                        style={{
-                          border: '1px solid var(--error)',
-                          background: 'var(--bg-alt)',
-                          color: 'var(--error)',
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          minHeight: 40,
-                          padding: '0 20px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Void Load
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!selectedDetail?.load?.id) return;
-                          const confirmed = window.confirm(`Delete load ${selectedDetail.load.id}? This cannot be undone.`);
-                          if (!confirmed) return;
-                          runQuickAction('delete', selectedDetail.load);
-                        }}
-                        style={{
-                          border: '1px solid var(--error)',
-                          background: 'transparent',
-                          color: 'var(--error)',
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          minHeight: 40,
-                          padding: '0 20px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Delete Load
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => navigate(`/loadcenter?selected=${encodeURIComponent(selectedDetail.load.id)}`)}
+                        onClick={handleSubmitQuote}
+                        disabled={!quoteForm.loadId || !quoteForm.carrierName || !quoteForm.amount || quoteSubmitting}
                         style={{
                           border: '1px solid var(--accent-2)',
-                          background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                          color: 'var(--bg)',
+                          background: (!quoteForm.loadId || !quoteForm.carrierName || !quoteForm.amount) ? 'var(--bg-alt)' : 'linear-gradient(135deg, var(--accent), var(--accent-2))',
+                          color: (!quoteForm.loadId || !quoteForm.carrierName || !quoteForm.amount) ? 'var(--text-secondary)' : 'var(--bg)',
                           borderRadius: 8,
                           fontSize: 12,
                           fontWeight: 700,
-                          minHeight: 40,
+                          minHeight: 36,
                           padding: '0 20px',
-                          cursor: 'pointer',
+                          cursor: (!quoteForm.loadId || !quoteForm.carrierName || !quoteForm.amount) ? 'not-allowed' : 'pointer',
                         }}
                       >
-                        Open in Load Command Center
+                        {quoteSubmitting ? 'Submitting...' : 'Submit Quote'}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => navigator.clipboard?.writeText(selectedDetail.load.id)}
-                        style={{
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-alt)',
-                          color: 'var(--text)',
-                          borderRadius: 8,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          minHeight: 40,
-                          padding: '0 20px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Copy Load ID
-                      </button>
+                      {quoteMessage && <div style={{ fontSize: 12, color: quoteMessage.includes('failed') ? 'var(--error)' : 'var(--success)' }}>{quoteMessage}</div>}
                     </div>
                   </div>
 
-                  {editState.error && <div style={{ fontSize: 12, color: 'var(--error)' }}>{editState.error}</div>}
-                  {editState.success && <div style={{ fontSize: 12, color: 'var(--success)' }}>{editState.success}</div>}
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 24 }}>
-                    <div style={{ display: 'grid', gap: 24, gridColumn: 'span 8' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 16, fontSize: 13 }}>
-                        <div>
-                          <strong>Status:</strong>{' '}
-                          {editMode ? (
-                            <select value={editDraft?.status || 'DRAFT'} onChange={(event) => onEditChange('status', event.target.value)} style={inputStyle}>
-                              {LOAD_STATUSES.map((status) => (
-                                <option key={status} value={status}>{status}</option>
-                              ))}
-                            </select>
-                          ) : (formatLoadStatusLabel(selectedDetail.load.status) || '—')}
-                        </div>
-                        <div>
-                          <strong>Customer:</strong>{' '}
-                          {editMode ? <input value={editDraft?.customerName || ''} onChange={(event) => onEditChange('customerName', event.target.value)} style={inputStyle} /> : (selectedDetail.load.customer?.name || '—')}
-                        </div>
-                        <div>
-                          <strong>Carrier:</strong>{' '}
-                          {editMode ? <input value={editDraft?.carrierName || ''} onChange={(event) => onEditChange('carrierName', event.target.value)} style={inputStyle} /> : (selectedDetail.load.carrier?.name || '—')}
-                        </div>
-                        <div>
-                          <strong>Dispatcher:</strong>{' '}
-                          {editMode ? <input value={editDraft?.dispatcherName || ''} onChange={(event) => onEditChange('dispatcherName', event.target.value)} style={inputStyle} /> : (selectedDetail.load.dispatcher?.name || '—')}
-                        </div>
-                        <div>
-                          <strong>Equipment:</strong>{' '}
-                          {editMode ? (
-                            <select value={editDraft?.equipment || 'van'} onChange={(event) => onEditChange('equipment', event.target.value)} style={inputStyle}>
-                              <option value="van">van</option>
-                              <option value="reefer">reefer</option>
-                              <option value="flatbed">flatbed</option>
-                            </select>
-                          ) : (selectedDetail.load.equipment || '—')}
-                        </div>
-                        {editMode && (
-                          <>
+                  {/* Show quotes for the selected load */}
+                  {quoteForm.loadId && (() => {
+                    const boardLoad = boardLoads.find((l) => l.id === quoteForm.loadId);
+                    const quotes = boardLoad?.carrierQuotes || [];
+                    if (quotes.length === 0) return null;
+                    return (
+                      <div style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 16, display: 'grid', gap: 8 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>QUOTES FOR {quoteForm.loadId}</div>
+                        {quotes.map((q) => (
+                          <div key={q.id} style={{ border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: 'var(--surface)' }}>
                             <div>
-                              <strong>Miles:</strong>{' '}
-                              <input type="number" min="0" value={editDraft?.miles || ''} onChange={(event) => onEditChange('miles', event.target.value)} style={inputStyle} />
+                              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{q.carrierName}</div>
+                              {q.notes && <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{q.notes}</div>}
+                              <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>{new Date(q.submittedAt).toLocaleString()}</div>
                             </div>
-                            <div>
-                              <strong>Revenue:</strong>{' '}
-                              <input type="number" min="0" value={editDraft?.revenue || ''} onChange={(event) => onEditChange('revenue', event.target.value)} style={inputStyle} />
-                            </div>
-                            <div>
-                              <strong>Carrier Cost:</strong>{' '}
-                              <input type="number" min="0" value={editDraft?.carrierCost || ''} onChange={(event) => onEditChange('carrierCost', event.target.value)} style={inputStyle} />
-                            </div>
-                            <div>
-                              <strong>Margin:</strong>{' '}
-                              {(() => {
-                                const revenue = Number(editDraft?.revenue || 0);
-                                const carrierCost = Number(editDraft?.carrierCost || 0);
-                                const margin = revenue - carrierCost;
-                                const pct = revenue > 0 ? (margin / revenue) * 100 : 0;
-                                return `$${margin.toLocaleString()} (${pct.toFixed(1)}%)`;
-                              })()}
-                            </div>
-                          </>
-                        )}
-                      </div>
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, minmax(0,1fr))', gap: 24, alignItems: 'start' }}>
-                        <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 20, display: 'grid', gap: 16, gridColumn: 'span 7' }}>
-                          <div style={sectionLabelStyle}>ROUTE DETAIL</div>
-                          <div style={{ display: 'grid', gap: 16, fontSize: 14 }}>
-                            <div>
-                              <strong>Origin:</strong>{' '}
-                              {editMode ? (
-                                <span style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 74px', gap: 6 }}>
-                                  <input value={editDraft?.originCity || ''} onChange={(event) => onEditChange('originCity', event.target.value)} style={inputStyle} />
-                                  <input value={editDraft?.originState || ''} onChange={(event) => onEditChange('originState', event.target.value)} maxLength={2} style={inputStyle} />
-                                </span>
-                              ) : (<>{selectedDetail.load.origin?.city || '—'}{selectedDetail.load.origin?.state ? `, ${selectedDetail.load.origin.state}` : ''}</>)}
-                            </div>
-                            <div style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', padding: 12, display: 'grid', gap: 8 }}>
-                              <div style={sectionLabelStyle}>ROUTE PROFILE</div>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 12 }}>
-                                <div style={{ display: 'grid', gap: 4 }}>
-                                  <div style={{ fontWeight: 700 }}>Origin</div>
-                                  <div><strong>Customer:</strong> {selectedDetail.load.customer?.name || '—'}</div>
-                                  <div><strong>Address:</strong> {toLocationAddress(selectedDetail.load.origin)}</div>
-                                </div>
-                                <div style={{ display: 'grid', gap: 4 }}>
-                                  <div style={{ fontWeight: 700 }}>Destination</div>
-                                  <div><strong>Customer:</strong> {selectedDetail.load.customer?.name || '—'}</div>
-                                  <div><strong>Address:</strong> {toLocationAddress(selectedDetail.load.destination)}</div>
-                                </div>
-                              </div>
-                              <div><strong>Lane:</strong> {toLocationLabel(selectedDetail.load.origin) || '—'} → {toLocationLabel(selectedDetail.load.destination) || '—'}</div>
-                              <div><strong>Miles / ETA:</strong> {Number(selectedDetail.load.miles || 0).toLocaleString()} mi • {selectedDetail.load.deliveryAt ? formatDateTime(selectedDetail.load.deliveryAt) : 'ETA pending'}</div>
-                              <InternalRoutePreview
-                                originLabel={toLocationLabel(selectedDetail.load.origin)}
-                                destinationLabel={toLocationLabel(selectedDetail.load.destination)}
-                                miles={selectedDetail.load.miles}
-                                height={160}
-                              />
-                            </div>
-                            <div>
-                              <strong>Destination:</strong>{' '}
-                              {editMode ? (
-                                <span style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 74px', gap: 6 }}>
-                                  <input value={editDraft?.destinationCity || ''} onChange={(event) => onEditChange('destinationCity', event.target.value)} style={inputStyle} />
-                                  <input value={editDraft?.destinationState || ''} onChange={(event) => onEditChange('destinationState', event.target.value)} maxLength={2} style={inputStyle} />
-                                </span>
-                              ) : (<>{selectedDetail.load.destination?.city || '—'}{selectedDetail.load.destination?.state ? `, ${selectedDetail.load.destination.state}` : ''}</>)}
-                            </div>
-                            <div>
-                              <strong>Pickup:</strong>{' '}
-                              {editMode ? <input type="datetime-local" value={editDraft?.pickupAt || ''} onChange={(event) => onEditChange('pickupAt', event.target.value)} style={inputStyle} /> : formatDateTime(selectedDetail.load.pickupAt)}
-                            </div>
-                            <div>
-                              <strong>Delivery:</strong>{' '}
-                              {editMode ? <input type="datetime-local" value={editDraft?.deliveryAt || ''} onChange={(event) => onEditChange('deliveryAt', event.target.value)} style={inputStyle} /> : formatDateTime(selectedDetail.load.deliveryAt)}
-                            </div>
-                          </div>
-                        </section>
-
-                        <section style={{ border: '1px solid var(--critical-field-border)', borderRadius: 10, background: 'linear-gradient(160deg, var(--critical-field-bg), var(--bg-alt))', padding: 20, display: 'grid', gap: 12, gridColumn: 'span 5' }}>
-                          <div style={criticalSectionLabelStyle}>CRITICAL DISPATCH</div>
-                          <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>Load Status</strong><strong style={{ color: 'var(--critical-value)', textTransform: 'capitalize' }}>{formatLoadStatusLabel(selectedDetail.load.status)}</strong></div>
-
-                            {lifecycleModules.isPreDispatch && (
-                              <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>⏳ Pickup Countdown</strong><strong style={{ color: 'var(--critical-value)' }}>{pickupCountdownLabel}</strong></div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>📍 Distance to Pickup</strong><strong style={{ color: 'var(--critical-value)' }}>{estimatedDistanceToPickup} mi</strong></div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>📈 Margin Buffer</strong><span style={{ color: marginBuffer < 0 ? 'var(--error)' : 'var(--success)', fontWeight: 700 }}>{marginBuffer >= 0 ? '+' : ''}{marginBuffer.toFixed(1)}%</span></div>
-                                <button
-                                  type="button"
-                                  onClick={dispatch}
-                                  disabled={!selectedDetail.controls?.canDispatch || actionState?.busy}
-                                  style={{ border: '1px solid var(--accent-2)', background: 'linear-gradient(135deg, var(--accent), var(--accent-2))', color: 'var(--bg)', borderRadius: 8, minHeight: 34, fontWeight: 700, cursor: (!selectedDetail.controls?.canDispatch || actionState?.busy) ? 'not-allowed' : 'pointer' }}
-                                >
-                                  Dispatch Load
-                                </button>
-                              </>
-                            )}
-
-                            {lifecycleModules.isInTransit && (
-                              <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>🛰 Live Tracking</strong><strong style={{ color: 'var(--critical-value)' }}>{selectedDetail.load.carrier?.assigned ? 'Active' : 'Pending Device'}</strong></div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>⏱ SLA Delta</strong><span style={{ color: etaDeltaMinutes > 30 ? 'var(--error)' : 'var(--success)', fontWeight: 700 }}>{etaDeltaMinutes} min</span></div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>🛣 ETA Recalculation</strong><strong style={{ color: 'var(--critical-value)' }}>{formatDateTime(selectedDetail.load.deliveryAt)}</strong></div>
-                                <div style={{ display: 'grid', gap: 4 }}>
-                                  <strong>Risk Indicators</strong>
-                                  <div style={{ color: 'var(--critical-value)', fontWeight: 700 }}>
-                                    {Array.isArray(dispatchRisk.warnings) && dispatchRisk.warnings.length > 0 ? dispatchRisk.warnings.join(', ') : 'None'}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-
-                            {lifecycleModules.isDeliveredOrLater && (
-                              <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>📄 POD Panel</strong><strong style={{ color: 'var(--critical-value)' }}>{selectedStatus === 'POD_RECEIVED' || selectedStatus === 'INVOICED' || selectedStatus === 'READY_TO_PAY' || selectedStatus === 'PAID' ? 'Received' : 'Pending Upload'}</strong></div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>🧾 Invoice Readiness</strong><strong style={{ color: 'var(--critical-value)' }}>{selectedStatus === 'INVOICED' || selectedStatus === 'READY_TO_PAY' || selectedStatus === 'PAID' ? 'Ready' : 'Waiting POD'}</strong></div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>🔒 Margin Lock</strong><strong style={{ color: 'var(--critical-value)' }}>{selectedStatus === 'PAID' ? 'Finalized' : 'Locked'}</strong></div>
-                              </>
-                            )}
-
-                            {lifecycleModules.isException && (
-                              <div style={{ border: '1px solid var(--error)', borderRadius: 8, padding: 10, background: 'rgba(220,38,38,0.08)', color: 'var(--error)', display: 'grid', gap: 6 }}>
-                                <div style={{ fontWeight: 800 }}>Exception Active</div>
-                                <div><strong>Reason:</strong> {selectedDetail.load.exceptionReason || 'Exception reason required.'}</div>
-                                <div><strong>Invoice:</strong> Locked</div>
-                                <div><strong>Escalation:</strong> Alert module active</div>
-                              </div>
-                            )}
-
-                            {lifecycleModules.showCapacityHeat && (
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>Capacity Heat</strong><strong style={{ color: 'var(--critical-value)' }}>{dispatchRisk.capacityHeatIndex ?? '—'}</strong></div>
-                            )}
-                          </div>
-                        </section>
-                      </div>
-
-                      <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 20, display: 'grid', gap: 16 }}>
-                        <div style={sectionLabelStyle}>
-                          LIVE DISPATCH TIMELINE ({detailState.events?.length || 0})
-                        </div>
-                        {(detailState.events || []).slice(0, 4).map((event) => (
-                          <div key={event.id} style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', padding: '12px 16px', fontSize: 12, display: 'grid', gap: 8 }}>
-                            <div style={{ color: 'var(--text-secondary)' }}>{formatDateTime(event.createdAt || event.timestamp)}</div>
-                            <div style={{ fontWeight: 700 }}>{event.type ? String(event.type).replaceAll('_', ' ') : 'Event'}</div>
-                            <div>{event.message || 'No message'}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>${Number(q.amount).toLocaleString()}</div>
                           </div>
                         ))}
-                        {(!detailState.events || detailState.events.length === 0) && (
-                          <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>No events available for this load.</div>
-                        )}
-                      </section>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: 20, alignContent: 'start', gridColumn: 'span 4' }}>
-                      <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 20, display: 'grid', gap: 12 }}>
-                        <div style={sectionLabelStyle}>RATE LOGIC / FINANCIALS</div>
-                        <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Miles</span><strong>{Number(loadMetrics?.miles || 0).toLocaleString()}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Revenue</span><strong>${Number(loadMetrics?.revenue || 0).toLocaleString()}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Carrier Cost</span><strong>${Number(loadMetrics?.carrierCost || 0).toLocaleString()}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Margin</span><strong>${Number(loadMetrics?.margin || 0).toLocaleString()} ({Number(loadMetrics?.marginPct || 0).toFixed(1)}%)</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Revenue / Mile</span><strong>${Number(loadMetrics?.rpm || 0).toFixed(2)}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cost / Mile</span><strong>${Number(loadMetrics?.cpm || 0).toFixed(2)}</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Fleet Avg Margin</span><strong>{fleetAverageMarginPct.toFixed(1)}%</strong></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>vs Fleet Avg</span><strong style={{ color: marginVsFleet >= 0 ? 'var(--success)' : 'var(--error)' }}>{marginVsFleet >= 0 ? '▲' : '▼'} {Math.abs(marginVsFleet).toFixed(1)}%</strong></div>
-                          <div style={{ display: 'grid', gap: 4, marginTop: 8 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span>Margin Strength</span>
-                              <strong>{Number(loadMetrics?.marginPct || 0).toFixed(1)}%</strong>
-                            </div>
-                            <div style={{ height: 8, borderRadius: 999, border: '1px solid var(--border)', background: 'var(--surface)' }}>
-                              <div
-                                style={{
-                                  width: `${Math.max(0, Math.min(100, Number(loadMetrics?.marginPct || 0) * 3))}%`,
-                                  height: '100%',
-                                  borderRadius: 999,
-                                  background: marginBelowTarget ? 'var(--error)' : 'linear-gradient(90deg, var(--success), var(--accent))',
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </section>
-
-                      <MarketIntelligenceModule
-                        load={selectedDetail.load}
-                        risk={dispatchRisk}
-                        marketRate={marketRate}
-                        opportunityGap={opportunityGap}
-                        laneLabel={`${toLocationLabel(selectedDetail.load.origin) || '—'} → ${toLocationLabel(selectedDetail.load.destination) || '—'}`}
-                      />
-
-                      <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 20, display: 'grid', gap: 20 }}>
-                        <div style={sectionLabelStyle}>CARRIER SCORE</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 12 }}>Overall</span>
-                          <strong style={{ fontSize: 16 }}>{Number(loadMetrics?.overallScore || 0).toFixed(0)} / 100</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 12 }}>Load Health Score</span>
-                          <strong style={{ fontSize: 16, color: loadHealthScore >= 80 ? 'var(--success)' : loadHealthScore >= 60 ? 'var(--warning)' : 'var(--error)' }}>{Number(loadHealthScore).toFixed(0)} / 100</strong>
-                        </div>
-                        <div style={{ display: 'grid', gap: 8, fontSize: 14 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Margin Health</span><span>{Number(loadMetrics?.marginScore || 0).toFixed(0)}</span></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Cost Efficiency</span><span>{Number(loadMetrics?.efficiencyScore || 0).toFixed(0)}</span></div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Stop Complexity</span><span>{Number(loadMetrics?.stopComplexity || 0).toFixed(0)}</span></div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/loads/${encodeURIComponent(selectedDetail.load.id)}/financials`)}
-                          style={{
-                            border: '1px solid var(--accent-2)',
-                            background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                            color: 'var(--bg)',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            minHeight: 40,
-                            padding: '0 20px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Open Financials
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/carriers-list')}
-                          style={{
-                            border: '1px solid var(--border)',
-                            background: 'var(--bg-alt)',
-                            color: 'var(--text)',
-                            borderRadius: 8,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            minHeight: 40,
-                            padding: '0 20px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Go to Carriers
-                        </button>
-                      </section>
-
-                      <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 20, display: 'grid', gap: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                          <div style={sectionLabelStyle}>TEAM CHAT FEED</div>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button
-                              type="button"
-                              onClick={() => setChatChannel('slack')}
-                              style={{
-                                border: `1px solid ${chatChannel === 'slack' ? 'var(--accent)' : 'var(--border)'}`,
-                                background: chatChannel === 'slack' ? 'linear-gradient(135deg, var(--accent), var(--accent-2))' : 'transparent',
-                                color: chatChannel === 'slack' ? 'var(--bg)' : 'var(--text-secondary)',
-                                borderRadius: 6,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                padding: '5px 8px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Slack
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setChatChannel('teams')}
-                              style={{
-                                border: `1px solid ${chatChannel === 'teams' ? 'var(--accent)' : 'var(--border)'}`,
-                                background: chatChannel === 'teams' ? 'linear-gradient(135deg, var(--accent), var(--accent-2))' : 'transparent',
-                                color: chatChannel === 'teams' ? 'var(--bg)' : 'var(--text-secondary)',
-                                borderRadius: 6,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                padding: '5px 8px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Teams
-                            </button>
-                          </div>
-                        </div>
-
-                        <div style={{ maxHeight: 190, overflowY: 'auto', display: 'grid', gap: 8, paddingRight: 2 }}>
-                          {visibleChatMessages.map((message) => (
-                            <div key={message.id} style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', padding: '12px 16px', display: 'grid', gap: 8 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11, color: 'var(--text-secondary)' }}>
-                                <span>{message.author}</span>
-                                <span>{formatDateTime(message.createdAt)}</span>
-                              </div>
-                              <div style={{ fontSize: 12 }}>{message.text}</div>
-                            </div>
-                          ))}
-                          {visibleChatMessages.length === 0 && (
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>No messages in this channel for this load.</div>
-                          )}
-                        </div>
-
-                        <div style={{ display: 'grid', gap: 16 }}>
-                          <input
-                            value={chatDraft}
-                            onChange={(event) => setChatDraft(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                sendTeamMessage();
-                              }
-                            }}
-                            placeholder={`Send ${chatChannel === 'slack' ? 'Slack' : 'Teams'} message`}
-                            style={{
-                              minHeight: 40,
-                              borderRadius: 8,
-                              border: '1px solid var(--border)',
-                              background: 'var(--surface)',
-                              color: 'var(--text)',
-                              fontSize: 12,
-                              padding: '0 16px',
-                            }}
-                          />
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button
-                              type="button"
-                              onClick={sendTeamMessage}
-                              style={{
-                                border: '1px solid var(--accent-2)',
-                                background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                                color: 'var(--bg)',
-                                borderRadius: 8,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                minHeight: 40,
-                                padding: '0 20px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Send Message
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setChatDraft(`ETA update for ${activeLoadId}: carrier en route and on schedule.`)}
-                              style={{
-                                border: '1px solid var(--border)',
-                                background: 'transparent',
-                                color: 'var(--text-secondary)',
-                                borderRadius: 8,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                minHeight: 40,
-                                padding: '0 20px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Add ETA Template
-                            </button>
-                          </div>
-                        </div>
-                      </section>
-                    </div>
-                  </div>
-
-                    <div style={{ display: 'grid', gap: 16 }}>
-                      <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 20, display: 'grid', gap: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>AUCTION BOARD</div>
-                          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{selectedLoad ? `Load ${selectedLoad.id}` : 'Select a load'}</span>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8, fontSize: 12 }}>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <input
-                              type="checkbox"
-                              checked={botAddons.autoAssign}
-                              onChange={(event) => setBotAddons((prev) => ({ ...prev, autoAssign: event.target.checked }))}
-                            />
-                            Auto-Assign
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <input
-                              type="checkbox"
-                              checked={botAddons.marginGuard}
-                              onChange={(event) => setBotAddons((prev) => ({ ...prev, marginGuard: event.target.checked }))}
-                            />
-                            Margin Guard
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <input
-                              type="checkbox"
-                              checked={botAddons.slaAlerts}
-                              onChange={(event) => setBotAddons((prev) => ({ ...prev, slaAlerts: event.target.checked }))}
-                            />
-                            SLA Alerts
-                          </label>
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <input
-                              type="checkbox"
-                              checked={botAddons.smartAuction}
-                              onChange={(event) => setBotAddons((prev) => ({ ...prev, smartAuction: event.target.checked }))}
-                            />
-                            Smart Auction
-                          </label>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            onClick={runBotRecommendCarrier}
-                            disabled={!selectedLoad || Boolean(botWorking)}
-                            style={{
-                              border: '1px solid var(--border)',
-                              background: 'transparent',
-                              color: 'var(--text-secondary)',
-                              borderRadius: 8,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              minHeight: 40,
-                              padding: '0 20px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            Recommend Carrier
-                          </button>
-                          <button
-                            type="button"
-                            onClick={runBotDispatch}
-                            disabled={!selectedLoad || Boolean(botWorking) || !botAddons.autoAssign}
-                            style={{
-                              border: '1px solid var(--accent-2)',
-                              background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-                              color: 'var(--bg)',
-                              borderRadius: 8,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              minHeight: 40,
-                              padding: '0 20px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {botWorking === 'dispatch' ? 'Dispatching...' : 'Auto Dispatch'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={runAuctionBot}
-                            disabled={!selectedLoad || Boolean(botWorking)}
-                            style={{
-                              border: '1px solid var(--border)',
-                              background: 'transparent',
-                              color: 'var(--text-secondary)',
-                              borderRadius: 8,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              minHeight: 40,
-                              padding: '0 20px',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {botWorking === 'auction' ? 'Listing...' : 'Run Auction Bot'}
-                          </button>
-                        </div>
-
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                          {recommendedCarrier
-                            ? `Recommended Carrier: ${recommendedCarrier.name} (${recommendedCarrier.confidence}% fit)`
-                            : 'No recommendation yet.'}
-                        </div>
-                        {botMessage && <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{botMessage}</div>}
-
-                        <div style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', padding: 20, display: 'grid', gap: 16 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>Auction Activity</div>
-                          {selectedBotActivity.map((entry) => (
-                            <div key={entry.id} style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-alt)', padding: '12px 16px', display: 'grid', gap: 8 }}>
-                              <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{formatDateTime(entry.createdAt)}</div>
-                              <div style={{ fontSize: 12 }}>{entry.text}</div>
-                            </div>
-                          ))}
-                          {selectedBotActivity.length === 0 && (
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>No auction activity yet for this load.</div>
-                          )}
-                        </div>
-                      </section>
-                    </div>
-
-                  <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>
-                    Tip: left click selects and previews • right click opens Load Management.
-                  </div>
+                      </div>
+                    );
+                  })()}
                 </div>
-                </>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      border: '1px solid var(--border)',
-                      borderRadius: 12,
-                      background: 'linear-gradient(160deg, var(--surface), var(--surface-strong))',
-                      padding: 24,
-                      display: 'grid',
-                      gap: 24,
-                      marginTop: 32,
-                      marginBottom: 32,
-                    }}
-                  >
-                    <section style={{ border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-alt)', padding: 14, fontSize: 13, color: 'var(--text-secondary)' }}>
-                      Select a load from the table above to view Load Details.
-                    </section>
-                  </div>
-                </>
-              )
-            )}
+              )}
             </>
           )}
 
-          {contextMenu?.load && (
+          {contextMenu?.load && createPortal(
             <div
               role="menu"
               data-load-context-menu="true"
@@ -1674,13 +1180,14 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                 position: 'fixed',
                 top: contextMenu.y,
                 left: contextMenu.x,
-                zIndex: 60,
+                zIndex: 9999,
                 width: 260,
+                maxHeight: 'calc(100vh - 16px)',
                 border: '1px solid var(--border)',
                 borderRadius: 8,
                 background: 'var(--surface)',
                 boxShadow: '0 14px 34px rgba(0,0,0,0.28)',
-                overflow: 'hidden',
+                overflowY: 'auto',
               }}
             >
               <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)' }}>
@@ -1688,45 +1195,81 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
               </div>
               {(() => {
                 const isDeleted = String(contextMenu.load?.status || '').toLowerCase() === 'deleted' || Boolean(contextMenu.load?.deletedAt);
-                return [
-                  { label: 'Assign Carrier', key: 'assign', hide: isDeleted },
-                  { label: 'Post to Bid Network', key: 'post', hide: isDeleted },
-                  { label: 'Duplicate Load', key: 'duplicate' },
-                  { label: 'Void Load', key: 'void', hide: isDeleted },
-                  { label: 'Archive Load', key: 'delete', hide: isDeleted },
-                  { label: 'Restore Load', key: 'restore', hide: !isDeleted },
-                  { label: 'Cancel Load', key: 'cancel', hide: isDeleted },
-                  { label: 'View in Panel', key: 'view' },
-                  { label: 'Open Load in New Tab', key: 'openTab' },
-                  {
-                    label: 'Go to Load Command Center',
-                    key: 'goLoadManagement',
-                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
-                  },
-                  {
-                    label: 'Go to Customer in Load Management',
-                    key: 'goCustomer',
-                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
-                  },
-                  {
-                    label: 'Go to Carrier in Load Management',
-                    key: 'goCarrier',
-                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
-                  },
-                  {
-                    label: 'Go to Financials in Load Management',
-                    key: 'goFinancials',
-                    onClick: (load) => navigate(`/loadcenter?selected=${encodeURIComponent(load.id)}`),
-                  },
-                  {
-                    label: 'Open Dispatch Screen',
-                    key: 'dispatchScreen',
-                    onClick: (load) => navigate(`/loadcenter/dispatch-screen?selected=${encodeURIComponent(load.id)}`),
-                  },
-                  { label: 'Copy Load ID', key: 'copyId' },
+                const status = normalizeLoadStatus(contextMenu.load?.status);
+                const isPreBooking = ['DRAFT', 'QUOTED', 'RATE_LOCKED'].includes(status);
+                const isBookedPreDispatch = ['BOOKED', 'TENDERED', 'CARRIER_ASSIGNED', 'DRIVER_ASSIGNED', 'PRE_DISPATCH'].includes(status);
+                const isDispatched = status === 'DISPATCHED' || status === 'AT_PICKUP' || status === 'LOADED';
+                const isInTransit = ['IN_TRANSIT', 'AT_DELIVERY'].includes(status);
+                const isPostDelivery = ['DELIVERED', 'POD_RECEIVED', 'INVOICED', 'READY_TO_PAY', 'PAID'].includes(status);
+                const isFinancialException = ['SHORT_PAID', 'RECONCILIATION_REQUIRED', 'CLAIM_OPEN'].includes(status);
+                const isOperationalException = ['EXCEPTION', 'DETENTION_ACTIVE', 'LAYOVER_REQUIRED', 'TONU_PENDING'].includes(status);
+                const isOnHold = status === 'ON_HOLD';
+                const isCancelled = status === 'CANCELLED';
+                const isPaid = status === 'PAID';
+                const isAncillary = String(contextMenu.load?.id || '').startsWith('AX-');
+                const isAuction = String(contextMenu.load?.id || '').startsWith('AL-');
+
+                const items = [
+                  // ─── Pre-booking actions ───
+                  { label: 'Get Quote', key: 'getQuote', show: isPreBooking, section: 'workflow', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`) },
+                  { label: 'Book Load', key: 'book', show: isPreBooking && status !== 'DRAFT', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/carrier-asset-info`) },
+                  { label: 'Post to Bid Network', key: 'post', show: isPreBooking || (isBookedPreDispatch && !isDispatched), section: 'workflow' },
+
+                  // ─── Carrier / dispatch actions ───
+                  { label: 'Assign Carrier', key: 'assign', show: isBookedPreDispatch && !['DRIVER_ASSIGNED', 'PRE_DISPATCH'].includes(status), section: 'dispatch' },
+                  { label: 'Dispatch Load', key: 'dispatch', show: status === 'PRE_DISPATCH', section: 'dispatch', onClick: (load) => runQuickAction('assign', load) },
+                  { label: 'Reassign Carrier', key: 'reassign', show: isBookedPreDispatch || isDispatched, section: 'dispatch', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/carrier-asset-info`) },
+
+                  // ─── In-transit actions ───
+                  { label: 'Update ETA', key: 'updateEta', show: isInTransit, section: 'transit', onClick: (load) => navigate(`/loadcenter/command-center/${encodeURIComponent(load.id)}`) },
+                  { label: 'Report Exception', key: 'reportException', show: isDispatched || isInTransit, section: 'transit', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/load-basics`) },
+                  { label: 'Mark Delivered', key: 'markDelivered', show: status === 'AT_DELIVERY', section: 'transit', onClick: (load) => { runQuickAction('assign', load); } },
+
+                  // ─── Post-delivery actions ───
+                  { label: 'Upload POD', key: 'uploadPod', show: status === 'DELIVERED', section: 'post', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`) },
+                  { label: 'Generate Invoice', key: 'genInvoice', show: status === 'POD_RECEIVED', section: 'post', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`) },
+                  { label: 'Approve Payment', key: 'approvePayment', show: status === 'READY_TO_PAY', section: 'post', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`) },
+
+                  // ─── Exception / hold handling ───
+                  { label: 'Resolve Exception', key: 'resolveException', show: isOperationalException, section: 'exception', onClick: (load) => navigate(`/loadcenter/command-center/${encodeURIComponent(load.id)}`) },
+                  { label: 'File Claim', key: 'fileClaim', show: isOperationalException || isFinancialException, section: 'exception', onClick: (load) => navigate(`/exceptions`) },
+                  { label: 'Resume from Hold', key: 'resumeHold', show: isOnHold, section: 'exception', onClick: (load) => runQuickAction('cancel', load) },
+                  { label: 'Reconcile', key: 'reconcile', show: isFinancialException, section: 'exception', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`) },
+
+                  // ─── Ancillary load specific ───
+                  { label: 'View Parent Load', key: 'viewParent', show: isAncillary && contextMenu.load?.parentLoadId, section: 'ancillary', onClick: (load) => navigate(`/loadcenter/command-center/${encodeURIComponent(load.parentLoadId)}`) },
+
+                  // ─── Lifecycle actions (always available where valid) ───
+                  { label: '—', key: 'sep1', separator: true, show: true },
+                  { label: 'Duplicate Load', key: 'duplicate', show: !isCancelled && !isDeleted, section: 'general' },
+
+                  // ─── Ancillary charge types (expanded) ───
+                  { label: 'Add Detention Charge', key: 'addDetention', show: !isCancelled && !isDeleted && !isPaid && !isAncillary, section: 'general', onClick: (load) => runQuickAction('createAncillary', { ...load, _ancillaryType: 'detention' }) },
+                  { label: 'Add Lumper Charge', key: 'addLumper', show: !isCancelled && !isDeleted && !isPaid && !isAncillary, section: 'general', onClick: (load) => runQuickAction('createAncillary', { ...load, _ancillaryType: 'lumper' }) },
+                  { label: 'Add TONU Charge', key: 'addTonu', show: !isCancelled && !isDeleted && !isPaid && !isAncillary, section: 'general', onClick: (load) => runQuickAction('createAncillary', { ...load, _ancillaryType: 'tonu' }) },
+                  { label: 'Add Layover Charge', key: 'addLayover', show: !isCancelled && !isDeleted && !isPaid && !isAncillary, section: 'general', onClick: (load) => runQuickAction('createAncillary', { ...load, _ancillaryType: 'layover' }) },
+                  { label: 'Add Other Ancillary', key: 'addOtherAncillary', show: !isCancelled && !isDeleted && !isPaid && !isAncillary, section: 'general', onClick: (load) => runQuickAction('createAncillary', { ...load, _ancillaryType: 'other' }) },
+                  { label: 'Place On Hold', key: 'cancel', show: !isCancelled && !isDeleted && !isPaid && !isOnHold && !isPostDelivery, section: 'general' },
+                  { label: 'Void Load', key: 'void', show: !isDeleted && !isCancelled && !isPaid, section: 'general' },
+                  { label: 'Archive Load', key: 'delete', show: !isDeleted && (isCancelled || isPaid || isPreBooking), section: 'general' },
+                  { label: 'Restore Load', key: 'restore', show: isDeleted, section: 'general' },
+
+                  // ─── Navigation ───
+                  { label: '—', key: 'sep2', separator: true, show: true },
+                  { label: 'View in Panel', key: 'view', show: true, section: 'nav' },
+                  { label: 'Open in Command Center', key: 'goLoadManagement', show: true, section: 'nav', onClick: (load) => navigate(`/loadcenter/command-center/${encodeURIComponent(load.id)}`) },
+                  { label: 'Open in New Tab', key: 'openTab', show: true, section: 'nav' },
+                  { label: 'Open Load Basics', key: 'goLoadBasics', show: true, section: 'nav', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/load-basics`) },
+                  { label: 'Open Financials', key: 'goFinancials', show: true, section: 'nav', onClick: (load) => navigate(`/loads/${encodeURIComponent(load.id)}/financials`) },
+                  { label: 'Open Dispatch Screen', key: 'dispatchScreen', show: true, section: 'nav', onClick: (load) => navigate(`/loadcenter/dispatch-screen?selected=${encodeURIComponent(load.id)}`) },
+                  { label: 'Copy Load ID', key: 'copyId', show: true, section: 'nav' },
                 ]
-                  .filter((action) => !action.hide)
-                  .map((action) => (
+                  .filter((item) => item.show)
+                  .map((action) => {
+                    if (action.separator) {
+                      return <div key={action.key} style={{ borderBottom: '1px solid var(--border)', margin: '2px 0' }} />;
+                    }
+                    return (
                     <button
                       key={action.label}
                       type="button"
@@ -1734,7 +1277,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                         if (typeof action.onClick === 'function') {
                           action.onClick(contextMenu.load);
                         } else if (action.key === 'openTab') {
-                          window.open(`/loadcenter?selected=${encodeURIComponent(contextMenu.load.id)}`, '_blank', 'noopener,noreferrer');
+                          window.open(`/loadcenter/command-center/${encodeURIComponent(contextMenu.load.id)}`, '_blank', 'noopener,noreferrer');
                         } else if (action.key === 'copyId') {
                           navigator.clipboard?.writeText(contextMenu.load.id);
                         } else {
@@ -1748,7 +1291,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                         border: 'none',
                         borderBottom: '1px solid var(--border)',
                         background: 'transparent',
-                        color: 'var(--text)',
+                        color: action.section === 'exception' ? 'var(--warning)' : action.key === 'void' || action.key === 'delete' ? 'var(--error)' : 'var(--text)',
                         fontSize: 12,
                         padding: '8px 10px',
                         cursor: 'pointer',
@@ -1756,23 +1299,28 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
                     >
                       {action.label}
                     </button>
-                  ));
+                  );
+                  });
               })()}
-            </div>
+            </div>,
+            document.body
           )}
         </section>
 
-        {!isLoadCenter && (
-          <LoadDetailPanel
-            detail={selectedDetail}
-            risk={dispatchRisk}
-            events={detailState.events}
-            actionState={actionState}
-            onDispatch={dispatch}
-            onReassign={reassign}
-            onBidNetwork={sendToBidNetworkAction}
-            onDelivered={markDelivered}
-          />
+        {(!isLoadCenter || isDispatchCenter) && (
+          <aside style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
+            <LoadDetailPanel
+              detail={selectedDetail}
+              risk={dispatchRisk}
+              events={detailState.events}
+              actionState={actionState}
+              onDispatch={dispatch}
+              onReassign={reassign}
+              onBidNetwork={sendToBidNetworkAction}
+              onDelivered={markDelivered}
+            />
+            {isDispatchCenter && <SoftphoneWidget selectedLoad={selectedLoad} />}
+          </aside>
         )}
       </div>
 

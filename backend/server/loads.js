@@ -481,6 +481,7 @@ function appendBotActivity(loadId, text, source = 'dispatch-bot-addon') {
 function normalizeTemplatePayload(payload = {}) {
   return {
     name: String(payload.name || '').trim(),
+    source: payload.source || 'direct',
     customer: String(payload.customer || 'Not set').trim() || 'Not set',
     picks: Math.max(0, Number.parseInt(String(payload.picks || 0), 10) || 0),
     drops: Math.max(0, Number.parseInt(String(payload.drops || 0), 10) || 0),
@@ -506,7 +507,8 @@ function buildLoadFromTemplate(template) {
   const now = new Date();
   const pickup = new Date(now.getTime() + (2 * 60 * 60 * 1000));
   const delivery = new Date(now.getTime() + (28 * 60 * 60 * 1000));
-  const nextId = generateLoadId();
+  const source = template?.source || template?.defaults?.source;
+  const nextId = generateLoadId(source);
   const defaults = template?.defaults || {};
   const revenue = Number(defaults.revenue || 0);
   const carrierCost = Number(defaults.carrierCost || 0);
@@ -912,8 +914,9 @@ router.post('/templates', (req, res) => {
     return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Template name is required' } });
   }
 
+  const prefix = normalized.source === 'auction' ? 'atpl' : 'tpl';
   const template = {
-    id: `tpl-${Date.now()}`,
+    id: `${prefix}-${Date.now()}`,
     ...normalized,
   };
 
@@ -1589,8 +1592,9 @@ router.post('/:loadId/restore', async (req, res) => {
 });
 
 // Helper to generate a new load ID
-function generateLoadId() {
-  return 'L-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+function generateLoadId(source, loadType) {
+  const prefix = source === 'auction' ? 'AL' : (loadType === 'ancillary' || source === 'ancillary') ? 'AX' : 'L';
+  return prefix + '-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
 }
 
 // CREATE a new load
@@ -1598,7 +1602,7 @@ router.post('/', async (req, res) => {
   try {
     const data = req.body;
     if (!data.id) {
-      data.id = generateLoadId();
+      data.id = generateLoadId(data.source, data.loadType);
     }
     const load = new Load(data);
     await load.save();

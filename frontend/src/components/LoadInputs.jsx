@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import CollapsibleSection from './CollapsibleSection';
 import { listLocations } from '../api/locationsClient';
-import { mockLocations } from '../mock/mockLocations';
+import { getMarketForZip } from '../utils/freightMarkets';
 
 const TRUCKLOAD_ZIP_DATASET_URL = 'https://gist.github.com/Tucker-Eric/6a1a6b164726f21bb699623b06591389/raw/d87104248e4796f872412993a8b43d583c889176/us_zips.csv';
 const MAX_ZIP_DATASET_ROWS = 30000;
@@ -38,6 +38,7 @@ function parseZipCsvDataset(csvText) {
       state,
       stateName,
       zip,
+      market: getMarketForZip(zip, state),
       normalized: `${city} ${state} ${stateName} ${zip}`.toLowerCase(),
     });
   }
@@ -74,15 +75,7 @@ async function loadTruckloadZipDataset() {
   return zipDatasetPromise;
 }
 
-function buildLocalFallbackLocations() {
-  return (Array.isArray(mockLocations) ? mockLocations : []).map((entry) => ({
-    city: String(entry.city || '').trim(),
-    state: String(entry.state || '').trim().toUpperCase(),
-    stateName: String(entry.stateName || '').trim(),
-    zip: String(entry.zip || '').trim(),
-    normalized: `${entry.city || ''} ${entry.state || ''} ${entry.stateName || ''} ${entry.zip || ''}`.toLowerCase(),
-  })).filter((entry) => entry.city && entry.state);
-}
+
 
 async function fetchLiveZipLocation(zipCode) {
   const zip = String(zipCode || '').replace(/\D/g, '').slice(0, 5);
@@ -111,6 +104,7 @@ async function fetchLiveZipLocation(zipCode) {
         state,
         stateName,
         zip,
+        market: getMarketForZip(zip, state),
         normalized: `${city} ${state} ${stateName} ${zip}`.toLowerCase(),
       };
 
@@ -153,7 +147,6 @@ const LoadInputs = ({
   const requestSeqRef = useRef(0);
 
   const MAX_LOCATION_SUGGESTIONS = 24;
-  const localFallbackLocations = useMemo(() => buildLocalFallbackLocations(), []);
 
   const formatLocation = (loc) => `${loc.city}, ${loc.state} ${loc.zip}`;
 
@@ -178,6 +171,7 @@ const LoadInputs = ({
           city,
           state,
           zip,
+          market: getMarketForZip(zip, state),
           normalized: `${city} ${state} ${zip}`.toLowerCase(),
         };
       })
@@ -200,11 +194,6 @@ const LoadInputs = ({
       if (!active) return;
       if (Array.isArray(zipFallback) && zipFallback.length > 0) {
         setSearchableLocations(zipFallback);
-        return;
-      }
-
-      if (localFallbackLocations.length > 0) {
-        setSearchableLocations(localFallbackLocations);
       }
     };
 
@@ -213,7 +202,7 @@ const LoadInputs = ({
     return () => {
       active = false;
     };
-  }, [normalizeLocations, localFallbackLocations]);
+  }, [normalizeLocations]);
 
   const queryDatabaseLocations = async (query) => {
     const requestId = ++requestSeqRef.current;
@@ -228,13 +217,6 @@ const LoadInputs = ({
     const zipFallback = await loadTruckloadZipDataset();
     if (requestId !== requestSeqRef.current) return;
     if (!Array.isArray(zipFallback) || zipFallback.length === 0) {
-      if (localFallbackLocations.length > 0) {
-        const normalizedQuery = String(query || '').trim().toLowerCase();
-        const fallbackFiltered = !normalizedQuery
-          ? localFallbackLocations
-          : localFallbackLocations.filter((loc) => loc.normalized.includes(normalizedQuery));
-        setSearchableLocations(fallbackFiltered.slice(0, 2000));
-      }
       return;
     }
 
@@ -255,7 +237,7 @@ const LoadInputs = ({
       const liveZip = await fetchLiveZipLocation(zip);
       if (requestId !== requestSeqRef.current) return;
       if (liveZip) {
-        setSearchableLocations([liveZip, ...localFallbackLocations].slice(0, 500));
+        setSearchableLocations((prev) => [liveZip, ...prev].slice(0, 500));
       }
     }
   };
@@ -325,6 +307,19 @@ const LoadInputs = ({
   const originSuggestions = filterLocations(originQuery).slice(0, MAX_LOCATION_SUGGESTIONS);
   const destSuggestions = filterLocations(destQuery).slice(0, MAX_LOCATION_SUGGESTIONS);
 
+  const groupByMarket = (locs) => {
+    const grouped = new Map();
+    for (const loc of locs) {
+      const key = loc.market || 'Other';
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(loc);
+    }
+    return grouped;
+  };
+
+  const originGrouped = groupByMarket(originSuggestions);
+  const destGrouped = groupByMarket(destSuggestions);
+
   useEffect(() => {
     if (!originFocused) setOriginQuery('');
   }, [origin, originFocused]);
@@ -382,18 +377,25 @@ const LoadInputs = ({
                 required
               />
               {originFocused && originSuggestions.length > 0 && (
-                <ul style={{ position: 'absolute', zIndex: 10, background: '#fff', color: '#222', width: '100%', border: '1px solid #ccc', borderRadius: 4, marginTop: 2, maxHeight: 160, overflowY: 'auto', fontSize: 14 }}>
-                  {originSuggestions.map((loc) => (
-                    <li
-                      key={loc.city + loc.state + loc.zip}
-                      style={{ padding: 6, cursor: 'pointer' }}
-                      onMouseDown={() => {
-                        setOrigin(`${loc.city}, ${loc.state} ${loc.zip}`);
-                        setOriginQuery(formatLocation(loc));
-                        setOriginFocused(false);
-                      }}
-                    >
-                      {loc.city}, {loc.state} {loc.zip}
+                <ul style={{ position: 'absolute', zIndex: 10, background: '#fff', color: '#222', width: '100%', border: '1px solid #ccc', borderRadius: 4, marginTop: 2, maxHeight: 220, overflowY: 'auto', fontSize: 13, listStyle: 'none', padding: 0, margin: 0 }}>
+                  {[...originGrouped.entries()].map(([market, locs]) => (
+                    <li key={market}>
+                      <div style={{ padding: '4px 8px', fontSize: 11, fontWeight: 700, color: '#888', background: '#f5f5f5', borderBottom: '1px solid #eee', position: 'sticky', top: 0 }}>{market}</div>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        {locs.map((loc) => (
+                          <li
+                            key={loc.city + loc.state + loc.zip}
+                            style={{ padding: '5px 10px', cursor: 'pointer' }}
+                            onMouseDown={() => {
+                              setOrigin(`${loc.city}, ${loc.state} ${loc.zip}`);
+                              setOriginQuery(formatLocation(loc));
+                              setOriginFocused(false);
+                            }}
+                          >
+                            {loc.city}, {loc.state} {loc.zip}
+                          </li>
+                        ))}
+                      </ul>
                     </li>
                   ))}
                 </ul>
@@ -443,18 +445,25 @@ const LoadInputs = ({
                 required
               />
               {destFocused && destSuggestions.length > 0 && (
-                <ul style={{ position: 'absolute', zIndex: 10, background: '#fff', color: '#222', width: '100%', border: '1px solid #ccc', borderRadius: 4, marginTop: 2, maxHeight: 160, overflowY: 'auto', fontSize: 14 }}>
-                  {destSuggestions.map((loc) => (
-                    <li
-                      key={loc.city + loc.state + loc.zip}
-                      style={{ padding: 6, cursor: 'pointer' }}
-                      onMouseDown={() => {
-                        setDestination(`${loc.city}, ${loc.state} ${loc.zip}`);
-                        setDestQuery(formatLocation(loc));
-                        setDestFocused(false);
-                      }}
-                    >
-                      {loc.city}, {loc.state} {loc.zip}
+                <ul style={{ position: 'absolute', zIndex: 10, background: '#fff', color: '#222', width: '100%', border: '1px solid #ccc', borderRadius: 4, marginTop: 2, maxHeight: 220, overflowY: 'auto', fontSize: 13, listStyle: 'none', padding: 0, margin: 0 }}>
+                  {[...destGrouped.entries()].map(([market, locs]) => (
+                    <li key={market}>
+                      <div style={{ padding: '4px 8px', fontSize: 11, fontWeight: 700, color: '#888', background: '#f5f5f5', borderBottom: '1px solid #eee', position: 'sticky', top: 0 }}>{market}</div>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        {locs.map((loc) => (
+                          <li
+                            key={loc.city + loc.state + loc.zip}
+                            style={{ padding: '5px 10px', cursor: 'pointer' }}
+                            onMouseDown={() => {
+                              setDestination(`${loc.city}, ${loc.state} ${loc.zip}`);
+                              setDestQuery(formatLocation(loc));
+                              setDestFocused(false);
+                            }}
+                          >
+                            {loc.city}, {loc.state} {loc.zip}
+                          </li>
+                        ))}
+                      </ul>
                     </li>
                   ))}
                 </ul>

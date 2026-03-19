@@ -32,10 +32,10 @@ import {
   generateLoadDocument,
   getCarriers,
 } from '../api/client';
-import { getLoadDetail, updateLoad, createLoad, createLoadsBatch, createLoadTemplate, listLoadTemplates, sendToBidNetwork } from '../api/loadsClient';
+import { getLoadDetail, updateLoad, createLoad, createLoadsBatch, createLoadTemplate, listLoadTemplates, sendToBidNetwork, createAuctionLoad, createAuctionLoadsBatch, createAuctionLoadTemplate } from '../api/loadsClient';
 import { postToBoards } from '../api/boardIntegrationClient';
 import { LOAD_STATUSES, formatLoadStatusLabel, canTransitionStatus } from '../utils/loadLifecycle';
-import { mockLocations } from '../mock/mockLocations';
+
 
 
 import LaneIntelligencePanel from '../components/LaneIntelligencePanel';
@@ -109,6 +109,8 @@ function safeString(val) {
 function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics', mode = 'load' }) {
         // mode: 'load' = create real load, 'template' = create/save template only
         const isTemplateMode = mode === 'template';
+        // Detect auction context — loads created from Post & Auction use AL- prefix
+        const isAuctionContext = pageTitle === 'Post & Auction';
         // Status update state
         const [statusUpdating, setStatusUpdating] = useState(false);
         const [statusError, setStatusError] = useState('');
@@ -182,10 +184,7 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
   const [arApHistory, setArApHistory] = useState([]);
   const [financialNotice, setFinancialNotice] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
-  const [locations, setLocations] = useState(() => mockLocations.map((location) => ({
-    ...location,
-    label: `${location.city}, ${location.state} ${location.zip}`,
-  })));
+  const [locations, setLocations] = useState([]);
   const [stopLocationQuery, setStopLocationQuery] = useState('');
   const [showCreateLocation, setShowCreateLocation] = useState(false);
   const [newLocationForm, setNewLocationForm] = useState({ city: '', state: '', zip: '' });
@@ -417,7 +416,8 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
     setOpBusy('save-template');
     setOpMessage('');
     const snapshot = collectFormSnapshot();
-    const res = await createLoadTemplate({ name, defaults: snapshot });
+    const createTemplateFn = isAuctionContext ? createAuctionLoadTemplate : createLoadTemplate;
+    const res = await createTemplateFn({ name, defaults: snapshot });
     if (res?.error) { setOpMessage(typeof res.error === 'string' ? res.error : JSON.stringify(res.error)); }
     else {
       setOpMessage(`Template "${name}" saved.`);
@@ -435,9 +435,11 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
     setOpBusy('batch-create');
     setOpMessage('');
     const payload = { ...(tpl.defaults || {}), count, templateId: tpl.id };
+    const createFn = isAuctionContext ? createAuctionLoad : createLoad;
+    const batchFn = isAuctionContext ? createAuctionLoadsBatch : createLoadsBatch;
     const res = count > 1
-      ? await createLoadsBatch(payload)
-      : await createLoad(payload);
+      ? await batchFn(payload)
+      : await createFn(payload);
     if (res?.error) { setOpMessage(typeof res.error === 'string' ? res.error : JSON.stringify(res.error)); }
     else {
       const loads = res?.loads || (res?.load ? [res.load] : []);
@@ -486,7 +488,8 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
     const name = templateName.trim() || `Template ${new Date().toLocaleDateString()}`;
     setSubmitBusy('save-template');
     setSubmitMessage('');
-    const res = await createLoadTemplate({ name, defaults: snapshot });
+    const createTemplateFn = isAuctionContext ? createAuctionLoadTemplate : createLoadTemplate;
+    const res = await createTemplateFn({ name, defaults: snapshot });
     if (res?.error) { setSubmitMessage(typeof res.error === 'string' ? res.error : JSON.stringify(res.error)); }
     else { setSubmitMessage(`Template "${name}" saved successfully.`); }
     setSubmitBusy('');

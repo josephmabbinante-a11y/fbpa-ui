@@ -162,8 +162,23 @@ function createRandomizedMockLoads(count = 240) {
     const deliveryAt = new Date(pickupAt.getTime() + (tripDurationHours * 60 * 60 * 1000));
     const updatedAt = new Date(pickupAt.getTime() - (randomInt(1, 30) * 60 * 60 * 1000));
 
+    // ~15% of mock loads are auction-sourced (AL- prefix) for Audit IQ rate reference
+    const isAuctionLoad = index % 7 === 0;
+    // ~5% of mock loads are ancillary (AX- prefix) — detention, lumper, TONU, etc.
+    const isAncillaryLoad = !isAuctionLoad && index % 11 === 0;
+    const loadPrefix = isAncillaryLoad ? 'AX' : isAuctionLoad ? 'AL' : 'L';
+
+    // ~10% of TENDERED loads are already posted to the internal board
+    const isPostedToBoard = status === 'TENDERED' && index % 3 === 0;
+
     generated.push({
-      id: `L-${String(300000 + index + 1)}`,
+      id: `${loadPrefix}-${String(300000 + index + 1)}`,
+      source: isAncillaryLoad ? 'ancillary' : isAuctionLoad ? 'auction' : 'direct',
+      loadType: isAncillaryLoad ? 'ancillary' : isAuctionLoad ? 'auction' : 'standard',
+      parentLoadId: isAncillaryLoad ? `L-${String(300000 + index)}` : null,
+      ancillaryType: isAncillaryLoad ? ['detention', 'lumper', 'tonu', 'layover', 'reweigh', 'storage'][index % 6] : 'none',
+      freightCategory: ['adhoc', 'contracted', 'spot_rate', 'capacity'][index % 4],
+      billingAllocations: [],
       status,
       customer: randomPick(customers),
       carrier: assignedCarrier
@@ -184,6 +199,9 @@ function createRandomizedMockLoads(count = 240) {
       statusHistory: createInitialStatusHistory(status),
       exceptionReason: status === 'EXCEPTION' ? 'Carrier check call missed SLA window.' : '',
       invoiceLocked: status === 'EXCEPTION',
+      postedToBoard: isPostedToBoard,
+      postedAt: isPostedToBoard ? updatedAt.toISOString() : null,
+      carrierQuotes: [],
     });
   }
 
@@ -333,6 +351,7 @@ function getMockList(filters = {}) {
   if (filters.tab === 'uncovered') items = items.filter((i) => !i.carrier?.assigned || normalizeLoadStatus(i.status) === 'TENDERED');
   if (filters.tab === 'my') items = items.filter((i) => i.dispatcher?.id === 'U-9');
   if (filters.tab === 'delivered') items = items.filter((i) => normalizeLoadStatus(i.status) === 'DELIVERED');
+  if (filters.tab === 'posted') items = items.filter((i) => i.postedToBoard === true);
 
   if (q) {
     items = items.filter((i) => [i.id, i.customer?.name, i.carrier?.name].filter(Boolean).some((v) => String(v).toLowerCase().includes(q)));
@@ -605,11 +624,12 @@ export async function deleteLoadTemplate(templateId) {
   });
 }
 
-export async function createLoad(payload) {
+export async function createAuctionLoad(payload) {
   if (shouldUseMockLoads()) {
     const status = normalizeLoadStatus(payload?.status || 'DRAFT');
     const created = {
-      id: `L-${Date.now()}`,
+      id: `AL-${Date.now()}`,
+      source: 'auction',
       status,
       customer: { id: payload?.customerId || '', name: payload?.customerName || 'Customer' },
       carrier: { id: payload?.carrierId || null, name: payload?.carrierName || 'Pending', assigned: Boolean(payload?.carrierId) },
@@ -633,7 +653,105 @@ export async function createLoad(payload) {
 
   const result = await safeFetch('/api/loads/create', {
     method: 'POST',
-    body: JSON.stringify(payload || {}),
+    body: JSON.stringify({ ...(payload || {}), source: 'auction', idPrefix: 'AL' }),
+  });
+  return normalizeLoadEnvelope(result);
+}
+
+export async function createAuctionLoadsBatch(payload = {}) {
+  const count = Math.min(50, Math.max(1, Number.parseInt(String(payload?.count || 0), 10) || 1));
+
+  if (shouldUseMockLoads()) {
+    const created = [];
+    for (let index = 0; index < count; index += 1) {
+      const now = Date.now();
+      const shiftedPickup = new Date(now + ((index + 1) * 60 * 60 * 1000)).toISOString();
+      const shiftedDelivery = new Date(now + ((index + 25) * 60 * 60 * 1000)).toISOString();
+      const result = await createAuctionLoad({
+        ...payload,
+        pickupAt: payload.pickupAt || shiftedPickup,
+        deliveryAt: payload.deliveryAt || shiftedDelivery,
+      });
+      if (result?.load) {
+        created.push(result.load);
+      }
+    }
+    return { count: created.length, loads: created };
+  }
+
+  const result = await safeFetch('/api/loads/create-batch', {
+    method: 'POST',
+    body: JSON.stringify({ ...(payload || {}), count, source: 'auction', idPrefix: 'AL' }),
+  });
+
+  if (result?.networkOffline) {
+    return createAuctionLoadsBatch({ ...(payload || {}), count });
+  }
+
+  return normalizeLoadEnvelope(result);
+}
+
+export async function createAuctionLoadTemplate(payload) {
+  if (shouldUseMockLoads()) {
+    const template = {
+      id: `atpl-${Date.now()}`,
+      name: String(payload?.name || '').trim(),
+      source: 'auction',
+      customer: String(payload?.customer || 'Not set'),
+      picks: Number.isFinite(Number(payload?.picks)) ? Number(payload.picks) : 1,
+      drops: Number.isFinite(Number(payload?.drops)) ? Number(payload.drops) : 1,
+      branch: String(payload?.branch || 'Shared'),
+      defaults: payload?.defaults && typeof payload.defaults === 'object' ? { ...payload.defaults, source: 'auction' } : { source: 'auction' },
+    };
+    if (!template.name) return { error: 'Template name is required' };
+    mockLoadTemplates.unshift(template);
+    return { template };
+  }
+
+  return safeFetch('/api/loads/templates', {
+    method: 'POST',
+    body: JSON.stringify({ ...(payload || {}), source: 'auction' }),
+  });
+}
+
+export async function createLoad(payload) {
+  const isAncillary = payload?.loadType === 'ancillary' || payload?.idPrefix === 'AX';
+
+  if (shouldUseMockLoads()) {
+    const status = normalizeLoadStatus(payload?.status || 'DRAFT');
+    const prefix = isAncillary ? 'AX' : 'L';
+    const created = {
+      id: `${prefix}-${Date.now()}`,
+      source: isAncillary ? 'ancillary' : 'direct',
+      loadType: isAncillary ? 'ancillary' : 'standard',
+      parentLoadId: isAncillary ? (payload?.parentLoadId || null) : null,
+      ancillaryType: isAncillary ? (payload?.ancillaryType || 'other') : 'none',
+      freightCategory: payload?.freightCategory || 'adhoc',
+      billingAllocations: payload?.billingAllocations || [],
+      status,
+      customer: { id: payload?.customerId || '', name: payload?.customerName || 'Customer' },
+      carrier: { id: payload?.carrierId || null, name: payload?.carrierName || 'Pending', assigned: Boolean(payload?.carrierId) },
+      miles: Number(payload?.miles || 0),
+      revenue: Number(payload?.revenue || 0),
+      carrierCost: Number(payload?.carrierCost || 0),
+      margin: Number(payload?.revenue || 0) - Number(payload?.carrierCost || 0),
+      marginPct: 0,
+      equipment: payload?.equipment || 'van',
+      dispatcher: { id: 'U-9', name: 'Alex Smith' },
+      pickupAt: payload?.pickupAt || new Date().toISOString(),
+      deliveryAt: payload?.deliveryAt || new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      statusHistory: createInitialStatusHistory(status),
+      invoiceLocked: status === 'EXCEPTION',
+      exceptionReason: status === 'EXCEPTION' ? String(payload?.exceptionReason || 'Exception opened on load creation.') : '',
+    };
+    created.marginPct = created.revenue ? Number(((created.margin / created.revenue) * 100).toFixed(1)) : 0;
+    mockLoads.unshift(created);
+    return { load: created };
+  }
+
+  const result = await safeFetch('/api/loads/create', {
+    method: 'POST',
+    body: JSON.stringify({ ...(payload || {}), ...(isAncillary ? { loadType: 'ancillary', idPrefix: 'AX' } : {}) }),
   });
   return normalizeLoadEnvelope(result);
 }
@@ -821,11 +939,40 @@ export async function reassignLoad(loadId, payload) {
 
 export async function sendToBidNetwork(loadId, payload) {
   if (shouldUseMockLoads()) {
-    return applyMockStatusTransition(loadId, 'TENDERED', payload || {}, 'send-to-bid-network');
+    const result = applyMockStatusTransition(loadId, 'TENDERED', payload || {}, 'send-to-bid-network');
+    if (result?.load) {
+      result.load.postedToBoard = true;
+      result.load.postedAt = new Date().toISOString();
+      result.load.carrierQuotes = result.load.carrierQuotes || [];
+    }
+    return result;
   }
   return safeFetch(`/api/loads/${encodeURIComponent(loadId)}/send-to-bid-network`, {
     method: 'POST',
     body: JSON.stringify(payload || {}),
+  });
+}
+
+export async function submitCarrierQuote(loadId, { carrierName, amount, notes }) {
+  if (shouldUseMockLoads()) {
+    const index = findMockLoadIndex(loadId);
+    if (index < 0) return { error: 'Load not found' };
+    const quote = {
+      id: `Q-${Date.now().toString(36).toUpperCase()}`,
+      loadId,
+      carrierName: String(carrierName || '').trim(),
+      amount: Number(amount),
+      notes: String(notes || '').trim(),
+      submittedAt: new Date().toISOString(),
+      status: 'pending',
+    };
+    if (!mockLoads[index].carrierQuotes) mockLoads[index].carrierQuotes = [];
+    mockLoads[index].carrierQuotes.push(quote);
+    return { ok: true, quote, load: mockLoads[index] };
+  }
+  return safeFetch(`/api/loads/${encodeURIComponent(loadId)}/carrier-quote`, {
+    method: 'POST',
+    body: JSON.stringify({ carrierName, amount, notes }),
   });
 }
 
@@ -909,4 +1056,103 @@ export async function restoreLoad(loadId) {
     method: 'POST',
   });
   return normalizeLoadEnvelope(result);
+}
+
+/* ─── Split Load Billing: Consolidated Financials ─── */
+
+const ANCILLARY_TYPES = ['detention', 'lumper', 'tonu', 'layover', 'reweigh', 'storage', 'other'];
+
+export { ANCILLARY_TYPES };
+
+export async function getConsolidatedFinancials(loadId) {
+  if (!loadId) return { error: 'loadId is required' };
+
+  if (shouldUseMockLoads()) {
+    const parent = mockLoads.find((l) => l.id === loadId);
+    if (!parent) return { error: 'Load not found' };
+
+    const ancillaryLoads = mockLoads.filter((l) => l.parentLoadId === loadId && l.loadType === 'ancillary');
+    const ancillaryCharges = ancillaryLoads.map((al) => ({
+      id: al.id,
+      ancillaryType: al.ancillaryType || 'other',
+      revenue: al.revenue || 0,
+      carrierCost: al.carrierCost || 0,
+      margin: (al.revenue || 0) - (al.carrierCost || 0),
+      status: al.status,
+      notes: al.notes || '',
+      createdAt: al.updatedAt || al.pickupAt,
+    }));
+
+    const totalAncillaryRevenue = ancillaryCharges.reduce((sum, a) => sum + a.revenue, 0);
+    const totalAncillaryCost = ancillaryCharges.reduce((sum, a) => sum + a.carrierCost, 0);
+    const consolidatedRevenue = (parent.revenue || 0) + totalAncillaryRevenue;
+    const consolidatedCost = (parent.carrierCost || 0) + totalAncillaryCost;
+    const consolidatedMargin = consolidatedRevenue - consolidatedCost;
+    const consolidatedMarginPct = consolidatedRevenue > 0 ? Number(((consolidatedMargin / consolidatedRevenue) * 100).toFixed(1)) : 0;
+
+    const allocations = (parent.billingAllocations || []).map((alloc) => ({
+      ...alloc,
+      allocatedAmount: alloc.fixedAmount != null ? alloc.fixedAmount : Math.round(consolidatedRevenue * (alloc.percentage / 100)),
+    }));
+
+    return {
+      loadId,
+      parent: { revenue: parent.revenue || 0, carrierCost: parent.carrierCost || 0, margin: (parent.revenue || 0) - (parent.carrierCost || 0), miles: parent.miles || 0 },
+      ancillaryCharges,
+      ancillaryCount: ancillaryCharges.length,
+      totalAncillaryRevenue,
+      totalAncillaryCost,
+      consolidated: { revenue: consolidatedRevenue, carrierCost: consolidatedCost, margin: consolidatedMargin, marginPct: consolidatedMarginPct },
+      billingAllocations: allocations,
+    };
+  }
+
+  return safeFetch(`/api/loads/${encodeURIComponent(loadId)}/consolidated-financials`);
+}
+
+export async function getAncillaryLoads(parentLoadId) {
+  if (!parentLoadId) return [];
+
+  if (shouldUseMockLoads()) {
+    return mockLoads.filter((l) => l.parentLoadId === parentLoadId && l.loadType === 'ancillary');
+  }
+
+  const result = await safeFetch(`/api/loads?parentLoadId=${encodeURIComponent(parentLoadId)}&loadType=ancillary`);
+  return result?.items || [];
+}
+
+export async function createAncillaryCharge(parentLoadId, { ancillaryType, revenue, carrierCost, notes }) {
+  const parent = shouldUseMockLoads()
+    ? mockLoads.find((l) => l.id === parentLoadId)
+    : null;
+
+  return createLoad({
+    loadType: 'ancillary',
+    parentLoadId,
+    idPrefix: 'AX',
+    ancillaryType: ancillaryType || 'other',
+    customerName: parent?.customer?.name || '',
+    equipment: parent?.equipment || 'van',
+    miles: 0,
+    revenue: Number(revenue) || 0,
+    carrierCost: Number(carrierCost) || 0,
+    origin: parent?.origin || {},
+    destination: parent?.destination || {},
+    notes: notes || `${ancillaryType || 'Ancillary'} charge for ${parentLoadId}`,
+  });
+}
+
+export async function updateBillingAllocations(loadId, allocations) {
+  if (!loadId) return { error: 'loadId is required' };
+
+  if (shouldUseMockLoads()) {
+    const index = findMockLoadIndex(loadId);
+    if (index < 0) return { error: 'Load not found' };
+    const totalPct = allocations.reduce((sum, a) => sum + (Number(a.percentage) || 0), 0);
+    if (totalPct > 100) return { error: 'Billing allocation percentages cannot exceed 100%' };
+    mockLoads[index] = { ...mockLoads[index], billingAllocations: allocations, updatedAt: new Date().toISOString() };
+    return { load: mockLoads[index] };
+  }
+
+  return updateLoad(loadId, { billingAllocations: allocations });
 }

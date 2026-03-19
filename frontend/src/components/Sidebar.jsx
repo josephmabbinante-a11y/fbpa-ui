@@ -73,8 +73,8 @@ function Sidebar() {
     { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: '🚛', path: '/fleet' },
     {
       id: 'load-center', label: 'Load Center', icon: '🚚', dropdown: true, items: [
+        { id: 'dispatch-center', label: 'Dispatch Center', icon: '🛣️', path: '/loadcenter/dispatch-screen' },
         { id: 'freight-exchange', label: 'Freight Exchange', icon: '🚛', path: '/load-board' },
-        { id: 'dispatch', label: 'Dispatch', icon: '🛣️', path: '/loadcenter/dispatch-screen' },
       ]
     },
     {
@@ -105,7 +105,6 @@ function Sidebar() {
     {
       id: 'tools', label: 'Tools', icon: '🛠️', dropdown: true, items: [
         { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic-tool' },
-        { id: 'truckload-rate-calculator', label: 'Truckload Rate Calculator', icon: 'RC', path: '/truckload-rate-calculator' },
       ]
     },
     { id: 'account', label: 'Account', icon: '👤', path: '/settings' },

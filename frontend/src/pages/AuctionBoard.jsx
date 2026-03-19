@@ -9,6 +9,7 @@ const EQUIPMENT_TYPES = ['Dry Van', 'Reefer', 'Flatbed', 'Step Deck', 'Double Dr
 const MOCK_ACTIVE_AUCTIONS = [
   {
     id: 'AUC-4821',
+    loadId: 'AL-4821',
     origin: 'Chicago, IL',
     destination: 'Atlanta, GA',
     miles: 720,
@@ -23,6 +24,7 @@ const MOCK_ACTIVE_AUCTIONS = [
   },
   {
     id: 'AUC-4820',
+    loadId: 'AL-4820',
     origin: 'Dallas, TX',
     destination: 'Phoenix, AZ',
     miles: 1015,
@@ -37,6 +39,7 @@ const MOCK_ACTIVE_AUCTIONS = [
   },
   {
     id: 'AUC-4819',
+    loadId: 'AL-4819',
     origin: 'Los Angeles, CA',
     destination: 'Denver, CO',
     miles: 1020,
@@ -51,6 +54,7 @@ const MOCK_ACTIVE_AUCTIONS = [
   },
   {
     id: 'AUC-4818',
+    loadId: 'AL-4818',
     origin: 'Memphis, TN',
     destination: 'Houston, TX',
     miles: 565,
@@ -65,6 +69,7 @@ const MOCK_ACTIVE_AUCTIONS = [
   },
   {
     id: 'AUC-4817',
+    loadId: 'AL-4817',
     origin: 'Seattle, WA',
     destination: 'Portland, OR',
     miles: 185,
@@ -288,6 +293,7 @@ export default function AuctionBoard() {
                 <thead>
                   <tr>
                     <th style={thStyle}>Auction</th>
+                    <th style={thStyle}>Load #</th>
                     <th style={thStyle}>Lane</th>
                     <th style={thStyle}>Equipment</th>
                     <th style={thStyle}>Pickup</th>
@@ -307,6 +313,7 @@ export default function AuctionBoard() {
                       onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedAuction?.id === auction.id ? t.bgAlt : 'transparent'}
                     >
                       <td style={tdStyle}><span style={{ fontFamily: 'monospace', fontSize: 11 }}>{auction.id}</span></td>
+                      <td style={tdStyle}><span style={{ fontFamily: 'monospace', fontSize: 11, color: '#e67e22', fontWeight: 700 }}>{auction.loadId}</span></td>
                       <td style={tdStyle}>
                         <div style={{ fontWeight: 600, fontSize: 12 }}>{auction.origin}</div>
                         <div style={{ fontSize: 11, color: t.textSecondary }}>→ {auction.destination}</div>
@@ -336,6 +343,7 @@ export default function AuctionBoard() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{selectedAuction.id}</div>
+                    <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#e67e22', fontWeight: 700, marginBottom: 6 }}>Load: {selectedAuction.loadId}</div>
                     <StatusBadge status={selectedAuction.status} />
                   </div>
                   <button

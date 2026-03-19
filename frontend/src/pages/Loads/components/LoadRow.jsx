@@ -1,6 +1,13 @@
 import React, { useMemo } from 'react';
 import { formatLoadStatusLabel, normalizeLoadStatus } from '../../../utils/loadLifecycle';
 
+const FREIGHT_CATEGORY_META = {
+  adhoc: { label: 'Ad-Hoc', color: 'var(--text-secondary)', bg: 'var(--bg-alt)' },
+  contracted: { label: 'Contracted', color: 'var(--accent)', bg: 'color-mix(in srgb, var(--accent) 12%, transparent)' },
+  spot_rate: { label: 'Spot Rate', color: 'var(--warning)', bg: 'color-mix(in srgb, var(--warning) 12%, transparent)' },
+  capacity: { label: 'Capacity', color: 'var(--success)', bg: 'color-mix(in srgb, var(--success) 12%, transparent)' },
+};
+
 function stopRowClick(event) {
   event.stopPropagation();
 }
@@ -98,6 +105,19 @@ export default function LoadRow({ load, selected, onSelect, onContextMenuAction,
         title="Click row to expand • Left click previews • Right click for shortcuts"
       >
         <td style={{ padding: '0 10px' }}>
+          <div style={{ fontWeight: 700, fontSize: 12 }}>
+            <a
+              href={`/loadcenter/command-center/${encodeURIComponent(load.id)}`}
+              onClick={stopRowClick}
+              style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+              title="Open in Load Command Center"
+            >
+              {load.id || '—'}
+            </a>
+          </div>
+          {load.referenceNumber && <div style={{ fontSize: 10, color: 'var(--text-secondary)' }}>Ref: {load.referenceNumber}</div>}
+        </td>
+        <td style={{ padding: '0 10px' }}>
           <span
             style={{
               display: 'inline-flex',
@@ -115,6 +135,16 @@ export default function LoadRow({ load, selected, onSelect, onContextMenuAction,
             <span>{statusIcon(normalizedStatus)}</span>
             <span>{formatLoadStatusLabel(normalizedStatus)}</span>
           </span>
+        </td>
+        <td style={{ padding: '0 10px' }}>
+          {(() => {
+            const cat = FREIGHT_CATEGORY_META[load.freightCategory] || FREIGHT_CATEGORY_META.adhoc;
+            return (
+              <span style={{ display: 'inline-flex', alignItems: 'center', border: `1px solid ${cat.color}`, borderRadius: 999, padding: '2px 8px', background: cat.bg, color: cat.color, fontSize: 9, fontWeight: 700, letterSpacing: 0.2 }}>
+                {cat.label}
+              </span>
+            );
+          })()}
         </td>
         <td style={{ padding: '0 10px' }}>
           <div>{load.customer?.name || '—'}</div>
@@ -139,7 +169,7 @@ export default function LoadRow({ load, selected, onSelect, onContextMenuAction,
 
       {expanded && (
         <tr style={{ background: 'var(--surface)' }}>
-          <td colSpan={10} style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
+          <td colSpan={12} style={{ padding: 16, borderTop: '1px solid var(--border)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr 1fr 1fr', gap: 16 }}>
               <div style={{ border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-alt)', padding: 16, fontSize: 12 }}>
                 <div style={{ fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 4 }}>Route</div>

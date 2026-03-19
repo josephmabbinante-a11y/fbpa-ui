@@ -1,6 +1,6 @@
 import React from 'react';
-import LoadCommandPage from './Loads/LoadCommandPage';
+import { Navigate } from 'react-router-dom';
 
 export default function LoadCenter() {
-  return <LoadCommandPage pageTitle="Load Board" />;
+  return <Navigate to="/loadcenter/dispatch-screen" replace />;
 }
