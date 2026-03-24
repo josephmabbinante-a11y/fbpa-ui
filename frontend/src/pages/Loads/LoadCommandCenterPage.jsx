@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import MarketIntelligenceModule from './components/MarketIntelligenceModule';
 import InternalRoutePreview from '../../components/InternalRoutePreview';
+import { LoadStatusBadge } from '../../components/LoadStatusBadge';
 import { useTheme } from '../../contexts/ThemeContext';
 import {
   addLoadBotActivity,
@@ -21,6 +22,7 @@ import {
   ANCILLARY_TYPES,
 } from '../../api/loadsClient';
 import {
+  ALLOWED_STATUS_TRANSITIONS,
   canTransitionStatus,
   deriveRouteDetailModules,
   formatLoadStatusLabel,
@@ -493,9 +495,7 @@ export default function LoadCommandCenterPage() {
               {load.referenceNumber && <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Ref: {load.referenceNumber}</span>}
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', fontSize: 13 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 999, padding: '2px 12px', background: 'var(--bg-alt)', color: 'var(--text)', fontWeight: 700, textTransform: 'capitalize' }}>
-                {formatLoadStatusLabel(load.status)}
-              </span>
+              <LoadStatusBadge status={normalizeLoadStatus(load.status)} />
               {(() => {
                 const cat = FREIGHT_CATEGORY_META[load.freightCategory] || FREIGHT_CATEGORY_META.adhoc;
                 return (
@@ -596,10 +596,38 @@ export default function LoadCommandCenterPage() {
             {/* editable fields */}
             <section style={cardStyle}>
               <div style={sectionLabelStyle}>LOAD DETAILS</div>
+              {/* ── status display (read-only at top) + editable dropdown ── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <LoadStatusBadge status={normalizeLoadStatus(load.status)} />
+                {load.loadId && <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>#{load.loadId}</span>}
+              </div>
+              {/* ── Status Transition Control (always visible) ── */}
+              {(ALLOWED_STATUS_TRANSITIONS[normalizeLoadStatus(load.status)] || []).length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, padding: '8px 12px', background: 'var(--bg-alt)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Advance Status:</label>
+                  <select
+                    value={editDraft?.status || normalizeLoadStatus(load.status)}
+                    onChange={(e) => {
+                      const newStatus = e.target.value;
+                      onEditChange('status', newStatus);
+                      // Auto-save status change immediately
+                      (async () => {
+                        const result = await updateLoad(load.id, { status: newStatus, userId: 'command_center_ui', transitionReason: 'Status advanced via Load Command Center' });
+                        if (!result?.error) fetchLoad(load.id);
+                      })();
+                    }}
+                    style={{ ...inputStyle, maxWidth: 240, fontSize: 12, fontWeight: 700 }}
+                  >
+                    <option value={normalizeLoadStatus(load.status)}>{formatLoadStatusLabel(load.status)} (current)</option>
+                    {(ALLOWED_STATUS_TRANSITIONS[normalizeLoadStatus(load.status)] || []).map((s) => (
+                      <option key={s} value={s}>{formatLoadStatusLabel(s)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 16, fontSize: 13 }}>
-                <div><strong>Status:</strong>{' '}{editMode ? (<select value={editDraft?.status || 'DRAFT'} onChange={(e) => onEditChange('status', e.target.value)} style={inputStyle}>{LOAD_STATUSES.map((s) => (<option key={s} value={s}>{s}</option>))}</select>) : formatLoadStatusLabel(load.status) || '—'}</div>
-                <div><strong>Customer:</strong>{' '}{editMode ? <input value={editDraft?.customerName || ''} onChange={(e) => onEditChange('customerName', e.target.value)} style={inputStyle} /> : (load.customer?.name || '—')}</div>
-                <div><strong>Carrier:</strong>{' '}{editMode ? <input value={editDraft?.carrierName || ''} onChange={(e) => onEditChange('carrierName', e.target.value)} style={inputStyle} /> : (load.carrier?.name || '—')}</div>
+                <div><strong>Customer:</strong>{' '}{editMode ? <input value={editDraft?.customerName || ''} onChange={(e) => onEditChange('customerName', e.target.value)} style={inputStyle} /> : (load.customer?.id ? <a href={`/customers/${encodeURIComponent(load.customer.id)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} title="Open customer profile">{load.customer.name || '—'}</a> : (load.customer?.name || '—'))}</div>
+                <div><strong>Carrier:</strong>{' '}{editMode ? <input value={editDraft?.carrierName || ''} onChange={(e) => onEditChange('carrierName', e.target.value)} style={inputStyle} /> : ((load.carrier?.id || load.carrier?.name) && load.carrier?.name !== '—' ? <a href={`/carriers/profile/${encodeURIComponent(load.carrier.id || load.carrier.name)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} title="Open carrier profile">{load.carrier.name || '—'}</a> : (load.carrier?.name || '—'))}</div>
                 <div><strong>Dispatcher:</strong>{' '}{editMode ? <input value={editDraft?.dispatcherName || ''} onChange={(e) => onEditChange('dispatcherName', e.target.value)} style={inputStyle} /> : (load.dispatcher?.name || '—')}</div>
                 <div><strong>Equipment:</strong>{' '}{editMode ? (<select value={editDraft?.equipment || 'van'} onChange={(e) => onEditChange('equipment', e.target.value)} style={inputStyle}><option value="van">van</option><option value="reefer">reefer</option><option value="flatbed">flatbed</option></select>) : (load.equipment || '—')}</div>
                 <div><strong>Freight Category:</strong>{' '}{editMode ? (<select value={editDraft?.freightCategory || 'adhoc'} onChange={(e) => onEditChange('freightCategory', e.target.value)} style={inputStyle}><option value="adhoc">Ad-Hoc (Transactional)</option><option value="contracted">Contracted</option><option value="spot_rate">Spot Rate (Quoting)</option><option value="capacity">Capacity (RFP)</option></select>) : ((FREIGHT_CATEGORY_META[load.freightCategory] || FREIGHT_CATEGORY_META.adhoc).label)}</div>
@@ -663,7 +691,7 @@ export default function LoadCommandCenterPage() {
             <section style={{ border: '1px solid var(--critical-field-border)', borderRadius: 10, background: 'linear-gradient(160deg, var(--critical-field-bg), var(--bg-alt))', padding: 20, display: 'grid', gap: 12 }}>
               <div style={criticalSectionLabelStyle}>CRITICAL DISPATCH</div>
               <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>Load Status</strong><strong style={{ color: 'var(--critical-value)', textTransform: 'capitalize' }}>{formatLoadStatusLabel(load.status)}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}><strong>Load Status</strong><strong style={{ color: 'var(--critical-value)', textTransform: 'capitalize' }}>{formatLoadStatusLabel(load.status)}</strong></div>
                 {lifecycleModules.isPreDispatch && (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>⏳ Pickup Countdown</strong><strong style={{ color: 'var(--critical-value)' }}>{pickupCountdownLabel}</strong></div>
@@ -791,14 +819,14 @@ export default function LoadCommandCenterPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 16, fontSize: 13 }}>
               <div style={{ display: 'grid', gap: 4 }}>
                 <div style={{ fontWeight: 700 }}>Customer / Shipper</div>
-                <div>{load.customer?.name || '—'}</div>
+                <div>{load.customer?.id ? <a href={`/customers/${encodeURIComponent(load.customer.id)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} title="Open customer profile">{load.customer.name || '—'}</a> : (load.customer?.name || '—')}</div>
                 <div style={{ color: 'var(--text-secondary)' }}>{load.customer?.email || ''}</div>
                 <div style={{ color: 'var(--text-secondary)' }}>{load.customer?.phone || ''}</div>
               </div>
               <div style={{ display: 'grid', gap: 4 }}>
                 <div style={{ fontWeight: 700 }}>Carrier</div>
-                <div>{load.carrier?.name || '—'}</div>
-                <div style={{ color: 'var(--text-secondary)' }}>MC #{load.carrier?.mc || '—'}</div>
+                <div>{(load.carrier?.id || load.carrier?.name) && load.carrier?.name !== '—' ? <a href={`/carriers/profile/${encodeURIComponent(load.carrier.id || load.carrier.name)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }} title="Open carrier profile">{load.carrier.name || '—'}</a> : (load.carrier?.name || '—')}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>{load.carrier?.mc ? <a href={`/carriers/profile/${encodeURIComponent(load.carrier.id || load.carrier.name || load.carrier.mc)}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: 12 }} title="Open carrier profile">MC #{load.carrier.mc}</a> : 'MC #—'}</div>
                 <div style={{ color: 'var(--text-secondary)' }}>{load.carrier?.phone || ''}</div>
                 <div style={{ color: load.carrier?.assigned ? 'var(--success)' : 'var(--warning)', fontWeight: 700, fontSize: 12 }}>{load.carrier?.assigned ? 'Assigned' : 'Not Assigned'}</div>
               </div>
@@ -1033,7 +1061,7 @@ export default function LoadCommandCenterPage() {
             <section style={{ border: '1px solid var(--critical-field-border)', borderRadius: 10, background: 'linear-gradient(160deg, var(--critical-field-bg), var(--bg-alt))', padding: 24, display: 'grid', gap: 16 }}>
               <div style={criticalSectionLabelStyle}>DISPATCH CONTROL CENTER</div>
               <div style={{ display: 'grid', gap: 10, fontSize: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>Load Status</strong><strong style={{ color: 'var(--critical-value)', textTransform: 'capitalize' }}>{formatLoadStatusLabel(load.status)}</strong></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}><strong>Load Status</strong><strong style={{ color: 'var(--critical-value)', textTransform: 'capitalize' }}>{formatLoadStatusLabel(load.status)}</strong></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}><strong>Carrier Assigned</strong><strong style={{ color: load.carrier?.assigned ? 'var(--success)' : 'var(--warning)' }}>{load.carrier?.assigned ? `Yes — ${load.carrier.name}` : 'No'}</strong></div>
 
                 {lifecycleModules.isPreDispatch && (

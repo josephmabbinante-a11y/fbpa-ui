@@ -16,6 +16,10 @@ function loadGoogleMapsScript(apiKey) {
           resolve();
         }
       }, 100);
+      setTimeout(() => {
+        clearInterval(wait);
+        reject(new Error('Timed out waiting for Google Maps SDK'));
+      }, 30000);
       return;
     }
     const script = document.createElement('script');

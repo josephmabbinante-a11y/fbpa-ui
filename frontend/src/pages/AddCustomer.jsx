@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createCustomer } from '../api/client';
+import { listLocations, updateLocation } from '../api/locationsClient';
 import { useTheme } from '../contexts/ThemeContext';
 import PlaceSearchMap from '../components/PlaceSearchMap';
 
@@ -12,6 +13,10 @@ export default function AddCustomer() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [errors, setErrors] = useState({});
+  const [locationSearch, setLocationSearch] = useState('');
+  const [locationResults, setLocationResults] = useState([]);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [linkedLocations, setLinkedLocations] = useState([]);
   const [form, setForm] = useState({
     name: '',
     company: '',
@@ -25,6 +30,7 @@ export default function AddCustomer() {
     contactTitle: '',
     contactPhone: '',
     contactEmail: '',
+    contactFax: '',
     paymentTerms: 'Net 30',
     creditLimit: '',
     privateNotes: '',
@@ -97,6 +103,31 @@ export default function AddCustomer() {
     setErrors((prev) => ({ ...prev, [key]: '' }));
   };
 
+  // Location search
+  useEffect(() => {
+    if (!locationSearch.trim()) { setLocationResults([]); return; }
+    const timer = setTimeout(async () => {
+      setLocationLoading(true);
+      const res = await listLocations({ q: locationSearch.trim() });
+      const items = Array.isArray(res?.items) ? res.items : [];
+      // Exclude already-linked locations
+      const linkedIds = new Set(linkedLocations.map(l => l.id));
+      setLocationResults(items.filter(l => !linkedIds.has(l.id)).slice(0, 10));
+      setLocationLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [locationSearch, linkedLocations]);
+
+  const linkLocation = (loc) => {
+    setLinkedLocations(prev => [...prev, loc]);
+    setLocationSearch('');
+    setLocationResults([]);
+  };
+
+  const unlinkLocation = (locId) => {
+    setLinkedLocations(prev => prev.filter(l => l.id !== locId));
+  };
+
   const handleSave = async () => {
     const nextErrors = {
       name: String(form.name || '').trim() ? '' : 'Customer name is required.',
@@ -130,6 +161,16 @@ export default function AddCustomer() {
       return;
     }
 
+    // Link locations to the newly created customer
+    const customerId = result?.customer?.id || result?.id;
+    if (customerId && linkedLocations.length > 0) {
+      await Promise.all(
+        linkedLocations.map(loc =>
+          updateLocation(loc.id, { customerId, customerName: form.name }),
+        ),
+      );
+    }
+
     navigate('/customers', {
       state: { message: 'Customer created successfully.' },
       replace: false,
@@ -155,7 +196,17 @@ export default function AddCustomer() {
         </div>
       </div>
 
-      {message ? <div style={{ fontSize: 12, color: t.textSecondary }}>{message}</div> : null}
+      {message ? (
+        <div style={{
+          fontSize: 12,
+          fontWeight: 600,
+          padding: '8px 12px',
+          borderRadius: 8,
+          border: `1px solid ${message.includes('error') || message.includes('required') || message.includes('resolve') ? t.error : t.accent}`,
+          background: message.includes('error') || message.includes('required') || message.includes('resolve') ? `${t.error}18` : `${t.accent}18`,
+          color: message.includes('error') || message.includes('required') || message.includes('resolve') ? t.error : t.accent,
+        }}>{message}</div>
+      ) : null}
 
       <PlaceSearchMap
         label="Customer Search & Map"
@@ -248,7 +299,7 @@ export default function AddCustomer() {
               <input value={form.contactTitle} onChange={(e) => setField('contactTitle', e.target.value)} style={inputStyle} placeholder="Logistics manager" />
             </label>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8 }}>
             <label style={{ display: 'grid', gap: 5 }}>
               <span style={labelStyle}>Telephone</span>
               <input value={form.contactPhone} onChange={(e) => setField('contactPhone', e.target.value)} style={inputStyle} placeholder="(555) 123-4567" />
@@ -257,7 +308,95 @@ export default function AddCustomer() {
               <span style={labelStyle}>Email</span>
               <input value={form.contactEmail} onChange={(e) => setField('contactEmail', e.target.value)} style={inputStyle} placeholder="contact@company.com" />
             </label>
+            <label style={{ display: 'grid', gap: 5 }}>
+              <span style={labelStyle}>Fax</span>
+              <input value={form.contactFax} onChange={(e) => setField('contactFax', e.target.value)} style={inputStyle} placeholder="Fax number" />
+            </label>
           </div>
+        </div>
+      </section>
+
+      <section style={sectionStyle}>
+        <div style={headerStyle}>📍 Linked Locations</div>
+        <div style={bodyStyle}>
+          <div style={{ position: 'relative' }}>
+            <input
+              value={locationSearch}
+              onChange={(e) => setLocationSearch(e.target.value)}
+              style={inputStyle}
+              placeholder="Search locations by name, city, zip…"
+            />
+            {locationLoading && <div style={{ fontSize: 11, color: t.textSecondary, marginTop: 4 }}>Searching…</div>}
+            {locationResults.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                maxHeight: 220, overflowY: 'auto',
+                border: `1px solid ${t.border}`, borderRadius: 8,
+                background: t.surface, boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+              }}>
+                {locationResults.map(loc => (
+                  <button
+                    key={loc.id}
+                    type="button"
+                    onClick={() => linkLocation(loc)}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left',
+                      padding: '8px 12px', border: 'none', background: 'transparent',
+                      color: t.text, cursor: 'pointer', fontSize: 12,
+                      borderBottom: `1px solid ${t.border}`,
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>{loc.name}</div>
+                    <div style={{ fontSize: 11, color: t.textSecondary }}>
+                      {[loc.address, loc.city, loc.state, loc.zip].filter(Boolean).join(', ')}
+                      {loc.type ? ` · ${loc.type}` : ''}
+                      {loc.role ? ` · ${loc.role}` : ''}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {linkedLocations.length === 0 && (
+            <div style={{ fontSize: 12, color: t.textSecondary, padding: '8px 0' }}>
+              No locations linked yet. Search above to associate existing locations with this customer.
+            </div>
+          )}
+
+          {linkedLocations.length > 0 && (
+            <div style={{ display: 'grid', gap: 6 }}>
+              {linkedLocations.map(loc => (
+                <div
+                  key={loc.id}
+                  style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '8px 12px', borderRadius: 8,
+                    border: `1px solid ${t.border}`, background: t.bgAlt,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{loc.name}</div>
+                    <div style={{ fontSize: 11, color: t.textSecondary }}>
+                      {[loc.address, loc.city, loc.state, loc.zip].filter(Boolean).join(', ')}
+                      {loc.type ? ` · ${loc.type}` : ''}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => unlinkLocation(loc.id)}
+                    style={{
+                      border: `1px solid ${t.border}`, background: t.surface,
+                      color: t.textSecondary, borderRadius: 6, fontSize: 11,
+                      fontWeight: 700, padding: '4px 10px', cursor: 'pointer',
+                    }}
+                  >
+                    Unlink
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

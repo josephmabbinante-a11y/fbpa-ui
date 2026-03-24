@@ -72,4 +72,48 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
+// ---------- PATCH /:id/audit — approve or reject an exception ----------
+router.patch('/:id/audit', async (req, res) => {
+  try {
+    const { auditAction, auditedBy, auditNotes } = req.body || {};
+    if (!auditAction || !['approved', 'rejected'].includes(auditAction)) {
+      return res.status(400).json({ error: 'auditAction must be "approved" or "rejected"' });
+    }
+
+    const exception = await Exception.findOne({ id: req.params.id });
+    if (!exception) return res.status(404).json({ error: 'Exception not found' });
+
+    exception.auditAction = auditAction;
+    exception.auditedBy = auditedBy || 'system';
+    exception.auditedAt = new Date();
+    if (auditNotes) exception.description = `${exception.description || ''}\n[Audit] ${auditNotes}`;
+
+    // Approving resolves the exception; rejecting leaves it open for follow-up
+    if (auditAction === 'approved') {
+      exception.status = 'Resolved';
+    }
+
+    exception.updatedAt = new Date();
+    await exception.save();
+
+    res.json({ success: true, exception });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------- GET /audit-queue — exceptions pending audit ----------
+router.get('/audit-queue', async (req, res) => {
+  try {
+    const exceptions = await Exception.find({
+      status: 'Open',
+      auditAction: { $in: ['pending', null] },
+    }).sort({ createdAt: -1 }).limit(200);
+
+    res.json({ exceptions, total: exceptions.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

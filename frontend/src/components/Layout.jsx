@@ -304,6 +304,21 @@ function Layout({ children }) {
     setRefreshCounter((prev) => prev + 1);
   };
 
+  // Listen for layout-customization events dispatched from Settings page
+  useEffect(() => {
+    const handleToggle = () => setLayoutEditMode((prev) => !prev);
+    const handleResetPage = () => resetPageLayout();
+    const handleResetAll = () => resetAllLayouts();
+    window.addEventListener('opscale-layout-edit-toggle', handleToggle);
+    window.addEventListener('opscale-layout-reset-page', handleResetPage);
+    window.addEventListener('opscale-layout-reset-all', handleResetAll);
+    return () => {
+      window.removeEventListener('opscale-layout-edit-toggle', handleToggle);
+      window.removeEventListener('opscale-layout-reset-page', handleResetPage);
+      window.removeEventListener('opscale-layout-reset-all', handleResetAll);
+    };
+  }, [pageKey]);
+
   const gearButtonStyle = {
     width: 30,
     height: 30,
@@ -431,82 +446,6 @@ function Layout({ children }) {
           </div>
         )}
 
-        <div
-            style={{
-              position: 'fixed',
-              right: 14,
-              bottom: 14,
-              zIndex: 1200,
-              display: 'grid',
-              gap: 6,
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-              background: 'var(--surface-elevated)',
-              color: 'var(--text-primary)',
-              boxShadow: '0 8px 24px var(--modal-shadow, rgba(0,0,0,0.16))',
-              padding: '16px',
-              minWidth: 220,
-            }}
-        >
-          <button
-            type="button"
-            onClick={() => setLayoutEditMode((prev) => !prev)}
-            style={{
-              minHeight: 34,
-              borderRadius: 8,
-              border: `1px solid ${layoutEditMode ? t.accent : t.border}`,
-              background: layoutEditMode ? t.accent : t.bgAlt,
-              color: layoutEditMode ? '#fff' : t.text,
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          >
-            {layoutEditMode ? 'Exit Layout Edit' : 'Customize Layout'}
-          </button>
-
-          {layoutEditMode && (
-            <>
-              <div style={{ fontSize: 11, color: t.textSecondary }}>
-                Hold <strong>Shift</strong> + drag to move blocks. Alt + double-click to hide/show.
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={resetPageLayout}
-                  style={{
-                    flex: 1,
-                    minHeight: 30,
-                    borderRadius: 8,
-                    border: `1px solid ${t.border}`,
-                    background: t.bgAlt,
-                    color: t.text,
-                    cursor: 'pointer',
-                    fontSize: 11,
-                  }}
-                >
-                  Reset Page
-                </button>
-                <button
-                  type="button"
-                  onClick={resetAllLayouts}
-                  style={{
-                    flex: 1,
-                    minHeight: 30,
-                    borderRadius: 8,
-                    border: `1px solid ${t.border}`,
-                    background: t.bgAlt,
-                    color: t.text,
-                    cursor: 'pointer',
-                    fontSize: 11,
-                  }}
-                >
-                  Reset All
-                </button>
-              </div>
-            </>
-          )}
-        </div>
       </main>
     </div>
   );

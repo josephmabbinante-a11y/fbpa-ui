@@ -1,5 +1,6 @@
 import express from 'express';
 import { Location } from './models.js';
+import { geocodeAddress, isGeocodingAvailable, lookupTimezone, deriveFreightRegion } from './geocoding.js';
 
 const router = express.Router();
 
@@ -41,6 +42,37 @@ router.post('/', async (req, res) => {
     data.updatedAt = now;
     if (!data.name) return res.status(400).json({ error: 'name is required' });
     if (!data.address) return res.status(400).json({ error: 'address is required' });
+
+    // Auto-geocode if lat/lng not provided
+    if ((!Number.isFinite(Number(data.lat)) || !Number.isFinite(Number(data.lng))) && isGeocodingAvailable()) {
+      try {
+        const parts = [data.address, data.city, data.state, data.zip].filter(Boolean).join(', ');
+        const geo = await geocodeAddress(parts);
+        if (geo) {
+          data.lat = geo.lat;
+          data.lng = geo.lng;
+          data.formattedAddress = geo.formattedAddress;
+          data.geocodedAt = new Date();
+          if (geo.county) data.county = geo.county;
+          if (geo.country) data.country = geo.country;
+          if (!data.city && geo.city) data.city = geo.city;
+          if (!data.state && geo.state) data.state = geo.state;
+          if (!data.zip && geo.zip) data.zip = geo.zip;
+          const tz = await lookupTimezone(geo.lat, geo.lng);
+          if (tz) data.timezone = tz;
+        }
+      } catch { /* geocoding is best-effort */ }
+    } else if (Number.isFinite(Number(data.lat)) && Number.isFinite(Number(data.lng))) {
+      try {
+        const tz = await lookupTimezone(Number(data.lat), Number(data.lng));
+        if (tz) data.timezone = tz;
+      } catch { /* best-effort */ }
+    }
+
+    // Derive freight region from state
+    const effectiveState = data.state || '';
+    if (effectiveState) data.region = deriveFreightRegion(effectiveState);
+
     const location = new Location(data);
     await location.save();
     return res.status(201).json({ location });
@@ -55,6 +87,36 @@ router.patch('/:locationId', async (req, res) => {
     if (!data.name) return res.status(400).json({ error: 'name is required' });
     if (!data.address) return res.status(400).json({ error: 'address is required' });
     data.updatedAt = new Date();
+
+    // Re-geocode if address fields changed and no explicit coords
+    if ((!Number.isFinite(Number(data.lat)) || !Number.isFinite(Number(data.lng))) && isGeocodingAvailable()) {
+      try {
+        const parts = [data.address, data.city, data.state, data.zip].filter(Boolean).join(', ');
+        const geo = await geocodeAddress(parts);
+        if (geo) {
+          data.lat = geo.lat;
+          data.lng = geo.lng;
+          data.formattedAddress = geo.formattedAddress;
+          data.geocodedAt = new Date();
+          if (geo.county) data.county = geo.county;
+          if (geo.country) data.country = geo.country;
+          if (!data.city && geo.city) data.city = geo.city;
+          if (!data.state && geo.state) data.state = geo.state;
+          if (!data.zip && geo.zip) data.zip = geo.zip;
+          const tz = await lookupTimezone(geo.lat, geo.lng);
+          if (tz) data.timezone = tz;
+        }
+      } catch { /* geocoding is best-effort */ }
+    } else if (Number.isFinite(Number(data.lat)) && Number.isFinite(Number(data.lng))) {
+      try {
+        const tz = await lookupTimezone(Number(data.lat), Number(data.lng));
+        if (tz) data.timezone = tz;
+      } catch { /* best-effort */ }
+    }
+
+    // Derive freight region from state
+    if (data.state) data.region = deriveFreightRegion(data.state);
+
     const updated = await Location.findOneAndUpdate(
       { id: req.params.locationId },
       data,

@@ -31,6 +31,7 @@ const Customers = lazy(() => import('./pages/Customers'));
 const CustomerProfile = lazy(() => import('./pages/CustomerProfile'));
 const Locations = lazy(() => import('./pages/Locations'));
 const AddLocation = lazy(() => import('./pages/AddLocation'));
+const LocationProfile = lazy(() => import('./pages/LocationProfile'));
 const Settings = lazy(() => import('./pages/Settings'));
 const RateLogicTool = lazy(() => import('./pages/RateLogicTool'));
 const FleetDashboard = lazy(() => import('./pages/FleetDashboard'));
@@ -59,6 +60,12 @@ const FraudPrevention = lazy(() => import('./pages/FraudPrevention'));
 const RiskScoring = lazy(() => import('./pages/RiskScoring'));
 const RouteOptimization = lazy(() => import('./pages/RouteOptimization'));
 const TenantAdmin = lazy(() => import('./pages/TenantAdmin'));
+const LeadManagement = lazy(() => import('./pages/LeadManagement'));
+const QuotingRFP = lazy(() => import('./pages/QuotingRFP'));
+const CapacityBoard = lazy(() => import('./pages/CapacityBoard'));
+const CarrierCompliance = lazy(() => import('./pages/CarrierCompliance'));
+const BudgetPL = lazy(() => import('./pages/BudgetPL'));
+const OperationalKPIs = lazy(() => import('./pages/OperationalKPIs'));
 
 function LoadingFallback() {
   return (
@@ -138,6 +145,7 @@ function AppRoutes() {
             <Route path="/customers/:customerId" element={<CustomerProfile />} />
             <Route path="/locations" element={<Locations />} />
             <Route path="/locations/new" element={<AddLocation />} />
+            <Route path="/locations/:locationId" element={<LocationProfile />} />
             <Route path="/invoices" element={<CombinedPage />} />
             <Route path="/invoices/:id" element={<InvoiceDetail />} />
             <Route path="/exceptions" element={<ExceptionsUploads />} />
@@ -163,7 +171,7 @@ function AppRoutes() {
             <Route path="/carriers/new" element={<AddCarrier />} />
             <Route path="/carriers/profile/:carrier" element={<CarrierProfile />} />
             <Route path="/carriers/:carrier" element={<CarrierScorecard />} />
-            <Route path="/carriers-list" element={<Carriers />} />
+            <Route path="/carrier-performance" element={<CarriersPerformance />} />
             <Route path="/account" element={<Navigate to="/settings" replace />} />
             <Route path="/profile" element={<Navigate to="/settings" replace />} />
             <Route path="*" element={<NotFound />} />
@@ -177,6 +185,12 @@ function AppRoutes() {
             <Route path="/auction-board" element={<Navigate to="/load-board" replace />} />
             <Route path="/exceptions-uploads" element={<ExceptionsUploads />} />
             <Route path="/tenant-admin" element={<TenantAdmin />} />
+            <Route path="/leads" element={<LeadManagement />} />
+            <Route path="/quoting" element={<QuotingRFP />} />
+            <Route path="/capacity-board" element={<CapacityBoard />} />
+            <Route path="/carrier-compliance" element={<CarrierCompliance />} />
+            <Route path="/budget-pl" element={<BudgetPL />} />
+            <Route path="/operational-kpis" element={<OperationalKPIs />} />
           </Routes>
         </Suspense>
       </Layout>

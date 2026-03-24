@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
-import { createLocation, listLocations, updateLocation } from '../api/locationsClient';
+import { createLocation, listLocations, updateLocation, enrichLocations } from '../api/locationsClient';
 import { getCustomers } from '../api/client';
 
 const EMPTY_FORM = {
@@ -106,6 +106,7 @@ export default function Locations() {
     shippers: rows.filter((r) => r.role === 'Shipper' || r.role === 'Both').length,
     consignees: rows.filter((r) => r.role === 'Consignee' || r.role === 'Both').length,
     active: rows.filter((r) => r.status === 'Active').length,
+    geocoded: rows.filter((r) => r.lat != null && r.lng != null).length,
   }), [rows]);
 
   const setField = (key, value) => setDraft((prev) => ({ ...prev, [key]: value }));
@@ -132,6 +133,10 @@ export default function Locations() {
       primaryEmail: row.primaryEmail || '', operatingHours: row.operatingHours || '',
       notes: row.notes || '', appointmentRequired: !!row.appointmentRequired,
       liftgateRequired: !!row.liftgateRequired, insidePickup: !!row.insidePickup,
+      lat: row.lat ?? null, lng: row.lng ?? null,
+      county: row.county || '', country: row.country || '',
+      timezone: row.timezone || '', region: row.region || '',
+      formattedAddress: row.formattedAddress || '', geocodedAt: row.geocodedAt || null,
     });
     setShowForm(true);
   };
@@ -151,6 +156,18 @@ export default function Locations() {
     setEditingId(null);
     setDraft({ ...EMPTY_FORM });
     setMessage(editingId ? 'Location updated.' : 'Location created.');
+  };
+
+  const [enriching, setEnriching] = useState(false);
+
+  const handleEnrichAll = async () => {
+    setEnriching(true);
+    setMessage('');
+    const result = await enrichLocations(100);
+    setEnriching(false);
+    if (result?.error) { setMessage(String(result.error)); return; }
+    setMessage(`Enriched ${result.enriched || 0} locations (${result.skipped || 0} skipped).`);
+    await loadRows();
   };
 
   const inputStyle = {
@@ -183,14 +200,15 @@ export default function Locations() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" style={ghostBtn} onClick={loadRows}>{loading ? 'Refreshing...' : 'Refresh'}</button>
-          <button type="button" style={primaryBtn} onClick={openCreate}>+ Add Location</button>
+          <button type="button" style={{ ...ghostBtn, opacity: enriching ? 0.7 : 1 }} disabled={enriching} onClick={handleEnrichAll}>{enriching ? 'Enriching...' : '🌐 Enrich All'}</button>
+          <button type="button" style={primaryBtn} onClick={() => navigate('/locations/new')}>+ Add Location</button>
         </div>
       </div>
       {message && <div style={{ color: t.textSecondary, fontSize: 12, padding: '4px 0' }}>{message}</div>}
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-        {[['Total Locations', metrics.total], ['Shippers', metrics.shippers], ['Consignees', metrics.consignees], ['Active', metrics.active]].map(([label, value]) => (
+        {[['Total Locations', metrics.total], ['Shippers', metrics.shippers], ['Consignees', metrics.consignees], ['Active', metrics.active], ['Geocoded', `${metrics.geocoded}/${metrics.total}`]].map(([label, value]) => (
           <div key={label} style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.surface, padding: 12 }}>
             <div style={{ fontSize: 11, color: t.textSecondary, marginBottom: 4 }}>{label}</div>
             <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
@@ -234,6 +252,22 @@ export default function Locations() {
             <label style={{ fontSize: 12 }}>Primary Email<input type="email" value={draft.primaryEmail} onChange={(e) => setField('primaryEmail', e.target.value)} style={inputStyle} /></label>
             <label style={{ fontSize: 12 }}>Operating Hours<input value={draft.operatingHours} onChange={(e) => setField('operatingHours', e.target.value)} style={inputStyle} placeholder="e.g. Mon-Fri 8am-5pm" /></label>
           </div>
+
+          {/* Geo Profile — read-only enriched data */}
+          {editingId && (draft.lat || draft.county || draft.timezone || draft.region) && (
+            <div style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary, marginBottom: 6 }}>📍 Geo Profile</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12 }}>
+                {draft.lat != null && draft.lng != null && <span><strong>Coords:</strong> {Number(draft.lat).toFixed(5)}, {Number(draft.lng).toFixed(5)}</span>}
+                {draft.county && <span><strong>County:</strong> {draft.county}</span>}
+                {draft.country && <span><strong>Country:</strong> {draft.country}</span>}
+                {draft.timezone && <span><strong>Timezone:</strong> {draft.timezone}</span>}
+                {draft.region && <span><strong>Freight Region:</strong> {draft.region}</span>}
+                {draft.formattedAddress && <span><strong>Formatted:</strong> {draft.formattedAddress}</span>}
+                {draft.geocodedAt && <span><strong>Geocoded:</strong> {new Date(draft.geocodedAt).toLocaleDateString()}</span>}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <label style={{ fontSize: 12, display: 'flex', gap: 4, alignItems: 'center' }}><input type="checkbox" checked={draft.appointmentRequired} onChange={(e) => setField('appointmentRequired', e.target.checked)} /> Appointment Required</label>
@@ -280,7 +314,7 @@ export default function Locations() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ background: t.bgAlt, color: t.textSecondary }}>
-                {['Code', 'Name', 'Address', 'Role', 'Type', 'Customer', 'Contact', 'Phone', 'Flags', 'Actions'].map((h) => (
+                {['Code', 'Name', 'Address', 'Role', 'Type', 'Region', 'Customer', 'Contact', 'Flags', 'Actions'].map((h) => (
                   <th key={h} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
@@ -296,16 +330,34 @@ export default function Locations() {
                   title="Right-click for location shortcuts"
                   style={{ cursor: 'pointer' }}
                 >
-                  <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontFamily: 'monospace', fontWeight: 600 }}>{row.locationCode || '—'}</td>
-                  <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontWeight: 600 }}>{row.name}</td>
+                  <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontFamily: 'monospace', fontWeight: 600 }}>
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEdit(row); }}
+                      style={{ color: 'var(--accent)', textDecoration: 'none', cursor: 'pointer' }}
+                      title="Click to view / edit location"
+                    >
+                      {row.locationCode || row.id || '—'}
+                    </a>
+                  </td>
+                  <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontWeight: 600 }}>
+                    <a
+                      href="#"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEdit(row); }}
+                      style={{ color: 'var(--accent)', textDecoration: 'none', cursor: 'pointer' }}
+                      title="Click to view / edit location"
+                    >
+                      {row.name}
+                    </a>
+                  </td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{[row.address, row.city, row.state, row.zip].filter(Boolean).join(', ') || '—'}</td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}><span style={roleBadge(row.role || 'None')}>{row.role || 'None'}</span></td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{row.type || '—'}</td>
+                  <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontSize: 11 }}>{row.region || '—'}</td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{row.customerName || '—'}</td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{row.primaryContact || '—'}</td>
-                  <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{row.primaryPhone || '—'}</td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontSize: 11 }}>
-                    {[row.appointmentRequired && 'Appt', row.liftgateRequired && 'Lift', row.insidePickup && 'Inside'].filter(Boolean).join(', ') || '—'}
+                    {[row.appointmentRequired && 'Appt', row.liftgateRequired && 'Lift', row.insidePickup && 'Inside', row.lat != null && '📍'].filter(Boolean).join(' ') || '—'}
                   </td>
                   <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>
                     <button type="button" style={{ ...ghostBtn, padding: '4px 8px', fontSize: 11 }} onClick={() => openEdit(row)}>Edit</button>
@@ -349,7 +401,7 @@ export default function Locations() {
           </button>
           <button
             type="button"
-            onClick={() => { openCreate(); setRowContextMenu(null); }}
+            onClick={() => { navigate('/locations/new'); setRowContextMenu(null); }}
             style={{ ...ghostBtn, minHeight: 34, textAlign: 'left', padding: '6px 12px' }}
           >
             + Create New Location

@@ -49,7 +49,7 @@ export default function ExceptionDrilldown() {
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Exception Detail</h1>
       <div style={{ marginBottom: 16, color: t.textSecondary }}>
         <strong>Invoice:</strong> {exception.invoiceNumber} &nbsp;|&nbsp;
-        <strong>Carrier:</strong> {exception.carrier} &nbsp;|&nbsp;
+        <strong>Carrier:</strong> {exception.carrier ? <a href={`/carriers/profile/${encodeURIComponent(exception.carrier)}`} onClick={(e) => { e.preventDefault(); navigate(`/carriers/profile/${encodeURIComponent(exception.carrier)}`); }} style={{ color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>{exception.carrier}</a> : '—'} &nbsp;|&nbsp;
         <strong>Status:</strong> {exception.status} &nbsp;|&nbsp;
         <strong>Created:</strong> {new Date(exception.createdAt).toLocaleDateString()}
       </div>

@@ -1,51 +1,58 @@
 // UI Badge System for Load Lifecycle (React)
 // Usage: <LoadStatusBadge status={currentState} />
 import React from 'react';
+import { normalizeLoadStatus, formatLoadStatusLabel } from '../utils/loadLifecycle';
 
-const statusColors = {
-  CREATED: '#bdbdbd',
-  AUCTION_OPEN: '#1976d2',
-  AUCTION_BID: '#0288d1',
-  AUCTION_CLOSED: '#7b1fa2',
-  TENDER_SENT: '#fbc02d',
-  TENDER_ACCEPTED: '#388e3c',
-  TENDER_REJECTED: '#d32f2f',
-  ASSIGNED: '#512da8',
-  IN_TRANSIT: '#0097a7',
-  DELIVERED: '#388e3c',
-  CANCELLED: '#616161',
-  REAUCTION: '#f57c00',
+const STATUS_COLORS = {
+  DRAFT: '#94a3b8',
+  QUOTED: '#64748b',
+  RATE_LOCKED: '#6366f1',
+  BOOKED: '#8b5cf6',
+  TENDERED: '#f59e0b',
+  CARRIER_ASSIGNED: '#a855f7',
+  DRIVER_ASSIGNED: '#7c3aed',
+  PRE_DISPATCH: '#0ea5e9',
+  DISPATCHED: '#3b82f6',
+  AT_PICKUP: '#06b6d4',
+  LOADED: '#14b8a6',
+  IN_TRANSIT: '#0891b2',
+  AT_DELIVERY: '#10b981',
+  DELIVERED: '#22c55e',
+  POD_RECEIVED: '#16a34a',
+  INVOICED: '#059669',
+  READY_TO_PAY: '#047857',
+  PAID: '#15803d',
+  DETENTION_ACTIVE: '#ef4444',
+  LAYOVER_REQUIRED: '#f97316',
+  TONU_PENDING: '#dc2626',
+  CLAIM_OPEN: '#e11d48',
+  SHORT_PAID: '#be123c',
+  RECONCILIATION_REQUIRED: '#d946ef',
+  CANCELLED: '#6b7280',
+  ON_HOLD: '#eab308',
+  EXCEPTION: '#ef4444',
 };
 
-const statusLabels = {
-  CREATED: 'Created',
-  AUCTION_OPEN: 'Auction Open',
-  AUCTION_BID: 'Bid Received',
-  AUCTION_CLOSED: 'Auction Closed',
-  TENDER_SENT: 'Tender Sent',
-  TENDER_ACCEPTED: 'Tender Accepted',
-  TENDER_REJECTED: 'Tender Rejected',
-  ASSIGNED: 'Assigned',
-  IN_TRANSIT: 'In Transit',
-  DELIVERED: 'Delivered',
-  CANCELLED: 'Cancelled',
-  REAUCTION: 'Re-Auction',
-};
+export { STATUS_COLORS };
 
-export function LoadStatusBadge({ status }) {
-  const color = statusColors[status] || '#bdbdbd';
-  const label = statusLabels[status] || status;
+export function LoadStatusBadge({ status, size = 'md' }) {
+  const normalized = normalizeLoadStatus(status);
+  const color = STATUS_COLORS[normalized] || '#94a3b8';
+  const label = formatLoadStatusLabel(normalized);
+  const isSmall = size === 'sm';
   return (
     <span
       style={{
-        background: color,
-        color: '#fff',
-        borderRadius: '12px',
-        padding: '4px 12px',
-        fontWeight: 600,
-        fontSize: '0.95em',
-        marginRight: '8px',
+        background: `${color}18`,
+        color: color,
+        borderRadius: 99,
+        padding: isSmall ? '2px 8px' : '4px 12px',
+        fontWeight: 700,
+        fontSize: isSmall ? 10 : 12,
         display: 'inline-block',
+        textTransform: 'capitalize',
+        letterSpacing: 0.3,
+        whiteSpace: 'nowrap',
       }}
     >
       {label}

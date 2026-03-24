@@ -32,7 +32,7 @@ import {
   generateLoadDocument,
   getCarriers,
 } from '../api/client';
-import { getLoadDetail, updateLoad, createLoad, createLoadsBatch, createLoadTemplate, listLoadTemplates, sendToBidNetwork, createAuctionLoad, createAuctionLoadsBatch, createAuctionLoadTemplate } from '../api/loadsClient';
+import { getLoadDetail, updateLoad, createLoad, deleteLoad, createLoadsBatch, createLoadTemplate, listLoadTemplates, sendToBidNetwork, createAuctionLoad, createAuctionLoadsBatch, createAuctionLoadTemplate, getLoadEvents, getLoadRiskSignals, uploadPod, addLoadEvent } from '../api/loadsClient';
 import { postToBoards } from '../api/boardIntegrationClient';
 import { LOAD_STATUSES, formatLoadStatusLabel, canTransitionStatus } from '../utils/loadLifecycle';
 
@@ -312,6 +312,22 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
     };
   };
   const [documentBusyType, setDocumentBusyType] = useState('');
+  const [generatedDocs, setGeneratedDocs] = useState([]);
+  const [docPreviewHtml, setDocPreviewHtml] = useState(null);
+  const [docPreviewTitle, setDocPreviewTitle] = useState('');
+  // POD upload state
+  const [podFileName, setPodFileName] = useState('');
+  const [podUploading, setPodUploading] = useState(false);
+  const [podMessage, setPodMessage] = useState('');
+  // Activity log state
+  const [eventLog, setEventLog] = useState([]);
+  const [eventLogLoading, setEventLogLoading] = useState(false);
+  const [newEventMessage, setNewEventMessage] = useState('');
+  const [newEventType, setNewEventType] = useState('note');
+  // Risk signals state
+  const [riskSignals, setRiskSignals] = useState([]);
+  const [riskMeta, setRiskMeta] = useState({});
+  const [riskLoading, setRiskLoading] = useState(false);
   const [companyBranding] = useState(() => {
     try {
       const saved = localStorage.getItem(COMPANY_BRANDING_STORAGE_KEY);
@@ -496,12 +512,30 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
   };
 
   const handleSendToLoadboard = async () => {
-    if (!loadId) { setSubmitMessage('Save the load first.'); return; }
+    let activeLoadId = loadId;
+    if (isNewDraft) {
+      setSubmitBusy('loadboard');
+      setSubmitMessage('');
+      const snapshot = collectFormSnapshot();
+      const res = await createLoad({
+        customerName: snapshot.customerName,
+        equipment: snapshot.equipment,
+        miles: snapshot.miles,
+        revenue: snapshot.revenue,
+        carrierCost: snapshot.carrierCost,
+        customerId: selectedCustomer?.id || selectedCustomer?._id || '',
+        carrierId: selectedCarrier?.id || selectedCarrier?._id || '',
+        status: 'Pending',
+      });
+      if (res?.error || !res?.load?.id) { setSubmitMessage(res?.error || 'Save the load first.'); setSubmitBusy(''); return; }
+      activeLoadId = res.load.id;
+    }
+    if (!activeLoadId) { setSubmitMessage('Save the load first.'); return; }
     setSubmitBusy('loadboard');
     setSubmitMessage('');
-    const res = await postToBoards(loadId, { boards: ['internal'], auctionConfig: null });
-    if (res?.error) { setSubmitMessage(res.error); }
-    else { setSubmitMessage(`Load posted to loadboard. ${res.message || ''}`); }
+    const res2 = await postToBoards(activeLoadId, { boards: ['internal'], auctionConfig: null });
+    if (res2?.error) { setSubmitMessage(res2.error); }
+    else { setSubmitMessage(`Load posted to loadboard. ${res2.message || ''}`); }
     setSubmitBusy('');
   };
 
@@ -517,15 +551,79 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
   };
 
   const handleSendToAuction = async () => {
-    if (!loadId) { setSubmitMessage('Save the load first.'); return; }
     if (auctionCarrierList.length === 0) { setSubmitMessage('Add at least one carrier to the bid list.'); return; }
+    let activeLoadId = loadId;
+    if (isNewDraft) {
+      setSubmitBusy('auction');
+      setSubmitMessage('');
+      const snapshot = collectFormSnapshot();
+      const res = await createLoad({
+        customerName: snapshot.customerName,
+        equipment: snapshot.equipment,
+        miles: snapshot.miles,
+        revenue: snapshot.revenue,
+        carrierCost: snapshot.carrierCost,
+        customerId: selectedCustomer?.id || selectedCustomer?._id || '',
+        carrierId: selectedCarrier?.id || selectedCarrier?._id || '',
+        status: 'Pending',
+      });
+      if (res?.error || !res?.load?.id) { setSubmitMessage(res?.error || 'Save the load first.'); setSubmitBusy(''); return; }
+      activeLoadId = res.load.id;
+    }
+    if (!activeLoadId) { setSubmitMessage('Save the load first.'); return; }
     setSubmitBusy('auction');
     setSubmitMessage('');
     const carrierIds = auctionCarrierList.map(c => c.id || c._id);
-    const res = await sendToBidNetwork(loadId, { carrierIds, notes: auctionNotes });
-    if (res?.error) { setSubmitMessage(res.error); }
+    const res2 = await sendToBidNetwork(activeLoadId, { carrierIds, notes: auctionNotes });
+    if (res2?.error) { setSubmitMessage(res2.error); }
     else { setSubmitMessage(`Load sent to auction. ${auctionCarrierList.length} carrier(s) notified.`); setShowAuctionPanel(false); }
     setSubmitBusy('');
+  };
+
+  // ── Save & Exit — persists load and navigates back ──
+  const [saveExitBusy, setSaveExitBusy] = useState(false);
+  const [saveExitMessage, setSaveExitMessage] = useState('');
+
+  const handleSaveAndExit = async () => {
+    setSaveExitBusy(true);
+    setSaveExitMessage('');
+    const snapshot = collectFormSnapshot();
+    try {
+      if (isNewDraft) {
+        const payload = {
+          customerName: snapshot.customerName,
+          equipment: snapshot.equipment,
+          miles: snapshot.miles,
+          revenue: snapshot.revenue,
+          carrierCost: snapshot.carrierCost,
+          origin: safeLoadSnapshot?.origin || '',
+          destination: safeLoadSnapshot?.destination || '',
+          customerId: selectedCustomer?.id || selectedCustomer?._id || '',
+          carrierId: selectedCarrier?.id || selectedCarrier?._id || '',
+          status: 'Pending',
+        };
+        const res = await createLoad(payload);
+        if (res?.error) { setSaveExitMessage(typeof res.error === 'string' ? res.error : JSON.stringify(res.error)); setSaveExitBusy(false); return; }
+        setSaveExitBusy(false);
+        navigate('/loads');
+      } else {
+        const updates = {
+          customerId: selectedCustomer?.id || selectedCustomer?._id || '',
+          carrierId: selectedCarrier?.id || selectedCarrier?._id || '',
+          equipment: snapshot.equipment,
+          mileage: snapshot.miles,
+          rate: snapshot.revenue,
+          stops: snapshot.stops,
+        };
+        const res = await updateLoad(loadId, updates);
+        if (res?.error) { setSaveExitMessage(typeof res.error === 'string' ? res.error : JSON.stringify(res.error)); setSaveExitBusy(false); return; }
+        setSaveExitBusy(false);
+        navigate('/loads');
+      }
+    } catch (err) {
+      setSaveExitMessage(err?.message || 'Save failed.');
+      setSaveExitBusy(false);
+    }
   };
 
   // OpScale carrier compliance checks
@@ -558,6 +656,99 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
     }
     return warnings;
   };
+
+  // ── Document generation handler ──
+  const handleGenerateDocument = async (docType) => {
+    setDocumentBusyType(docType);
+    const payload = {
+      branding: companyBranding,
+      load: {
+        id: loadId || 'NEW',
+        origin: safeLoadSnapshot?.origin || {},
+        destination: safeLoadSnapshot?.destination || {},
+        equipment: safeLoadSnapshot?.equipment || 'Van',
+        weight: safeLoadSnapshot?.weight || '',
+        miles: safeLoadSnapshot?.totalMiles || '',
+        mileage: safeLoadSnapshot?.totalMiles || '',
+        pickupAt: safeStopsData[0]?.scheduleStart || safeLoadSnapshot?.pickupDate || '',
+        deliveryAt: safeStopsData[safeStopsData.length - 1]?.scheduleEnd || safeStopsData[safeStopsData.length - 1]?.scheduleStart || safeLoadSnapshot?.deliveryDate || '',
+        carrier: selectedCarrier ? { name: selectedCarrier.name || selectedCarrier.companyName } : {},
+        customer: selectedCustomer ? { name: selectedCustomer.name || selectedCustomer.companyName } : {},
+      },
+      customer: selectedCustomer || {},
+      carrier: selectedCarrier || {},
+      stops: safeStopsData.map((s, i) => ({ order: i + 1, action: s.type || (i === 0 ? 'Pickup' : 'Delivery'), location: s.address || '', scheduleStart: s.datetime || s.scheduleStart || '', scheduleEnd: s.scheduleEnd || '', cargoDescription: s.cargoDescription || s.notes || '', referenceNumbers: s.referenceNumbers || '', driverInstructions: s.driverInstructions || '' })),
+      financials: { incomeItems, expenseItems },
+      terms: { paymentTerms: 'Net 30', freightTerms: freightChargeTerms === 'prepaid' ? 'Prepaid' : 'Collect' },
+    };
+    const res = await generateLoadDocument(docType, payload);
+    if (res?.document) {
+      setGeneratedDocs(prev => [{ ...res.document, generatedAt: new Date().toISOString() }, ...prev]);
+      setDocPreviewHtml(res.document.html);
+      setDocPreviewTitle(`${res.document.type.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} — ${res.document.fileName}`);
+    }
+    setDocumentBusyType('');
+  };
+
+  // ── POD Upload handler ──
+  const handlePodUpload = async () => {
+    if (!loadId) { setPodMessage('Save the load first.'); return; }
+    setPodUploading(true);
+    setPodMessage('');
+    const fileName = podFileName.trim() || `POD-${loadId}-${Date.now()}.pdf`;
+    const res = await uploadPod(loadId, { fileName, userId: 'current_user' });
+    if (res?.error) { setPodMessage(typeof res.error === 'string' ? res.error : 'Upload failed'); }
+    else {
+      setPodMessage(`POD uploaded: ${res.podFileName || fileName}. Status transitioned to POD Received.`);
+      setPodFileName('');
+      if (res?.load) setLoadSnapshot(res.load);
+      // Refresh events
+      loadEventLog();
+    }
+    setPodUploading(false);
+  };
+
+  // ── Event Log loader ──
+  const loadEventLog = async () => {
+    if (!loadId) return;
+    setEventLogLoading(true);
+    const res = await getLoadEvents(loadId);
+    if (res?.items) setEventLog(res.items);
+    setEventLogLoading(false);
+  };
+
+  // ── Add Event handler ──
+  const handleAddEvent = async () => {
+    if (!loadId || !newEventMessage.trim()) return;
+    const res = await addLoadEvent(loadId, { type: newEventType, message: newEventMessage.trim(), userId: 'current_user' });
+    if (res?.item) {
+      setEventLog(prev => [res.item, ...prev]);
+      setNewEventMessage('');
+    }
+  };
+
+  // ── Risk Signals loader ──
+  const loadRiskSignals = async () => {
+    if (!loadId) return;
+    setRiskLoading(true);
+    const res = await getLoadRiskSignals(loadId);
+    if (res?.signals) setRiskSignals(res.signals);
+    if (res?.meta) setRiskMeta(res.meta);
+    else if (res?.risk) {
+      setRiskSignals(res.risk.warnings ? res.risk.warnings.map(w => ({ level: 'warning', category: 'analysis', text: w.replace(/_/g, ' ') })) : []);
+      setRiskMeta(res.risk);
+    }
+    setRiskLoading(false);
+  };
+
+  // Load events and risk signals when loadId is available (skip unsaved drafts)
+  const isNewDraft = !loadId || loadId === 'new';
+  useEffect(() => {
+    if (loadId && loadId !== 'new') {
+      loadEventLog();
+      loadRiskSignals();
+    }
+  }, [loadId]);
 
   const toggleAuctionCarrier = (carrier) => {
     setAuctionCarrierList(prev => {
@@ -737,8 +928,46 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
               >
                 ⚡ Create Load
               </button>
+              <button
+                type="button"
+                disabled={saveExitBusy}
+                onClick={handleSaveAndExit}
+                style={{
+                  minHeight: 40, borderRadius: 8, border: '2px solid #2980b9', background: '#2980b9',
+                  color: '#fff', fontSize: 13, fontWeight: 700, padding: '0 18px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  opacity: saveExitBusy ? 0.6 : 1,
+                }}
+              >
+                {saveExitBusy ? '💾 Saving...' : '💾 Save & Exit'}
+              </button>
+              {!isNewDraft && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm(`Delete load ${loadId}?`)) return;
+                    setSaveExitBusy(true);
+                    const res = await deleteLoad(loadId);
+                    setSaveExitBusy(false);
+                    if (res?.error) { setSaveExitMessage(res.error); return; }
+                    navigate('/loads');
+                  }}
+                  style={{
+                    minHeight: 40, borderRadius: 8, border: '2px solid #c0392b', background: '#fff',
+                    color: '#c0392b', fontSize: 13, fontWeight: 700, padding: '0 18px', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  🗑 Delete Load
+                </button>
+              )}
             </div>
           </div>
+          {saveExitMessage && (
+            <div style={{ fontSize: 12, padding: '6px 10px', borderRadius: 6, background: saveExitMessage.includes('fail') ? '#ffeaea' : '#eaffec', color: saveExitMessage.includes('fail') ? '#c0392b' : '#27ae60' }}>
+              {saveExitMessage}
+            </div>
+          )}
 
           {/* Template save row — always visible */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', borderTop: '1px solid #d0e6fa', paddingTop: 12 }}>
@@ -942,40 +1171,7 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
           ) : (
             <div style={{ color: 'red' }}>FinancialSection component missing</div>
           )}
-          {/* Financials summary table placeholder */}
-          <div style={{ marginTop: 10 }}>
-            <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
-              <thead style={{ background: '#f4f8fb' }}>
-                <tr>
-                  <th>Type</th>
-                  <th>Company</th>
-                  <th>Description</th>
-                  <th>Rate</th>
-                  <th>Quantity</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/* Example rows, replace with real data */}
-                <tr>
-                  <td>Income</td>
-                  <td>Pro Clear Aquatic Systems</td>
-                  <td>Flat Rate</td>
-                  <td>$680.00</td>
-                  <td>1</td>
-                  <td>$680.00</td>
-                </tr>
-                <tr>
-                  <td>Expense</td>
-                  <td>US 1 LOGISTICS</td>
-                  <td>Flat Rate</td>
-                  <td>$300.00</td>
-                  <td>1</td>
-                  <td>$300.00</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+
           {/* ── Load Submission Panel — appears when all sections complete ── */}
           {allSectionsComplete && !isTemplateMode && (
             <div style={{ marginTop: 24, border: '2px solid #2980b9', borderRadius: 12, background: 'linear-gradient(135deg, #eaf6ff 0%, #f0f6ff 100%)', padding: 20 }}>
@@ -1191,12 +1387,263 @@ function LoadManagement({ pageTitle = 'New Shipment', activeTab = 'load-basics',
           )}
         </DynamicSection>
 
-        <DynamicSection title="Documents & Dispatch" complete={false}>
-          <div>Documents Section Placeholder</div>
+        <DynamicSection title="Documents & Dispatch" complete={generatedDocs.length > 0}>
+          <div style={{ display: 'grid', gap: 14 }}>
+            {/* Document Generation Buttons */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {[
+                { type: 'bol', label: '📄 Bill of Lading', color: '#2980b9' },
+                { type: 'rate-confirmation', label: '📋 Rate Confirmation', color: '#27ae60' },
+                { type: 'invoice', label: '💰 Customer Invoice', color: '#8e44ad' },
+                { type: 'lumper-receipt', label: '🧾 Lumper Receipt', color: '#e67e22' },
+                { type: 'carrier-packet', label: '📦 Carrier Packet', color: '#c0392b' },
+              ].map(doc => (
+                <button
+                  key={doc.type}
+                  type="button"
+                  disabled={Boolean(documentBusyType)}
+                  onClick={() => handleGenerateDocument(doc.type)}
+                  style={{
+                    minHeight: 40, borderRadius: 8, border: `2px solid ${doc.color}`,
+                    background: doc.color, color: '#fff', fontSize: 12, fontWeight: 700,
+                    padding: '0 14px', cursor: 'pointer', opacity: documentBusyType ? 0.6 : 1,
+                  }}
+                >
+                  {documentBusyType === doc.type ? 'Generating...' : doc.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Generated Documents List */}
+            {generatedDocs.length > 0 && (
+              <div style={{ border: '1px solid #d0e6fa', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ padding: '8px 12px', background: '#eaf6ff', fontWeight: 700, fontSize: 13 }}>
+                  Generated Documents ({generatedDocs.length})
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#f4f8fb' }}>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700 }}>Type</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700 }}>File Name</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700 }}>Generated</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left', fontWeight: 700 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {generatedDocs.map((doc, idx) => (
+                      <tr key={idx} style={{ borderTop: '1px solid #e0e6ed' }}>
+                        <td style={{ padding: '6px 10px', fontWeight: 600, textTransform: 'capitalize' }}>{(doc.type || '').replace(/-/g, ' ')}</td>
+                        <td style={{ padding: '6px 10px', color: '#5a7a9a' }}>{doc.fileName}</td>
+                        <td style={{ padding: '6px 10px', color: '#5a7a9a' }}>{doc.generatedAt ? new Date(doc.generatedAt).toLocaleString() : '—'}</td>
+                        <td style={{ padding: '6px 10px', display: 'flex', gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => { setDocPreviewHtml(doc.html); setDocPreviewTitle(`${(doc.type || '').replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())} — ${doc.fileName}`); }}
+                            style={{ border: '1px solid #2980b9', background: '#fff', color: '#2980b9', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            👁 View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const blob = new Blob([doc.html], { type: 'text/html' });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement('a');
+                              a.href = url;
+                              a.download = doc.fileName;
+                              a.click();
+                              URL.revokeObjectURL(url);
+                            }}
+                            style={{ border: '1px solid #27ae60', background: '#fff', color: '#27ae60', borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            ⬇ Download
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Document Preview */}
+            {docPreviewHtml && (
+              <div style={{ border: '2px solid #2980b9', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{ padding: '8px 14px', background: '#eaf6ff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>{docPreviewTitle}</span>
+                  <button type="button" onClick={() => { setDocPreviewHtml(null); setDocPreviewTitle(''); }} style={{ border: 'none', background: 'transparent', fontSize: 18, cursor: 'pointer', color: '#888' }}>✕</button>
+                </div>
+                <iframe
+                  srcDoc={docPreviewHtml}
+                  title="Document Preview"
+                  style={{ width: '100%', height: 600, border: 'none', background: '#fff' }}
+                  sandbox="allow-same-origin"
+                />
+              </div>
+            )}
+
+            {/* POD Upload Section */}
+            <div style={{ border: '1px solid #d0e6fa', borderRadius: 8, padding: 14, background: '#f8fbff' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10 }}>📎 Proof of Delivery (POD)</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input
+                  value={podFileName}
+                  onChange={(e) => setPodFileName(e.target.value)}
+                  placeholder="POD file name (e.g., POD-signed.pdf)"
+                  style={{ flex: 1, minWidth: 200, minHeight: 34, borderRadius: 6, border: '1px solid #ccc', padding: '0 10px', fontSize: 12 }}
+                />
+                <button
+                  type="button"
+                  disabled={podUploading || !loadId}
+                  onClick={handlePodUpload}
+                  style={{
+                    minHeight: 36, borderRadius: 8, border: '2px solid #27ae60', background: '#27ae60',
+                    color: '#fff', fontSize: 12, fontWeight: 700, padding: '0 18px', cursor: 'pointer',
+                    opacity: podUploading ? 0.6 : 1,
+                  }}
+                >
+                  {podUploading ? 'Uploading...' : '📤 Upload POD'}
+                </button>
+              </div>
+              {podMessage && (
+                <div style={{ marginTop: 8, fontSize: 12, padding: '6px 10px', borderRadius: 6, background: podMessage.includes('fail') ? '#ffeaea' : '#eaffec', color: podMessage.includes('fail') ? '#c0392b' : '#27ae60' }}>
+                  {podMessage}
+                </div>
+              )}
+              <div style={{ marginTop: 8, fontSize: 11, color: '#7a8a9a' }}>
+                Uploading POD will automatically transition status from DELIVERED → POD_RECEIVED and unblock invoicing.
+              </div>
+            </div>
+          </div>
         </DynamicSection>
 
-        <DynamicSection title="Activity Log" complete={false}>
-          <div>Activity Log Panel Placeholder</div>
+        {/* ── Risk Signals Section ── */}
+        <DynamicSection title="Risk Signals" complete={riskSignals.length === 0 && !riskLoading}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a3a5c' }}>Live Risk Analysis</span>
+              <button type="button" onClick={loadRiskSignals} disabled={riskLoading} style={{ border: '1px solid #2980b9', background: '#fff', color: '#2980b9', borderRadius: 6, padding: '4px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                {riskLoading ? 'Loading...' : '🔄 Refresh'}
+              </button>
+            </div>
+            {/* Risk Meta Gauges */}
+            {(riskMeta.marginPct !== undefined || riskMeta.capacityHeatIndex !== undefined) && (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                {riskMeta.marginPct !== undefined && (
+                  <div style={{ flex: '1 1 140px', padding: 10, borderRadius: 8, border: '1px solid #e0e6ed', background: '#f8fbff', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#5a7a9a', textTransform: 'uppercase' }}>Margin</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: riskMeta.marginPct < 10 ? '#c0392b' : riskMeta.marginPct < 15 ? '#e67e22' : '#27ae60' }}>{riskMeta.marginPct}%</div>
+                  </div>
+                )}
+                {riskMeta.capacityHeatIndex !== undefined && (
+                  <div style={{ flex: '1 1 140px', padding: 10, borderRadius: 8, border: '1px solid #e0e6ed', background: '#f8fbff', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#5a7a9a', textTransform: 'uppercase' }}>Capacity Heat</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: riskMeta.capacityHeatIndex > 70 ? '#c0392b' : riskMeta.capacityHeatIndex > 50 ? '#e67e22' : '#27ae60' }}>{riskMeta.capacityHeatIndex}</div>
+                  </div>
+                )}
+                {riskMeta.laneVolatilityScore !== undefined && (
+                  <div style={{ flex: '1 1 140px', padding: 10, borderRadius: 8, border: '1px solid #e0e6ed', background: '#f8fbff', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#5a7a9a', textTransform: 'uppercase' }}>Lane Volatility</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: riskMeta.laneVolatilityScore > 70 ? '#c0392b' : riskMeta.laneVolatilityScore > 40 ? '#e67e22' : '#27ae60' }}>{riskMeta.laneVolatilityScore}</div>
+                  </div>
+                )}
+                {riskMeta.complianceStatus && (
+                  <div style={{ flex: '1 1 140px', padding: 10, borderRadius: 8, border: '1px solid #e0e6ed', background: '#f8fbff', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: '#5a7a9a', textTransform: 'uppercase' }}>Compliance</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: riskMeta.complianceStatus === 'valid' ? '#27ae60' : '#e67e22' }}>{riskMeta.complianceStatus === 'valid' ? '✔ Valid' : '⚠ ' + riskMeta.complianceStatus}</div>
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Signal List */}
+            {riskSignals.length === 0 && !riskLoading && (
+              <div style={{ padding: 16, textAlign: 'center', color: '#7a8a9a', fontSize: 13 }}>✅ No risk signals detected — load is healthy.</div>
+            )}
+            {riskSignals.length > 0 && (
+              <div style={{ display: 'grid', gap: 6 }}>
+                {riskSignals.map((sig, idx) => (
+                  <div key={idx} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 8,
+                    border: `1px solid ${sig.level === 'critical' ? '#f5c6cb' : sig.level === 'warning' ? '#ffeeba' : '#d6eaf8'}`,
+                    background: sig.level === 'critical' ? '#ffeaea' : sig.level === 'warning' ? '#fff8e1' : '#eaf6ff',
+                  }}>
+                    <span style={{ fontSize: 16 }}>{sig.level === 'critical' ? '🚨' : sig.level === 'warning' ? '⚠️' : 'ℹ️'}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: sig.level === 'critical' ? '#c0392b' : sig.level === 'warning' ? '#856404' : '#2980b9' }}>
+                        {sig.category ? sig.category.toUpperCase() : 'GENERAL'}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#333' }}>{sig.text}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DynamicSection>
+
+        {/* ── Activity Log Section ── */}
+        <DynamicSection title="Activity Log" complete={eventLog.length > 0}>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {/* Add Event Form */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={newEventType} onChange={(e) => setNewEventType(e.target.value)} style={{ minHeight: 34, borderRadius: 6, border: '1px solid #ccc', padding: '0 8px', fontSize: 12 }}>
+                <option value="note">Note</option>
+                <option value="call">Phone Call</option>
+                <option value="email">Email</option>
+                <option value="check_call">Check Call</option>
+                <option value="exception">Exception</option>
+                <option value="escalation">Escalation</option>
+              </select>
+              <input
+                value={newEventMessage}
+                onChange={(e) => setNewEventMessage(e.target.value)}
+                placeholder="Add a log entry..."
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddEvent(); }}
+                style={{ flex: 1, minWidth: 200, minHeight: 34, borderRadius: 6, border: '1px solid #ccc', padding: '0 10px', fontSize: 12 }}
+              />
+              <button
+                type="button"
+                disabled={!newEventMessage.trim() || !loadId}
+                onClick={handleAddEvent}
+                style={{ minHeight: 34, borderRadius: 6, border: '1px solid #2980b9', background: '#2980b9', color: '#fff', fontSize: 12, fontWeight: 700, padding: '0 14px', cursor: 'pointer' }}
+              >
+                ➕ Add Entry
+              </button>
+              <button type="button" onClick={loadEventLog} disabled={eventLogLoading} style={{ border: '1px solid #ccc', background: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                {eventLogLoading ? '...' : '🔄'}
+              </button>
+            </div>
+            {/* Event Log Timeline */}
+            {eventLogLoading && eventLog.length === 0 && (
+              <div style={{ padding: 16, textAlign: 'center', color: '#888', fontSize: 13 }}>Loading event log...</div>
+            )}
+            {!eventLogLoading && eventLog.length === 0 && (
+              <div style={{ padding: 16, textAlign: 'center', color: '#888', fontSize: 13 }}>No events recorded yet. Add a note or take an action to begin the log.</div>
+            )}
+            {eventLog.length > 0 && (
+              <div style={{ maxHeight: 400, overflowY: 'auto', border: '1px solid #e0e6ed', borderRadius: 8, background: '#fff' }}>
+                {eventLog.map((ev, idx) => {
+                  const typeIcons = { status_transition: '🔄', pod_upload: '📎', note: '📝', call: '📞', email: '📧', check_call: '📡', exception: '⚠️', escalation: '🚨', document: '📄' };
+                  const typeColors = { status_transition: '#2980b9', pod_upload: '#27ae60', exception: '#c0392b', escalation: '#c0392b', note: '#5a7a9a', call: '#8e44ad', email: '#e67e22', check_call: '#2980b9', document: '#2980b9' };
+                  return (
+                    <div key={ev.id || idx} style={{ display: 'flex', gap: 10, padding: '10px 14px', borderBottom: idx < eventLog.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                      <span style={{ fontSize: 16, flexShrink: 0 }}>{typeIcons[ev.type] || '📌'}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: typeColors[ev.type] || '#333', textTransform: 'capitalize' }}>{(ev.type || 'event').replace(/_/g, ' ')}</span>
+                          <span style={{ fontSize: 10, color: '#999' }}>{ev.createdAt ? new Date(ev.createdAt).toLocaleString() : '—'}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: '#333', marginTop: 2 }}>{ev.message}</div>
+                        {ev.actor?.name && ev.actor.name !== 'system' && (
+                          <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>by {ev.actor.name}{ev.reason ? ` — ${ev.reason}` : ''}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </DynamicSection>
       </div>
     </ErrorBoundary>

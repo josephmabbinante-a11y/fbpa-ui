@@ -10,7 +10,7 @@ router.get('/test', (req, res) => {
 router.use(verifyToken);
 // import fs from 'fs';
 // import path from 'path';
-import { buildMileageLaneKey, estimateMileage } from './mileage.js';
+import { buildMileageLaneKey, estimateMileage, estimateMileageAsync, geocodeLocationAddress } from './mileage.js';
 import fs from 'fs';
 import path from 'path';
 const STORE_DIR = path.resolve('./server/data');
@@ -183,6 +183,7 @@ let loads = structuredClone(seedLoads);
 let loadTemplates = structuredClone(seedLoadTemplates);
 let eventsByLoad = structuredClone(seedEventsByLoad);
 let botActivityByLoad = structuredClone(seedBotActivityByLoad);
+const bidsByLoad = {};
 
 const REQUIRED_LOAD_FIELDS = ['customerName', 'originCity', 'originState', 'destinationCity', 'destinationState'];
 
@@ -602,7 +603,7 @@ function applyCreateOverrides(load, payload = {}) {
   return withComputed(next);
 }
 
-function resolveCreatedLoadMileage(load, payload = {}) {
+async function resolveCreatedLoadMileage(load, payload = {}) {
   const providedMiles = Number(payload?.miles);
   const laneKey = buildMileageLaneKey(load.origin, load.destination, load.equipment);
 
@@ -620,18 +621,34 @@ function resolveCreatedLoadMileage(load, payload = {}) {
     };
   }
 
-  const resolved = estimateMileage(load.origin, load.destination, load.equipment);
-  return {
-    ...load,
-    miles: Math.max(1, Number(resolved.miles || 0)),
-    mileage: {
+  try {
+    const resolved = await estimateMileageAsync(load.origin, load.destination, load.equipment);
+    return {
+      ...load,
       miles: Math.max(1, Number(resolved.miles || 0)),
-      method: resolved.method,
-      confidence: Number(resolved.confidence || 0),
-      laneKey: resolved.laneKey || laneKey,
-      resolvedAt: new Date().toISOString(),
-    },
-  };
+      mileage: {
+        miles: Math.max(1, Number(resolved.miles || 0)),
+        method: resolved.method,
+        confidence: Number(resolved.confidence || 0),
+        durationMinutes: resolved.durationMinutes ?? null,
+        laneKey: resolved.laneKey || laneKey,
+        resolvedAt: new Date().toISOString(),
+      },
+    };
+  } catch {
+    const resolved = estimateMileage(load.origin, load.destination, load.equipment);
+    return {
+      ...load,
+      miles: Math.max(1, Number(resolved.miles || 0)),
+      mileage: {
+        miles: Math.max(1, Number(resolved.miles || 0)),
+        method: resolved.method,
+        confidence: Number(resolved.confidence || 0),
+        laneKey: resolved.laneKey || laneKey,
+        resolvedAt: new Date().toISOString(),
+      },
+    };
+  }
 }
 
 function withComputed(load) {
@@ -822,19 +839,42 @@ router.get('/:loadId', async (req, res) => {
   }
 });
 
-router.post('/estimate-mileage', (req, res) => {
+router.post('/estimate-mileage', async (req, res) => {
   const payload = req.body || {};
   const origin = payload.origin ?? payload.originLocation ?? payload.originText;
   const destination = payload.destination ?? payload.destinationLocation ?? payload.destinationText;
   const equipmentType = payload.equipmentType ?? payload.equipment;
 
-  const estimate = estimateMileage(origin, destination, equipmentType);
-  return res.json({
-    miles: estimate.miles,
-    method: estimate.method,
-    confidence: estimate.confidence,
-    laneKey: estimate.laneKey,
-  });
+  try {
+    const estimate = await estimateMileageAsync(origin, destination, equipmentType);
+    return res.json({
+      miles: estimate.miles,
+      method: estimate.method,
+      confidence: estimate.confidence,
+      durationMinutes: estimate.durationMinutes ?? null,
+      laneKey: estimate.laneKey,
+    });
+  } catch {
+    const estimate = estimateMileage(origin, destination, equipmentType);
+    return res.json({
+      miles: estimate.miles,
+      method: estimate.method,
+      confidence: estimate.confidence,
+      laneKey: estimate.laneKey,
+    });
+  }
+});
+
+router.post('/geocode', async (req, res) => {
+  const { address } = req.body || {};
+  if (!address || typeof address !== 'string' || !address.trim()) {
+    return res.status(400).json({ error: 'address is required' });
+  }
+  const result = await geocodeLocationAddress(address.trim());
+  if (!result) {
+    return res.status(404).json({ error: 'Unable to geocode address' });
+  }
+  return res.json(result);
 });
 
 router.get('/:loadId/risk-signals', (req, res) => {
@@ -989,7 +1029,7 @@ router.post('/create', async (req, res) => {
   }
 
   const load = applyCreateOverrides(buildLoadFromTemplate(template), payload);
-  const resolvedLoad = resolveCreatedLoadMileage(load, payload);
+  const resolvedLoad = await resolveCreatedLoadMileage(load, payload);
   const normalizedLoad = normalizeStoredLoad(withComputed(resolvedLoad));
 
   const persisted = await syncLoadToDatabase(normalizedLoad);
@@ -1051,7 +1091,7 @@ router.post('/create-batch', async (req, res) => {
       return res.status(400).json(buildValidationError(validationErrors));
     }
 
-    const resolvedLoad = resolveCreatedLoadMileage(load, req.body || {});
+    const resolvedLoad = await resolveCreatedLoadMileage(load, req.body || {});
     const normalizedLoad = normalizeStoredLoad(withComputed(resolvedLoad));
 
     const persisted = await syncLoadToDatabase(normalizedLoad);
@@ -1381,8 +1421,7 @@ router.post('/:loadId/send-to-bid-network', async (req, res) => {
 });
 
 // ─── Carrier Bid Tracking ───────────────────────────────────────────────────
-
-const bidsByLoad = {};
+// bidsByLoad declared at module scope (line ~186)
 
 router.get('/:loadId/bids', async (req, res) => {
   const loadId = req.params.loadId;

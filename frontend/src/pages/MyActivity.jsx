@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { listLoads } from '../api/loadsClient';
+import { LoadStatusBadge } from '../components/LoadStatusBadge';
 import AuctionNotificationManager from '../components/AuctionNotificationManager';
 
 export default function MyActivity() {
@@ -129,7 +130,7 @@ export default function MyActivity() {
                       {load.customer?.name || '—'} &bull; {load.origin?.city || '—'} &rarr; {load.destination?.city || '—'}
                     </span>
                     <span style={{ color: t.textSecondary }}>
-                      Status: {String(load.status || '').replace('_', ' ')} &bull; Margin: {Number(load.marginPct || 0).toFixed(1)}%
+                      <LoadStatusBadge status={load.status || 'DRAFT'} size="sm" /> &bull; Margin: {Number(load.marginPct || 0).toFixed(1)}%
                     </span>
                   </div>
                   <button type="button" style={ghostBtn} onClick={() => navigate(`/loads/${encodeURIComponent(load.id)}/load-basics`)}>

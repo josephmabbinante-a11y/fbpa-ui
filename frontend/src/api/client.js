@@ -4,6 +4,7 @@ import mockDashboard from '../mock/dashboard';
 import mockReports from '../mock/reports';
 import mockInvoiceImages from '../mock/invoiceImages';
 import { mockRateData } from '../mock/mockRateData';
+import mockCustomers, { mockCustomerAging } from '../mock/mockCustomers';
 import { getAccessToken } from '../utils/authToken';
 import { isMockModeEnabled } from '../utils/mockMode';
 
@@ -163,7 +164,7 @@ export async function getInvoices(type) {
 
 export async function getCustomers() {
   if (isMockModeEnabled()) {
-    return [];
+    return mockCustomers;
   }
   return safeFetch('/api/customers');
 }
@@ -178,11 +179,18 @@ export async function createCustomer(data) {
 
 export async function getCustomerDetail(id) {
   if (!id) return { error: 'Customer id is required' };
+  if (isMockMode()) {
+    const found = mockCustomers.find((c) => c.id === id || String(c.name).toLowerCase() === String(id).toLowerCase());
+    return found || { error: 'Customer not found' };
+  }
   return safeFetch(`/api/customers/${encodeURIComponent(id)}`);
 }
 
 export async function getCustomerAging(id) {
   if (!id) return { error: 'Customer id is required' };
+  if (isMockMode()) {
+    return mockCustomerAging[id] || { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+  }
   return safeFetch(`/api/customers/${encodeURIComponent(id)}/aging`);
 }
 
@@ -788,6 +796,41 @@ export async function exportTrainingDatasetJson() {
   return safeFetch('/api/rate-logic/training-dataset/export');
 }
 
+// ─── Quote History API ───────────────────────────────────────────────────────
+export async function listQuoteHistory({ limit = 50, skip = 0, status, source, customerId } = {}) {
+  const params = new URLSearchParams();
+  params.set('limit', String(limit));
+  params.set('skip', String(skip));
+  if (status) params.set('status', status);
+  if (source) params.set('source', source);
+  if (customerId) params.set('customerId', customerId);
+  return safeFetch(`/api/quotes?${params.toString()}`);
+}
+
+export async function getQuote(quoteId) {
+  return safeFetch(`/api/quotes/${encodeURIComponent(quoteId)}`);
+}
+
+export async function createQuote(payload) {
+  return safeFetch('/api/quotes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload || {}),
+  });
+}
+
+export async function updateQuote(quoteId, payload) {
+  return safeFetch(`/api/quotes/${encodeURIComponent(quoteId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload || {}),
+  });
+}
+
+export async function getQuoteSummaryStats() {
+  return safeFetch('/api/quotes/stats/summary');
+}
+
 export async function register(payload) {
   try {
     const normalizedEmail = ensureGeneratedRegisterEmail(payload);
@@ -875,4 +918,78 @@ export async function deleteDocument(docId) {
 
 export function downloadDocument(docId) {
   window.open(`/api/documents/${encodeURIComponent(docId)}/download`, '_blank');
+}
+
+// ── Geocoding & Mileage ─────────────────────────────────────────────
+
+export async function estimateMileage(payload) {
+  return safeFetch('/api/loads/estimate-mileage', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function geocodeAddress(address) {
+  return safeFetch('/api/loads/geocode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ address }),
+  });
+}
+
+// ── Document Registry & Audit Queue ─────────────────────────────────
+
+export async function getDocumentRegistry(filters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
+  const qs = params.toString();
+  return safeFetch(`/api/document-registry${qs ? `?${qs}` : ''}`);
+}
+
+export async function registerDocument(payload) {
+  // payload can include a File (via FormData) or plain JSON metadata
+  if (payload instanceof FormData) {
+    return safeFetch('/api/document-registry', { method: 'POST', body: payload });
+  }
+  return safeFetch('/api/document-registry', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateDocumentAudit(docId, updates) {
+  return safeFetch(`/api/document-registry/${encodeURIComponent(docId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function getAuditQueue() {
+  return safeFetch('/api/document-registry/audit-queue');
+}
+
+export async function getExceptionAuditQueue() {
+  return safeFetch('/api/exceptions/audit-queue');
+}
+
+export async function auditException(exceptionId, payload) {
+  return safeFetch(`/api/exceptions/${encodeURIComponent(exceptionId)}/audit`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function submitQrDocument(payload) {
+  if (payload instanceof FormData) {
+    return safeFetch('/api/document-registry/qr-ingest', { method: 'POST', body: payload });
+  }
+  return safeFetch('/api/document-registry/qr-ingest', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
 }

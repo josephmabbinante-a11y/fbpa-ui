@@ -18,6 +18,7 @@ function toNumber(value: string | undefined, fallback: number): number {
 export const env = {
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: toNumber(process.env.PORT, 4010),
+  GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || '',
   HERE_API_KEY: requireEnv('HERE_API_KEY', 'demo-key'),
   REDIS_URL: requireEnv('REDIS_URL', 'redis://localhost:6379'),
   DATABASE_URL: requireEnv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/route_intelligence'),

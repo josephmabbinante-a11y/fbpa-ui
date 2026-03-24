@@ -1,4 +1,5 @@
 import { getAccessToken } from '../utils/authToken';
+import mockLocations from '../mock/mockLocations';
 
 const RAW_API_URL = import.meta.env.VITE_API_URL;
 const API_URL = import.meta.env.PROD
@@ -22,7 +23,7 @@ function shouldUseMockLocations() {
   return isMockMode() || forceMockFromNetwork;
 }
 
-let mockStore = [];
+let mockStore = [...mockLocations];
 
 async function safeFetch(path, options) {
   try {
@@ -125,5 +126,12 @@ export async function updateLocation(id, payload = {}) {
   return safeFetch(`/api/locations/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
+  });
+}
+
+export async function enrichLocations(limit = 50) {
+  return safeFetch('/api/locations/enrich-batch', {
+    method: 'POST',
+    body: JSON.stringify({ limit }),
   });
 }

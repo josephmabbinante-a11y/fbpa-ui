@@ -5,6 +5,7 @@ import {
   addLoadBotActivity,
   createLoad,
   createLoadTemplate,
+  deleteLoad,
   deleteLoadTemplate,
   dispatchLoad,
   getLoadBotActivity,
@@ -397,18 +398,7 @@ export default function LoadBoard() {
   }, [visibleLoads]);
 
   const runCreateNewLoad = async () => {
-    setWorking('create-load');
-    setMessage('');
-    const result = await createLoad({});
-    setWorking('');
-
-    if (result?.error || !result?.load?.id) {
-      setMessage(result?.error || 'Could not create load.');
-      return;
-    }
-
-    setMessage(`New load ${result.load.id} created.`);
-    navigate(`/loads/${encodeURIComponent(result.load.id)}/load-basics`);
+    navigate('/loads/new/load-basics');
   };
 
   const runUseTemplate = async () => {
@@ -417,18 +407,7 @@ export default function LoadBoard() {
       return;
     }
 
-    setWorking('template-load');
-    setMessage('');
-    const result = await createLoad({ templateId: selectedTemplateId });
-    setWorking('');
-
-    if (result?.error || !result?.load?.id) {
-      setMessage(result?.error || 'Could not create load from template.');
-      return;
-    }
-
-    setMessage(`Template load ${result.load.id} created.`);
-    navigate(`/loads/${encodeURIComponent(result.load.id)}/load-basics`);
+    navigate(`/loads/new/load-basics?templateId=${encodeURIComponent(selectedTemplateId)}`);
   };
 
   const runUseTemplateById = async (templateId) => {
@@ -1242,6 +1221,9 @@ export default function LoadBoard() {
                           >
                             {load.customer?.name || '—'}
                           </span>
+                          {load.customer?.id && (
+                            <div><a href={`/customers/${encodeURIComponent(load.customer.id)}`} onClick={(e) => e.stopPropagation()} style={{ color: 'var(--accent)', fontSize: 10, textDecoration: 'underline' }} title="Open customer profile">{load.customer.id}</a></div>
+                          )}
                         </td>
                         <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
                           <span
@@ -1260,6 +1242,9 @@ export default function LoadBoard() {
                           >
                             {load.carrier?.name || '—'}
                           </span>
+                          {(load.carrier?.id || load.carrier?.name) && load.carrier?.name !== '—' && (
+                            <div><a href={`/carriers/profile/${encodeURIComponent(load.carrier.id || load.carrier.name)}`} onClick={(e) => e.stopPropagation()} style={{ color: 'var(--accent)', fontSize: 10, textDecoration: 'underline' }} title="Open carrier profile">{load.carrier.id || 'Profile'}</a></div>
+                          )}
                         </td>
                         <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}` }}>
                           <span
@@ -1302,7 +1287,7 @@ export default function LoadBoard() {
                             {String(load.status || '').replace('_', ' ')}
                           </span>
                         </td>
-                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}`, textAlign: 'right' }}>
+                        <td style={{ padding: '3px 5px', borderTop: `1px solid ${t.border}`, textAlign: 'right', display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
                           <button
                             type="button"
                             style={{ ...ghostBtn, fontSize: 9, padding: '2px 6px', borderRadius: 5 }}
@@ -1312,6 +1297,24 @@ export default function LoadBoard() {
                             }}
                           >
                             Open
+                          </button>
+                          <button
+                            type="button"
+                            style={{ ...ghostBtn, fontSize: 9, padding: '2px 6px', borderRadius: 5, color: '#c0392b', borderColor: '#c0392b' }}
+                            disabled={working === `delete-load-${load.id}`}
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                              if (!window.confirm(`Delete load ${load.id}?`)) return;
+                              setWorking(`delete-load-${load.id}`);
+                              setMessage('');
+                              const result = await deleteLoad(load.id);
+                              setWorking('');
+                              if (result?.error) { setMessage(result.error); return; }
+                              setMessage(`Load ${load.id} deleted.`);
+                              await loadBoardData(activeTab, query);
+                            }}
+                          >
+                            {working === `delete-load-${load.id}` ? '...' : 'Delete'}
                           </button>
                         </td>
                       </tr>

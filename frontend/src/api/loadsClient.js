@@ -18,7 +18,8 @@ function apiUrl(path) {
 }
 
 function isMockMode() {
-  // Only enable mock mode if VITE_MOCK_MODE or demoMode is true
+  // In production builds, never use mock mode
+  if (import.meta.env.PROD) return false;
   return import.meta.env.VITE_MOCK_MODE === 'true' ||
     (typeof window !== 'undefined' && localStorage.getItem('demoMode') === 'true');
 }
@@ -1014,25 +1015,14 @@ export async function deleteLoad(loadId) {
   if (shouldUseMockLoads()) {
     const index = findMockLoadIndex(loadId);
     if (index < 0) return { error: 'Load not found' };
-    const existing = mockLoads[index];
-    mockLoads[index] = {
-      ...existing,
-      status: 'CANCELLED',
-      deletedAt: existing.deletedAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      carrier: {
-        ...(existing.carrier || {}),
-        assigned: false,
-      },
-    };
-    appendStatusHistory(mockLoads[index], 'CANCELLED', { reason: 'Load archived' }, 'delete-load');
-    return { ok: true, archived: true, load: mockLoads[index] };
+    mockLoads.splice(index, 1);
+    return { ok: true, id: loadId };
   }
 
   const result = await safeFetch(`/api/loads/${encodeURIComponent(loadId)}`, {
     method: 'DELETE',
   });
-  return normalizeLoadEnvelope(result);
+  return result;
 }
 
 export async function restoreLoad(loadId) {
@@ -1155,4 +1145,42 @@ export async function updateBillingAllocations(loadId, allocations) {
   }
 
   return updateLoad(loadId, { billingAllocations: allocations });
+}
+
+export async function uploadPod(loadId, { fileName, userId } = {}) {
+  if (!loadId) return { error: 'loadId is required' };
+  if (shouldUseMockLoads()) {
+    const index = findMockLoadIndex(loadId);
+    if (index < 0) return { error: 'Load not found' };
+    const podName = fileName || `POD-${loadId}-${Date.now()}.pdf`;
+    mockLoads[index] = { ...mockLoads[index], podFileName: podName, podUploadedAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    // Auto-transition DELIVERED → POD_RECEIVED
+    if (normalizeLoadStatus(mockLoads[index].status) === 'DELIVERED') {
+      const prev = mockLoads[index].status;
+      mockLoads[index].status = 'POD_RECEIVED';
+      if (!mockLoads[index].statusHistory) mockLoads[index].statusHistory = [];
+      mockLoads[index].statusHistory.push({ id: `sh-${Date.now()}`, fromStatus: prev, toStatus: 'POD_RECEIVED', userId: userId || 'system', reason: 'POD received', createdAt: new Date().toISOString() });
+    }
+    return { ok: true, podFileName: podName, podUploadedAt: mockLoads[index].podUploadedAt, load: mockLoads[index] };
+  }
+  return safeFetch(`/api/loads/${encodeURIComponent(loadId)}/pod`, {
+    method: 'POST',
+    body: JSON.stringify({ fileName, userId }),
+  });
+}
+
+export async function addLoadEvent(loadId, { type, message, userId } = {}) {
+  if (!loadId) return { error: 'loadId is required' };
+  if (shouldUseMockLoads()) {
+    const index = findMockLoadIndex(loadId);
+    if (index < 0) return { error: 'Load not found' };
+    const event = { id: `ev-${Date.now()}`, type: type || 'note', message: message || 'Event logged', actor: { id: userId || 'system', name: userId || 'system' }, createdAt: new Date().toISOString() };
+    if (!mockLoads[index].events) mockLoads[index].events = [];
+    mockLoads[index].events.push(event);
+    return { item: event };
+  }
+  return safeFetch(`/api/loads/${encodeURIComponent(loadId)}/events`, {
+    method: 'POST',
+    body: JSON.stringify({ type, message, userId }),
+  });
 }

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const CustomerSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
+  customerCode: { type: String, unique: true, sparse: true, index: true },
   name: { type: String, required: true },
   email: { type: String },
   nameLower: { type: String },

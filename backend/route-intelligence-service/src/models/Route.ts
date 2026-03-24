@@ -7,7 +7,7 @@ export interface RouteRecord {
   billableMiles: number;
   durationHours: number;
   polyline: string;
-  method: 'here-truck';
+  method: 'google-directions' | 'here-truck';
   cached: boolean;
   createdAt?: string;
 }

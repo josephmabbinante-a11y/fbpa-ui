@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme, themes } from '../contexts/ThemeContext';
-import { getCarriers, importCarrierFromSafer, purgeCarriers, searchCarrierSafer } from '../api/client';
+import { getCarriers, createCarrier, importCarrierFromSafer, purgeCarriers, searchCarrierSafer } from '../api/client';
 import EmptyState from '../components/EmptyState';
 
 function toMoney(value) {
@@ -84,9 +84,64 @@ export default function Carriers() {
   const [totalCount, setTotalCount] = useState(0);
   const [listMode, setListMode] = useState('top');
   const [topCount, setTopCount] = useState(10);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addSaving, setAddSaving] = useState(false);
+  const [addMessage, setAddMessage] = useState('');
+  const [addErrors, setAddErrors] = useState({});
+  const [addForm, setAddForm] = useState({
+    name: '', mcNumber: '', taxId: '', dotNumber: '', email: '', phone: '', ext: '',
+    remittanceEmail: '', website: '', branch: 'Shared', paymentTerms: 'Net 30',
+    insuranceExpiry: '', status: 'Active', contactName: '', contactTitle: '',
+    contactPhone: '', contactEmail: '', contactFax: '', privateNotes: '', publicNotes: '',
+    equipmentTypes: [], lanes: '', preferredRegions: '', complianceNotes: '', safetyRating: 'Satisfactory',
+  });
 
   const CARRIER_UI_LIMIT = 2000;
   const CARRIER_RENDER_LIMIT = 1000;
+
+  const setAddField = (key, value) => {
+    setAddForm((prev) => ({ ...prev, [key]: value }));
+    setAddErrors((prev) => ({ ...prev, [key]: '' }));
+  };
+
+  const toggleEquipmentType = (entry) => {
+    setAddForm((prev) => {
+      const current = Array.isArray(prev.equipmentTypes) ? prev.equipmentTypes : [];
+      const next = current.includes(entry) ? current.filter((i) => i !== entry) : [...current, entry];
+      return { ...prev, equipmentTypes: next };
+    });
+  };
+
+  const handleAddSave = async () => {
+    const nextErrors = {
+      name: String(addForm.name || '').trim() ? '' : 'Carrier name is required.',
+      email: addForm.email && !String(addForm.email).includes('@') ? 'Enter a valid email.' : '',
+    };
+    setAddErrors(nextErrors);
+    if (nextErrors.name || nextErrors.email) { setAddMessage('Please resolve required fields.'); return; }
+
+    setAddSaving(true);
+    setAddMessage('');
+    const result = await createCarrier({
+      name: addForm.name, mcNumber: addForm.mcNumber, taxId: addForm.taxId,
+      email: addForm.email, phone: addForm.phone, paymentTerms: addForm.paymentTerms,
+      insuranceExpiry: addForm.insuranceExpiry || null, status: addForm.status,
+    });
+    setAddSaving(false);
+
+    if (result?.error) { setAddMessage(result.error); return; }
+
+    setAddMessage('Carrier created successfully.');
+    setAddForm({
+      name: '', mcNumber: '', taxId: '', dotNumber: '', email: '', phone: '', ext: '',
+      remittanceEmail: '', website: '', branch: 'Shared', paymentTerms: 'Net 30',
+      insuranceExpiry: '', status: 'Active', contactName: '', contactTitle: '',
+      contactPhone: '', contactEmail: '', contactFax: '', privateNotes: '', publicNotes: '',
+      equipmentTypes: [], lanes: '', preferredRegions: '', complianceNotes: '', safetyRating: 'Satisfactory',
+    });
+    setShowAddForm(false);
+    await loadCarriers();
+  };
 
   useEffect(() => {
     if (!location?.state?.message) return;
@@ -459,7 +514,7 @@ export default function Carriers() {
           <div style={{ fontSize: 12, color: t.textSecondary }}>Carrier command center with compliance and AP insights.</div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => navigate('/carriers/new')} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700, borderColor: t.accent2 }}>Add Carrier</button>
+          <button type="button" onClick={() => setShowAddForm((p) => !p)} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700, borderColor: t.accent2 }}>{showAddForm ? 'Cancel' : 'Add Carrier'}</button>
           <button
             type="button"
             onClick={() => navigate('/carriers/import')}
@@ -490,6 +545,174 @@ export default function Carriers() {
           <button type="button" onClick={() => navigate('/finance/ap')} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700 }}>Open AP</button>
         </div>
       </header>
+
+      {showAddForm && (
+        <section style={{ ...panelStyle, padding: 16, display: 'grid', gap: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Add New Carrier</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" onClick={() => setShowAddForm(false)} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700 }}>Cancel</button>
+              <button type="button" onClick={handleAddSave} disabled={addSaving} style={{ ...inputStyle, cursor: 'pointer', fontWeight: 700, borderColor: t.accent2, background: `linear-gradient(135deg, ${t.accent}, ${t.accent2})`, color: t.bg }}>{addSaving ? 'Saving...' : 'Save Carrier'}</button>
+            </div>
+          </div>
+          {addMessage && <div style={{ fontSize: 12, color: addMessage.includes('success') ? t.success : t.error }}>{addMessage}</div>}
+
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt, fontSize: 13, fontWeight: 700 }}>Carrier Details</div>
+            <div style={{ padding: 12, display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Carrier Name *</span>
+                  <input value={addForm.name} onChange={(e) => setAddField('name', e.target.value)} style={{ ...inputStyle, border: addErrors.name ? `1.5px solid ${t.error}` : inputStyle.border }} placeholder="Carrier legal name" />
+                  {addErrors.name && <span style={{ fontSize: 11, color: t.error }}>{addErrors.name}</span>}
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Branch</span>
+                  <select value={addForm.branch} onChange={(e) => setAddField('branch', e.target.value)} style={inputStyle}>
+                    <option value="Shared">Shared</option><option value="Main">Main</option>
+                  </select>
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>MC Number</span>
+                  <input value={addForm.mcNumber} onChange={(e) => setAddField('mcNumber', e.target.value)} style={inputStyle} placeholder="MC123456" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>DOT Number</span>
+                  <input value={addForm.dotNumber} onChange={(e) => setAddField('dotNumber', e.target.value)} style={inputStyle} placeholder="USDOT number" />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Tax ID</span>
+                  <input value={addForm.taxId} onChange={(e) => setAddField('taxId', e.target.value)} style={inputStyle} placeholder="12-3456789" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Website</span>
+                  <input value={addForm.website} onChange={(e) => setAddField('website', e.target.value)} style={inputStyle} placeholder="https://carrier.com" />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Email</span>
+                  <input value={addForm.email} onChange={(e) => setAddField('email', e.target.value)} style={{ ...inputStyle, border: addErrors.email ? `1.5px solid ${t.error}` : inputStyle.border }} placeholder="ops@carrier.com" />
+                  {addErrors.email && <span style={{ fontSize: 11, color: t.error }}>{addErrors.email}</span>}
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Phone</span>
+                  <input value={addForm.phone} onChange={(e) => setAddField('phone', e.target.value)} style={inputStyle} placeholder="(555) 123-4567" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Ext</span>
+                  <input value={addForm.ext} onChange={(e) => setAddField('ext', e.target.value)} style={inputStyle} placeholder="Ext" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Remittance Email</span>
+                  <input value={addForm.remittanceEmail} onChange={(e) => setAddField('remittanceEmail', e.target.value)} style={inputStyle} placeholder="ap@carrier.com" />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Payment Terms</span>
+                  <select value={addForm.paymentTerms} onChange={(e) => setAddField('paymentTerms', e.target.value)} style={inputStyle}>
+                    <option value="Net 30">Net 30</option><option value="Net 21">Net 21</option><option value="Net 15">Net 15</option><option value="Quick Pay">Quick Pay</option>
+                  </select>
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Insurance Expiry</span>
+                  <input type="date" value={addForm.insuranceExpiry} onChange={(e) => setAddField('insuranceExpiry', e.target.value)} style={inputStyle} />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Status</span>
+                  <select value={addForm.status} onChange={(e) => setAddField('status', e.target.value)} style={inputStyle}>
+                    <option value="Active">Active</option><option value="Alert">Alert</option><option value="Inactive">Inactive</option>
+                  </select>
+                </label>
+              </div>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Safety Rating</span>
+                <select value={addForm.safetyRating} onChange={(e) => setAddField('safetyRating', e.target.value)} style={{ ...inputStyle, maxWidth: 220 }}>
+                  <option value="Satisfactory">Satisfactory</option><option value="Conditional">Conditional</option><option value="Unsatisfactory">Unsatisfactory</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt, fontSize: 13, fontWeight: 700 }}>Contact Info</div>
+            <div style={{ padding: 12, display: 'grid', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Name</span>
+                  <input value={addForm.contactName} onChange={(e) => setAddField('contactName', e.target.value)} style={inputStyle} placeholder="Contact name" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Title / Role</span>
+                  <input value={addForm.contactTitle} onChange={(e) => setAddField('contactTitle', e.target.value)} style={inputStyle} placeholder="Dispatch manager" />
+                </label>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Telephone</span>
+                  <input value={addForm.contactPhone} onChange={(e) => setAddField('contactPhone', e.target.value)} style={inputStyle} placeholder="(555) 123-4567" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Email</span>
+                  <input value={addForm.contactEmail} onChange={(e) => setAddField('contactEmail', e.target.value)} style={inputStyle} placeholder="dispatch@carrier.com" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Fax</span>
+                  <input value={addForm.contactFax} onChange={(e) => setAddField('contactFax', e.target.value)} style={inputStyle} placeholder="Fax" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt, fontSize: 13, fontWeight: 700 }}>Additional Info</div>
+            <div style={{ padding: 12, display: 'grid', gap: 8 }}>
+              <div style={{ display: 'grid', gap: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Equipment Types</span>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+                  {['Dry Van', 'Reefer', 'Flatbed', 'Power Only', 'Step Deck', 'Hotshot'].map((entry) => (
+                    <label key={entry} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input type="checkbox" checked={addForm.equipmentTypes.includes(entry)} onChange={() => toggleEquipmentType(entry)} />
+                      {entry}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8 }}>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Primary Lanes</span>
+                  <input value={addForm.lanes} onChange={(e) => setAddField('lanes', e.target.value)} style={inputStyle} placeholder="CA-TX, AZ-UT" />
+                </label>
+                <label style={{ display: 'grid', gap: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Preferred Regions</span>
+                  <input value={addForm.preferredRegions} onChange={(e) => setAddField('preferredRegions', e.target.value)} style={inputStyle} placeholder="West, Southwest" />
+                </label>
+              </div>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Compliance Notes</span>
+                <textarea value={addForm.complianceNotes} onChange={(e) => setAddField('complianceNotes', e.target.value)} rows={2} style={{ ...inputStyle, minHeight: 52, resize: 'vertical' }} placeholder="Insurance, authority, or onboarding notes" />
+              </label>
+            </div>
+          </div>
+
+          <div style={{ border: `1px solid ${t.border}`, borderRadius: 10, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt, fontSize: 13, fontWeight: 700 }}>Notes (Optional)</div>
+            <div style={{ padding: 12, display: 'grid', gap: 8 }}>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Private Notes</span>
+                <textarea value={addForm.privateNotes} onChange={(e) => setAddField('privateNotes', e.target.value)} rows={2} style={{ ...inputStyle, minHeight: 52, resize: 'vertical' }} placeholder="Internal-only notes" />
+              </label>
+              <label style={{ display: 'grid', gap: 4 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary }}>Public Notes</span>
+                <textarea value={addForm.publicNotes} onChange={(e) => setAddField('publicNotes', e.target.value)} rows={2} style={{ ...inputStyle, minHeight: 52, resize: 'vertical' }} placeholder="Notes for carrier communications" />
+              </label>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section style={{ ...panelStyle, padding: 12, display: 'grid', gap: 8 }}>
         <div style={{ fontSize: 11, color: t.textSecondary }}>Top Performing Carrier</div>
@@ -694,7 +917,9 @@ export default function Carriers() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: t.bgAlt, color: t.textSecondary }}>
+                  <th style={{ padding: 10, textAlign: 'left' }}>Carrier ID</th>
                   <th style={{ padding: 10, textAlign: 'left' }}>Carrier</th>
+                  <th style={{ padding: 10, textAlign: 'left' }}>SCAC</th>
                   <th style={{ padding: 10, textAlign: 'left' }}>MC #</th>
                   <th style={{ padding: 10, textAlign: 'left' }}>Tax ID</th>
                   <th style={{ padding: 10, textAlign: 'center' }}>Rating</th>
@@ -726,10 +951,34 @@ export default function Carriers() {
                       }}
                     >
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>
-                        <div style={{ fontWeight: 700 }}>{carrier.name || 'Unnamed Carrier'}</div>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent)' }}>{carrier.id || '—'}</span>
+                      </td>
+                      <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>
+                        <div style={{ fontWeight: 700 }}>
+                          <a
+                            href={`/carriers/profile/${encodeURIComponent(carrier.id || carrier._id || carrier.mcNumber)}`}
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); navigate(`/carriers/profile/${encodeURIComponent(carrier.id || carrier._id || carrier.mcNumber)}`); }}
+                            style={{ color: 'var(--accent)', textDecoration: 'none' }}
+                            title="Open carrier profile"
+                          >
+                            {carrier.name || 'Unnamed Carrier'}
+                          </a>
+                        </div>
                         <div style={{ fontSize: 11, color: t.textSecondary }}>{carrier.phone || 'No phone'} {carrier.email ? `• ${carrier.email}` : ''}</div>
                       </td>
-                      <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{carrier.mcNumber || '—'}</td>
+                      <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{carrier.scacCode || '—'}</span>
+                      </td>
+                      <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>
+                        <a
+                          href={`/carriers/profile/${encodeURIComponent(carrier.id || carrier._id || carrier.mcNumber)}`}
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); navigate(`/carriers/profile/${encodeURIComponent(carrier.id || carrier._id || carrier.mcNumber)}`); }}
+                          style={{ color: 'var(--accent)', textDecoration: 'none', fontFamily: 'monospace' }}
+                          title="Open carrier profile"
+                        >
+                          {carrier.mcNumber || '—'}
+                        </a>
+                      </td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}` }}>{carrier.taxId || 'Missing'}</td>
                       <td style={{ padding: 10, borderTop: `1px solid ${t.border}`, textAlign: 'center' }}>
                         {carrier.rating ? (
@@ -766,7 +1015,7 @@ export default function Carriers() {
                         headline="No carriers yet"
                         category="carriers"
                         actionLabel="Add Carrier"
-                        onAction={() => navigate('/carriers/new')}
+                        onAction={() => setShowAddForm(true)}
                       />
                     </td>
                   </tr>
@@ -882,7 +1131,7 @@ export default function Carriers() {
           <button
             type="button"
             onClick={() => {
-              navigate('/carriers/new');
+              setShowAddForm(true);
               setRowContextMenu(null);
             }}
             style={{ ...inputStyle, minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700 }}

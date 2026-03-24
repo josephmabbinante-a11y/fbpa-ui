@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { calculateRateLogic, createInvoice } from '../src/api/client';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { calculateRateLogic, createInvoice, estimateMileage } from '../src/api/client';
 
 
 export default function FinancialSection({ load, setLoad, onComplete }) {
@@ -23,6 +23,35 @@ export default function FinancialSection({ load, setLoad, onComplete }) {
   const [invoiceStatus, setInvoiceStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mileageInfo, setMileageInfo] = useState(null);
+  const mileageTimerRef = useRef(null);
+
+  // Auto-estimate mileage when origin + destination are both filled
+  const fetchMileage = useCallback(async (origin, destination) => {
+    if (!origin || !destination) return;
+    try {
+      const res = await estimateMileage({ origin, destination, equipmentType: form.equipment });
+      if (res && !res.error && res.miles > 0) {
+        setMileageInfo(res);
+        setForm((prev) => ({ ...prev, miles: String(res.miles) }));
+        setLoad((prev) => ({
+          ...prev,
+          financials: { ...prev.financials, miles: String(res.miles) },
+        }));
+      }
+    } catch {
+      // Mileage estimation is best-effort
+    }
+  }, [form.equipment, setLoad]);
+
+  // Debounce mileage lookup when origin/destination change
+  useEffect(() => {
+    if (mileageTimerRef.current) clearTimeout(mileageTimerRef.current);
+    if (form.origin.length >= 3 && form.destination.length >= 3) {
+      mileageTimerRef.current = setTimeout(() => fetchMileage(form.origin, form.destination), 600);
+    }
+    return () => { if (mileageTimerRef.current) clearTimeout(mileageTimerRef.current); };
+  }, [form.origin, form.destination, fetchMileage]);
 
   const handleInput = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -85,6 +114,15 @@ export default function FinancialSection({ load, setLoad, onComplete }) {
         <label style={{ marginLeft: 8 }}>
           Destination: <input name="destination" value={form.destination} onChange={handleInput} />
         </label>
+        {mileageInfo && (
+          <span style={{ marginLeft: 12, fontSize: 13, color: '#555' }}>
+            ~{mileageInfo.miles} mi
+            {mileageInfo.durationMinutes ? ` (${Math.round(mileageInfo.durationMinutes / 60)}h ${mileageInfo.durationMinutes % 60}m)` : ''}
+            <span style={{ marginLeft: 4, fontSize: 11, opacity: 0.7 }}>
+              [{mileageInfo.method}, {Math.round((mileageInfo.confidence || 0) * 100)}%]
+            </span>
+          </span>
+        )}
         {/* Equipment, lane type, miles, etc. now belong in Load Details section above */}
         <label style={{ marginLeft: 8 }}>
           Base Rate: <input name="baseRate" value={form.baseRate} onChange={handleInput} type="number" />

@@ -97,7 +97,9 @@ function mapLoadToRow(load) {
   return {
     id: load?.id || `L-${Date.now()}`,
     customer: typeof load?.customer === 'object' ? (load.customer?.name || '—') : (load?.customer || '—'),
+    customerId: typeof load?.customer === 'object' ? (load.customer?.id || '') : '',
     carrier: typeof load?.carrier === 'object' ? (load.carrier?.name || 'Pending') : (load?.carrier || 'Pending'),
+    carrierId: typeof load?.carrier === 'object' ? (load.carrier?.id || '') : '',
     origin: typeof load?.origin === 'object' ? `${load.origin?.city || '—'}${load.origin?.state ? `, ${load.origin.state}` : ''}` : (load?.origin || '—'),
     destination: typeof load?.destination === 'object' ? `${load.destination?.city || '—'}${load.destination?.state ? `, ${load.destination.state}` : ''}` : (load?.destination || '—'),
     status: String(load?.status || 'open').replaceAll('_', ' '),
@@ -269,13 +271,170 @@ export default function Dashboard() {
       </CollapsibleSection>
 
       <CollapsibleSection title="Shipment Analytics & Distribution" defaultOpen>
-        <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-          {dashboardPrefs.showExceptionDistribution ? (
-            <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
-          ) : null}
-          {dashboardPrefs.showSavingsByCarrier ? (
-            <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
-          ) : null}
+        {/* Summary metrics row */}
+        {(() => {
+          const total = todayShipments.length;
+          const statusCounts = {};
+          const carrierCounts = {};
+          const laneCounts = {};
+          let totalRev = 0;
+          let totalCost = 0;
+
+          todayShipments.forEach((s) => {
+            const st = s.status || 'unknown';
+            statusCounts[st] = (statusCounts[st] || 0) + 1;
+            const cr = s.carrier || 'Unassigned';
+            carrierCounts[cr] = (carrierCounts[cr] || 0) + 1;
+            const lane = `${(s.origin || '?').split(',')[0]} → ${(s.destination || '?').split(',')[0]}`;
+            laneCounts[lane] = (laneCounts[lane] || 0) + 1;
+            totalRev += Number(String(s.revenue || '0').replace(/[$,]/g, '')) || 0;
+            totalCost += Number(String(s.cost || '0').replace(/[$,]/g, '')) || 0;
+          });
+
+          const avgMargin = totalRev > 0 ? ((totalRev - totalCost) / totalRev * 100).toFixed(1) : '0.0';
+          const topStatuses = Object.entries(statusCounts).sort(([,a],[,b]) => b - a);
+          const topCarriers = Object.entries(carrierCounts).sort(([,a],[,b]) => b - a).slice(0, 5);
+          const topLanes = Object.entries(laneCounts).sort(([,a],[,b]) => b - a).slice(0, 5);
+          const statusColors = { delivered: '#22c55e', completed: '#22c55e', 'in transit': '#3b82f6', dispatched: '#3b82f6', pending: '#f59e0b', booked: '#f59e0b', open: '#64748b' };
+
+          return (
+            <>
+              {/* Volume & Margin Metrics */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+                {[
+                  { label: 'Total Shipments', value: total, color: t.accent },
+                  { label: 'Total Revenue', value: toCurrency(totalRev), color: '#22c55e' },
+                  { label: 'Total Cost', value: toCurrency(totalCost), color: '#ef4444' },
+                  { label: 'Avg Margin', value: `${avgMargin}%`, color: Number(avgMargin) >= 15 ? '#22c55e' : '#f59e0b' },
+                  { label: 'Active Carriers', value: Object.keys(carrierCounts).length, color: '#3b82f6' },
+                  { label: 'Active Lanes', value: Object.keys(laneCounts).length, color: '#8b5cf6' },
+                ].map((kpi) => (
+                  <div key={kpi.label} style={{ padding: 12, borderRadius: 10, border: `1px solid ${t.border}`, background: t.bgAlt || t.surface, textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: t.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: kpi.color, marginTop: 2 }}>{kpi.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Status Distribution + Charts row */}
+              <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', marginBottom: 16 }}>
+                {/* Status Distribution */}
+                <div style={{ border: `1px solid ${t.border}`, borderRadius: 4, padding: 16, background: t.surface }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px 0', color: t.text, textTransform: 'uppercase' }}>Status Distribution</h3>
+                  {topStatuses.length > 0 ? topStatuses.map(([status, count]) => {
+                    const pctVal = total > 0 ? (count / total * 100) : 0;
+                    const barColor = statusColors[status.toLowerCase()] || t.accent;
+                    return (
+                      <div key={status} style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
+                          <span style={{ fontWeight: 600, textTransform: 'capitalize' }}>{status}</span>
+                          <span style={{ color: t.textSecondary }}>{count} ({pctVal.toFixed(0)}%)</span>
+                        </div>
+                        <div style={{ height: 6, borderRadius: 3, background: `${t.border}`, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', borderRadius: 3, background: barColor, width: `${pctVal}%`, transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <div style={{ fontSize: 12, color: t.textSecondary, padding: 16, textAlign: 'center' }}>No shipment data</div>
+                  )}
+                </div>
+
+                {/* Exception Distribution Chart */}
+                {dashboardPrefs.showExceptionDistribution ? (
+                  <ExceptionBreakdownChart data={data.exceptionBreakdown} onClick={() => navigate('/exceptions')} />
+                ) : null}
+              </div>
+
+              {/* Savings + Top Carriers + Top Lanes row */}
+              <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+                {/* Savings by Carrier Chart */}
+                {dashboardPrefs.showSavingsByCarrier ? (
+                  <SavingsByCarrierChart data={data.savingsByCarrier} onClick={() => navigate('/reports')} />
+                ) : null}
+
+                {/* Top Carriers by Volume */}
+                <div style={{ border: `1px solid ${t.border}`, borderRadius: 4, padding: 16, background: t.surface }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px 0', color: t.text, textTransform: 'uppercase' }}>Top Carriers by Volume</h3>
+                  {topCarriers.length > 0 ? topCarriers.map(([carrier, count], i) => (
+                    <div key={carrier} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${t.border}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary, minWidth: 16 }}>#{i + 1}</span>
+                        <a href={`/carriers/profile/${encodeURIComponent(carrier)}`} onClick={(e) => { e.preventDefault(); navigate(`/carriers/profile/${encodeURIComponent(carrier)}`); }} style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>{carrier}</a>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 50, height: 5, borderRadius: 3, background: t.border, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', borderRadius: 3, background: t.accent, width: `${total > 0 ? (count / total * 100) : 0}%` }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, minWidth: 24, textAlign: 'right' }}>{count}</span>
+                      </div>
+                    </div>
+                  )) : (
+                    <div style={{ fontSize: 12, color: t.textSecondary, padding: 16, textAlign: 'center' }}>No carrier data</div>
+                  )}
+                </div>
+
+                {/* Top Lanes */}
+                <div style={{ border: `1px solid ${t.border}`, borderRadius: 4, padding: 16, background: t.surface }}>
+                  <h3 style={{ fontSize: 13, fontWeight: 600, margin: '0 0 12px 0', color: t.text, textTransform: 'uppercase' }}>Top Lanes by Volume</h3>
+                  {topLanes.length > 0 ? topLanes.map(([lane, count], i) => (
+                    <div key={lane} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${t.border}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: t.textSecondary, minWidth: 16 }}>#{i + 1}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600 }}>{lane}</span>
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700 }}>{count}</span>
+                    </div>
+                  )) : (
+                    <div style={{ fontSize: 12, color: t.textSecondary, padding: 16, textAlign: 'center' }}>No lane data</div>
+                  )}
+                </div>
+              </div>
+            </>
+          );
+        })()}
+      </CollapsibleSection>
+
+      {/* Operational KPIs Panel */}
+      <CollapsibleSection title="Operational KPIs" defaultOpen>
+        {(() => {
+          const totalLoads = todayShipments.length;
+          const delivered = todayShipments.filter((s) => /delivered|completed/i.test(s.status)).length;
+          const inTransit = todayShipments.filter((s) => /in.?transit|dispatched/i.test(s.status)).length;
+          const pending = todayShipments.filter((s) => /pending|booked|open/i.test(s.status)).length;
+          const exceptions = Number(data.summary?.totalExceptions || 0);
+          const revenue = Number(data.summary?.totalInvoices || data.summary?.revenue || 0);
+          const carrierPay = Number(data.summary?.totalCarrierPay || 0);
+          const grossMargin = revenue > 0 ? ((revenue - carrierPay) / revenue * 100) : 0;
+          const savings = Number(data.summary?.totalSavings || 0);
+          const exceptionRate = totalLoads > 0 ? (exceptions / totalLoads * 100) : 0;
+
+          const kpiCards = [
+            { label: 'Today\'s Loads', value: totalLoads, color: t.accent },
+            { label: 'In Transit', value: inTransit, color: '#3b82f6' },
+            { label: 'Delivered', value: delivered, color: '#22c55e' },
+            { label: 'Pending', value: pending, color: '#f59e0b' },
+            { label: 'Gross Margin', value: `${grossMargin.toFixed(1)}%`, color: grossMargin >= 15 ? '#22c55e' : '#f59e0b' },
+            { label: 'Exception Rate', value: `${exceptionRate.toFixed(1)}%`, color: exceptionRate <= 5 ? '#22c55e' : '#ef4444' },
+            { label: 'Audit Savings', value: toCurrency(savings), color: t.accent },
+            { label: 'Exceptions', value: exceptions, color: '#ef4444' },
+          ];
+
+          return (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              {kpiCards.map((kpi) => (
+                <div key={kpi.label} style={{ padding: 14, borderRadius: 10, border: `1px solid ${t.border}`, background: t.bgAlt || t.surface, textAlign: 'center', cursor: 'pointer' }} onClick={() => navigate('/operational-kpis')}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: t.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>{kpi.label}</div>
+                  <div style={{ fontSize: 26, fontWeight: 800, color: kpi.color, marginTop: 4 }}>{kpi.value}</div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+        <div style={{ marginTop: 12, textAlign: 'right' }}>
+          <button style={{ padding: '8px 16px', borderRadius: 6, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.accent, fontWeight: 600, fontSize: 12, cursor: 'pointer' }} onClick={() => navigate('/operational-kpis')}>
+            View Full Operational KPIs →
+          </button>
         </div>
       </CollapsibleSection>
 
@@ -343,8 +502,12 @@ export default function Dashboard() {
                   })}
                 >
                   <td style={{ padding: '8px 12px' }}><strong>{ship.id}</strong></td>
-                  <td style={{ padding: '8px 12px' }}>{ship.customer}</td>
-                  <td style={{ padding: '8px 12px' }}>{ship.carrier}</td>
+                  <td style={{ padding: '8px 12px' }}>
+                    {ship.customerId ? <a href={`/customers/${encodeURIComponent(ship.customerId)}`} onClick={(e) => e.stopPropagation()} style={{ color: 'var(--accent)', textDecoration: 'none' }} title="Open customer profile">{ship.customer}</a> : ship.customer}
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    {ship.carrierId ? <a href={`/carriers/profile/${encodeURIComponent(ship.carrierId)}`} onClick={(e) => e.stopPropagation()} style={{ color: 'var(--accent)', textDecoration: 'none' }} title="Open carrier profile">{ship.carrier}</a> : ship.carrier}
+                  </td>
                   <td style={{ padding: '8px 12px' }}>{ship.origin}</td>
                   <td style={{ padding: '8px 12px' }}>{ship.destination}</td>
                   <td style={{ padding: '8px 12px' }}>{ship.status}</td>

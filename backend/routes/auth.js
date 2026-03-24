@@ -89,8 +89,8 @@ router.post("/login", authLimiter, loginValidators, validate, async (req, res) =
 
       res.json({ success: true, message: "Login successful", token, accessToken: token, user: { id: user.id, email: user.email, name: user.name, roles: user.roles } });
   } catch (error) {
-    console.error('[LOGIN] Error during login:', error);
-      res.status(500).json({ success: false, message: error.message });
+    console.error('[LOGIN] Error during login:', error.message);
+      res.status(500).json({ success: false, message: 'Login failed. Please try again.' });
   }
 });
 // List all users (protected)
@@ -99,7 +99,8 @@ router.get("/users", verifyToken, async (req, res) => {
     const users = await User.find({}, "id email name roles");
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('[AUTH] Error listing users:', error.message);
+    res.status(500).json({ error: 'Failed to list users.' });
   }
 });
 

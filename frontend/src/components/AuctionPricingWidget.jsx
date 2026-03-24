@@ -7,15 +7,24 @@ export default function AuctionPricingWidget() {
   const [load, setLoad] = useState({});
   const [quoteResult, setQuoteResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [trackedQuoteId, setTrackedQuoteId] = useState(null);
 
   useEffect(() => {
-    getSaiaAuctionCircuit().then(setCircuit);
+    getSaiaAuctionCircuit().then(setCircuit).catch(() => {});
   }, []);
 
   const handleQuote = async () => {
     setLoading(true);
-    const result = await quoteSaiaAuction(load);
-    setQuoteResult(result);
+    setTrackedQuoteId(null);
+    try {
+      const result = await quoteSaiaAuction(load);
+      setQuoteResult(result);
+      if (result?.auctionQuoteId) {
+        setTrackedQuoteId(result.auctionQuoteId);
+      }
+    } catch (err) {
+      setQuoteResult({ error: err.message });
+    }
     setLoading(false);
   };
 
@@ -51,6 +60,9 @@ export default function AuctionPricingWidget() {
       {quoteResult && (
         <div className="mt-4">
           <strong className="text-indigo-400">Quote Result:</strong>
+          {trackedQuoteId && (
+            <div className="mt-1 text-xs text-green-400">Tracked as quote {trackedQuoteId}</div>
+          )}
           <pre className="bg-slate-950 p-2 rounded text-xs text-indigo-300 mt-2">{JSON.stringify(quoteResult, null, 2)}</pre>
         </div>
       )}

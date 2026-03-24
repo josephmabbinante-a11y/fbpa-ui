@@ -47,7 +47,7 @@ router.get('/api/documents/:id/download', (req, res) => {
 });
 
 
-const SUPPORTED_DOCUMENT_TYPES = new Set(['invoice', 'rate-confirmation', 'bol']);
+const SUPPORTED_DOCUMENT_TYPES = new Set(['invoice', 'rate-confirmation', 'bol', 'lumper-receipt', 'carrier-packet']);
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -499,9 +499,217 @@ function buildBolDocument(payload) {
   `;
 }
 
+function buildLumperReceiptDocument(payload) {
+  const { branding = {}, load = {}, carrier = {}, stops = [], terms = {} } = payload;
+  const lumperAmount = Number(terms.lumperAmount || 0);
+  const facility = terms.facility || stops[stops.length - 1]?.location || 'Delivery Facility';
+  const receiptNumber = terms.receiptNumber || `LR-${load.id || 'NEW'}-${Date.now().toString(36).toUpperCase()}`;
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Lumper Receipt ${escapeHtml(load.id || '')}</title>
+        ${sharedStyles(branding?.accentColor)}
+      </head>
+      <body>
+        <div class="doc">
+          ${baseHeader({ typeLabel: 'Lumper Receipt', branding, load })}
+
+          <section class="grid grid-2">
+            <div class="panel">
+              <div class="label">Receipt #</div>
+              <div class="value">${escapeHtml(receiptNumber)}</div>
+              <div style="margin-top:10px" class="label">Facility</div>
+              <div class="value">${escapeHtml(facility)}</div>
+            </div>
+            <div class="panel">
+              <div class="label">Carrier</div>
+              <div class="value">${escapeHtml(carrier.companyName || load.carrier?.name || 'Carrier')}</div>
+              <div class="muted">MC: ${escapeHtml(carrier.mcNumber || '—')} • USDOT: ${escapeHtml(carrier.usdotNumber || '—')}</div>
+              <div style="margin-top:10px" class="label">Driver</div>
+              <div class="value">${escapeHtml(terms.driverName || 'Driver on file')}</div>
+            </div>
+          </section>
+
+          <section class="grid">
+            <div class="panel">
+              <div class="label">Load ID</div>
+              <div class="value">${escapeHtml(load.id || 'NEW')}</div>
+              <div class="muted">Origin: ${escapeHtml(load.origin?.city ? `${load.origin.city}, ${load.origin.state || ''}` : load.origin || '—')}</div>
+              <div class="muted">Destination: ${escapeHtml(load.destination?.city ? `${load.destination.city}, ${load.destination.state || ''}` : load.destination || '—')}</div>
+            </div>
+          </section>
+
+          <section class="grid">
+            <table>
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Description</th>
+                  <th style="text-align:right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Lumper / Unloading</td>
+                  <td>${escapeHtml(terms.serviceDescription || 'Unloading services at delivery facility')}</td>
+                  <td style="text-align:right; font-weight:700">${escapeHtml(toMoney(lumperAmount))}</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="grid grid-2">
+            <div>
+              <div class="label">Payment Method</div>
+              <div class="value">${escapeHtml(terms.paymentMethod || 'Comchek / T-Chek')}</div>
+            </div>
+            <div>
+              <div class="label">Authorization Code</div>
+              <div class="value">${escapeHtml(terms.authorizationCode || 'Pending')}</div>
+            </div>
+          </section>
+
+          <section class="grid grid-2">
+            <div>
+              <div class="sign"></div>
+              <div class="muted">Facility Representative / Date</div>
+            </div>
+            <div>
+              <div class="sign"></div>
+              <div class="muted">Driver Signature / Date</div>
+            </div>
+          </section>
+
+          <div class="footer">
+            ${escapeHtml(terms.lumperNotes || 'Lumper receipt must be submitted with POD for reimbursement.')}
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+function buildCarrierPacketDocument(payload) {
+  const { branding = {}, load = {}, carrier = {}, stops = [], terms = {} } = payload;
+  const dispatchContact = terms.dispatchContact || branding.email || 'dispatch@company.com';
+  const dispatchPhone = terms.dispatchPhone || branding.phone || '';
+
+  const stopRows = (stops || []).map((s, i) => `
+    <tr>
+      <td>${escapeHtml(i + 1)}</td>
+      <td>${escapeHtml(s.action || (i === 0 ? 'Pickup' : 'Delivery'))}</td>
+      <td>${escapeHtml(s.location || s.address || '—')}</td>
+      <td>${escapeHtml(s.scheduleStart || '—')}</td>
+      <td>${escapeHtml(s.cargoDescription || '—')}</td>
+      <td>${escapeHtml(s.driverInstructions || s.referenceNumbers || '—')}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Carrier Packet ${escapeHtml(load.id || '')}</title>
+        ${sharedStyles(branding?.accentColor)}
+      </head>
+      <body>
+        <div class="doc">
+          ${baseHeader({ typeLabel: 'Carrier Packet', branding, load })}
+
+          <section class="grid grid-2">
+            <div class="panel">
+              <div class="label">Carrier</div>
+              <div class="value">${escapeHtml(carrier.companyName || load.carrier?.name || 'Carrier')}</div>
+              <div class="muted">MC: ${escapeHtml(carrier.mcNumber || '—')} • USDOT: ${escapeHtml(carrier.usdotNumber || '—')}</div>
+              <div class="muted">${escapeHtml(carrier.phone || '')} ${carrier.email ? `• ${escapeHtml(carrier.email)}` : ''}</div>
+            </div>
+            <div class="panel">
+              <div class="label">Load Details</div>
+              <div class="value">Load ID: ${escapeHtml(load.id || 'NEW')}</div>
+              <div class="muted">Equipment: ${escapeHtml(load.equipment || '—')}</div>
+              <div class="muted">Weight: ${escapeHtml(load.weight || '—')} lbs</div>
+              <div class="muted">Miles: ${escapeHtml(load.miles || load.mileage || '—')}</div>
+            </div>
+          </section>
+
+          <section class="grid">
+            <div class="value">Stop Schedule & Instructions</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Date/Time</th>
+                  <th>Cargo</th>
+                  <th>Instructions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${stopRows || '<tr><td colspan="6" class="muted">No stops provided</td></tr>'}
+              </tbody>
+            </table>
+          </section>
+
+          <section class="grid">
+            <div class="panel">
+              <div class="value" style="margin-bottom:8px">Carrier Instructions & Requirements</div>
+              <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.7">
+                <li>Driver must check in with dispatch upon arrival at each stop</li>
+                <li>All temperature-sensitive freight must maintain required temp range</li>
+                <li>Driver must obtain signed BOL at pickup and POD at delivery</li>
+                <li>Report any delays, damages, or exceptions immediately to dispatch</li>
+                <li>No double-brokering — carrier must use own assets or approved subcontractors</li>
+                ${terms.additionalInstructions ? `<li>${escapeHtml(terms.additionalInstructions)}</li>` : ''}
+              </ul>
+            </div>
+          </section>
+
+          <section class="grid grid-2">
+            <div class="panel">
+              <div class="label">Insurance Requirements</div>
+              <div class="muted">Auto Liability: ${escapeHtml(terms.autoLiability || '$1,000,000 minimum')}</div>
+              <div class="muted">Cargo Insurance: ${escapeHtml(terms.cargoInsurance || '$100,000 minimum')}</div>
+              <div class="muted">General Liability: ${escapeHtml(terms.generalLiability || '$1,000,000 minimum')}</div>
+            </div>
+            <div class="panel">
+              <div class="label">Dispatch Contact</div>
+              <div class="value">${escapeHtml(dispatchContact)}</div>
+              <div class="muted">${escapeHtml(dispatchPhone)}</div>
+              <div style="margin-top:10px" class="label">After-Hours Emergency</div>
+              <div class="muted">${escapeHtml(terms.emergencyPhone || dispatchPhone || 'Same as dispatch')}</div>
+            </div>
+          </section>
+
+          <section class="grid grid-2">
+            <div>
+              <div class="sign"></div>
+              <div class="muted">Carrier Representative / Date</div>
+            </div>
+            <div>
+              <div class="sign"></div>
+              <div class="muted">Broker Representative / Date</div>
+            </div>
+          </section>
+
+          <div class="footer">
+            This carrier packet, along with the executed Rate Confirmation, constitutes the complete dispatch documentation for Load ${escapeHtml(load.id || 'NEW')}.
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
 function buildDocument(type, payload) {
   if (type === 'invoice') return buildInvoiceDocument(payload);
   if (type === 'rate-confirmation') return buildRateConfirmationDocument(payload);
+  if (type === 'lumper-receipt') return buildLumperReceiptDocument(payload);
+  if (type === 'carrier-packet') return buildCarrierPacketDocument(payload);
   return buildBolDocument(payload);
 }
 
@@ -511,7 +719,7 @@ router.post('/:type', (req, res) => {
     return res.status(400).json({
       error: {
         code: 'UNSUPPORTED_DOCUMENT_TYPE',
-        message: 'Supported types are invoice, rate-confirmation, and bol',
+        message: 'Supported types are invoice, rate-confirmation, bol, lumper-receipt, and carrier-packet',
       },
     });
   }

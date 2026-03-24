@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 const CarrierSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
+  scacCode: { type: String, default: '', index: true },
   mcNumber: { type: String, sparse: true, unique: true },
   mcNumberNormalized: { type: String },
   dotNumber: { type: String },

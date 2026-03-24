@@ -15,7 +15,7 @@ export default function UnifiedLoadAuctionBoard() {
 
   const activeSection = useMemo(() => {
     if (location.pathname.startsWith('/load-board/new-shipment')) return 'post-auction';
-    if (location.pathname.startsWith('/load-board/my-activity')) return 'my-activity';
+    if (location.pathname.startsWith('/load-board/my-activity')) return 'post-auction';
     if (location.pathname.startsWith('/load-board/connections')) return 'connections';
     if (location.pathname === '/auction-board') return 'browse-bid';
     return 'browse-bid';
@@ -69,19 +69,11 @@ export default function UnifiedLoadAuctionBoard() {
         </button>
         <button
           type="button"
-          onClick={() => navigate('/load-board/new-shipment')}
+          onClick={() => navigate('/load-board/my-activity')}
           style={tabButtonStyle(activeSection === 'post-auction')}
           aria-pressed={activeSection === 'post-auction'}
         >
-          ➕ Post &amp; Auction
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/load-board/my-activity')}
-          style={tabButtonStyle(activeSection === 'my-activity')}
-          aria-pressed={activeSection === 'my-activity'}
-        >
-          📋 My Activity
+          📋 Post+Auction
         </button>
         <button
           type="button"
@@ -95,10 +87,6 @@ export default function UnifiedLoadAuctionBoard() {
 
       {/* Content */}
       {activeSection === 'post-auction' ? (
-        <Suspense fallback={<div style={{ padding: 24, color: t.textSecondary }}>Loading...</div>}>
-          <LoadManagement pageTitle="Post & Auction" activeTab="load-basics" />
-        </Suspense>
-      ) : activeSection === 'my-activity' ? (
         <MyActivity />
       ) : activeSection === 'connections' ? (
         <BoardConnections />

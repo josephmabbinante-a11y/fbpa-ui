@@ -92,23 +92,27 @@ export default function SoftphoneWidget({ selectedLoad, compact = false }) {
   }, [activeCall?.status]);
 
   // Poll active call status in mock mode
+  const activeCallIdRef = useRef(activeCall?.id);
+  useEffect(() => { activeCallIdRef.current = activeCall?.id; }, [activeCall?.id]);
   useEffect(() => {
     if (!activeCall) return;
     const poll = setInterval(async () => {
       try {
         const res = await getActiveCall();
         if (res?.call) {
-          setActiveCall(res.call);
+          setActiveCall(prev => {
+            if (prev?.id === activeCallIdRef.current) return res.call;
+            return prev;
+          });
         } else {
           setActiveCall(null);
-          clearInterval(poll);
         }
       } catch {
         // ignore
       }
     }, 2000);
     return () => clearInterval(poll);
-  }, [activeCall?.id]);
+  }, [!!activeCall]);
 
   const handleDial = async () => {
     if (!phoneNumber.trim()) return;

@@ -84,8 +84,12 @@ export default function CustomerProfile() {
           >
             Back to Customers
           </button>
-          <h1 style={{ margin: 0, fontSize: 26 }}>Customer Profile</h1>
-          <div style={{ fontSize: 12, color: t.textSecondary }}>
+          <h1 style={{ margin: 0, fontSize: 26 }}>{detail?.name || 'Customer Profile'}</h1>
+          <div style={{ display: 'flex', gap: 16, fontSize: 13, color: t.textSecondary, marginTop: 2 }}>
+            <span>Customer Code: <b style={{ fontFamily: 'monospace', color: t.accent }}>{detail?.customerCode || detail?.id || customerId}</b></span>
+            {detail?.company && <span>Company: <b>{detail.company}</b></span>}
+          </div>
+          <div style={{ fontSize: 12, color: t.textSecondary, marginTop: 2 }}>
             Deep account view with AR, payment, and aging performance.
           </div>
         </div>

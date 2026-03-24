@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
+import { getCarriers, getExceptions } from '../api/client';
 
-const FRAUD_ALERTS = [
+const DEMO_FRAUD_ALERTS = [
   {
     id: 'FA-001',
     type: 'Double Brokering',
@@ -119,6 +120,80 @@ export default function FraudPrevention() {
   const t = theme;
   const [selectedAlert, setSelectedAlert] = useState(null);
   const [filter, setFilter] = useState('All');
+  const [liveAlerts, setLiveAlerts] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const alerts = [];
+        const [carrierRes, exceptionRes] = await Promise.allSettled([getCarriers(), getExceptions()]);
+        const carriers = carrierRes.status === 'fulfilled'
+          ? (Array.isArray(carrierRes.value) ? carrierRes.value : Array.isArray(carrierRes.value?.carriers) ? carrierRes.value.carriers : [])
+          : [];
+        const exceptions = exceptionRes.status === 'fulfilled'
+          ? (Array.isArray(exceptionRes.value) ? exceptionRes.value : [])
+          : [];
+
+        // Derive fraud signals from carriers
+        carriers.forEach((c) => {
+          const signals = [];
+          const mc = c.mcNumber || '';
+          const createdAt = c.createdAt ? new Date(c.createdAt) : null;
+          const daysSinceCreated = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / 86400000) : null;
+          if (daysSinceCreated !== null && daysSinceCreated < 30) signals.push(`MC issued ${daysSinceCreated} days ago`);
+          if (c.rating && c.rating < 2) signals.push('Low carrier rating');
+          if (!c.insuranceExpiry) signals.push('Insurance expiry not on file');
+          else if (new Date(c.insuranceExpiry) < new Date()) signals.push('Insurance expired');
+          if (!c.dotNumber && !c.usdotNumber) signals.push('No DOT number on file');
+          if (signals.length) {
+            const score = Math.min(100, 30 + signals.length * 15);
+            alerts.push({
+              id: `FA-${(c.id || c._id || '').slice(-4).toUpperCase() || Math.random().toString(36).slice(2, 6)}`,
+              type: daysSinceCreated !== null && daysSinceCreated < 30 ? 'New MC Verification' : 'Carrier Risk Flag',
+              carrier: c.name || 'Unknown',
+              mc: mc || 'N/A',
+              riskScore: score,
+              signals,
+              status: score >= 76 ? 'Critical' : score >= 51 ? 'High' : score >= 21 ? 'Moderate' : 'Low',
+              date: createdAt ? createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            });
+          }
+        });
+
+        // Derive fraud signals from exceptions
+        exceptions.forEach((ex) => {
+          const signals = [];
+          if (ex.severity === 'critical' || ex.severity === 'high') signals.push(`Exception severity: ${ex.severity}`);
+          if (ex.type) signals.push(`Type: ${ex.type}`);
+          if (ex.description) signals.push(ex.description.slice(0, 80));
+          if (signals.length) {
+            const score = ex.severity === 'critical' ? 85 : ex.severity === 'high' ? 65 : 40;
+            alerts.push({
+              id: `FX-${(ex.id || ex._id || '').slice(-4).toUpperCase() || Math.random().toString(36).slice(2, 6)}`,
+              type: 'Exception Anomaly',
+              carrier: ex.carrier || ex.carrierName || 'Unknown',
+              mc: ex.mc || 'N/A',
+              riskScore: score,
+              signals,
+              status: score >= 76 ? 'Critical' : score >= 51 ? 'High' : score >= 21 ? 'Moderate' : 'Low',
+              date: ex.createdAt ? new Date(ex.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            });
+          }
+        });
+
+        if (!cancelled && alerts.length) {
+          alerts.sort((a, b) => b.riskScore - a.riskScore);
+          setLiveAlerts(alerts);
+        }
+      } catch (_) { /* fallback to demo */ }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const FRAUD_ALERTS = liveAlerts || DEMO_FRAUD_ALERTS;
 
   const containerStyle = {
     padding: 24,
@@ -165,6 +240,9 @@ export default function FraudPrevention() {
         <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 6 }}>🚨 Fraud Prevention Engine</div>
         <div style={{ fontSize: 14, color: t.textSecondary }}>
           Real-time freight fraud detection • Carrier identity monitoring • Payment protection • Internal controls
+          {loading && <span style={{ marginLeft: 8 }}>Scanning…</span>}
+          {!loading && liveAlerts && <span style={{ marginLeft: 8, color: '#10b981' }}>📡 Live — {liveAlerts.length} alerts from carrier &amp; exception data</span>}
+          {!loading && !liveAlerts && <span style={{ marginLeft: 8, color: t.textSecondary }}>(Demo data — add carriers for live fraud scanning)</span>}
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { listLoads } from '../api/loadsClient';
 import { searchExternalBoards, placeBid, getLoadBids, placeCarrierBid, acceptBid, declineBid } from '../api/boardIntegrationClient';
+import { LoadStatusBadge } from '../components/LoadStatusBadge';
 
 const EQUIPMENT_FILTERS = ['All', 'Dry Van', 'Reefer', 'Flatbed', 'Step Deck'];
 const SOURCE_OPTIONS = [
@@ -23,21 +24,6 @@ function SourceBadge({ source, theme: t }) {
   return (
     <span style={{ padding: '2px 8px', borderRadius: 99, backgroundColor: c.bg, color: c.text, fontSize: 11, fontWeight: 700, textTransform: 'uppercase' }}>
       {source}
-    </span>
-  );
-}
-
-function StatusBadge({ status }) {
-  const colors = {
-    Open: { bg: '#10b98118', text: '#10b981' },
-    'Closing Soon': { bg: '#f59e0b18', text: '#f59e0b' },
-    Awarded: { bg: '#3b82f618', text: '#3b82f6' },
-    Expired: { bg: '#ef444418', text: '#ef4444' },
-  };
-  const c = colors[status] || { bg: '#88888820', text: '#888' };
-  return (
-    <span style={{ padding: '2px 8px', borderRadius: 99, backgroundColor: c.bg, color: c.text, fontSize: 11, fontWeight: 700 }}>
-      {status}
     </span>
   );
 }
@@ -334,7 +320,7 @@ export default function BrowseAndBid() {
                       <td style={tdStyle}>{load.equipment || '—'}</td>
                       <td style={tdStyle}>{Number(load.miles || 0).toLocaleString()}</td>
                       <td style={{ ...tdStyle, fontWeight: 700, color: '#10b981' }}>{load.rate || '—'}</td>
-                      <td style={tdStyle}><StatusBadge status={String(load.status || 'Open').replace('_', ' ')} /></td>
+                      <td style={tdStyle}><LoadStatusBadge status={load.status || 'DRAFT'} size="sm" /></td>
                       <td style={{ ...tdStyle, fontSize: 11, color: t.textSecondary }}>{load.postedAt ? new Date(load.postedAt).toLocaleDateString() : '—'}</td>
                     </tr>
                   ))}
@@ -352,7 +338,7 @@ export default function BrowseAndBid() {
                   <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{selectedLoad.id}</div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <SourceBadge source={selectedLoad.source} theme={t} />
-                    <StatusBadge status={String(selectedLoad.status || 'Open').replace('_', ' ')} />
+                    <LoadStatusBadge status={selectedLoad.status || 'DRAFT'} size="sm" />
                   </div>
                 </div>
                 <button onClick={() => { setSelectedLoad(null); setBidMessage(''); }} style={{ background: 'none', border: 'none', color: t.textSecondary, cursor: 'pointer', fontSize: 18 }} aria-label="Close detail">×</button>

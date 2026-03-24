@@ -1,5 +1,6 @@
 import { redis } from '../config/redis';
 import { getTruckRoute } from '../providers/here.provider';
+import { getGoogleRoute, isGoogleAvailable } from '../providers/google.provider';
 import { RouteRecord } from '../models/Route';
 import { extractZipToken, generateLaneId } from '../utils/hash.util';
 import { normalizePolyline } from '../utils/polyline.util';
@@ -14,8 +15,32 @@ export interface BuildRouteInput {
   capacityScore?: number;
 }
 
+interface ProviderResult {
+  miles: number;
+  durationHours: number;
+  polyline: string;
+  method: 'google-directions' | 'here-truck';
+}
+
 function toCacheKey(origin: string, destination: string): string {
   return `route:${origin}:${destination}`;
+}
+
+/**
+ * Fetch route from Google Directions first; fall back to HERE truck routing.
+ */
+async function fetchRoute(origin: string, destination: string): Promise<ProviderResult> {
+  if (isGoogleAvailable()) {
+    try {
+      const g = await getGoogleRoute(origin, destination);
+      return { ...g, method: 'google-directions' };
+    } catch {
+      // Google failed — fall through to HERE
+    }
+  }
+
+  const h = await getTruckRoute(origin, destination);
+  return { ...h, method: 'here-truck' };
 }
 
 export async function buildRoute(input: BuildRouteInput): Promise<RouteRecord> {
@@ -33,7 +58,7 @@ export async function buildRoute(input: BuildRouteInput): Promise<RouteRecord> {
     return { ...parsed, cached: true };
   }
 
-  const route = await getTruckRoute(origin, destination);
+  const route = await fetchRoute(origin, destination);
   const intelligence = deriveLaneIntelligence(input.volatilityIndex, input.capacityScore);
   const billableMiles = calculateBillableMiles(route.miles, {
     volatilityIndex: intelligence.volatilityIndex,
@@ -50,7 +75,7 @@ export async function buildRoute(input: BuildRouteInput): Promise<RouteRecord> {
     billableMiles,
     durationHours: Number(route.durationHours.toFixed(2)),
     polyline: normalizePolyline(route.polyline),
-    method: 'here-truck',
+    method: route.method,
     cached: false,
   };
 
@@ -62,6 +87,7 @@ export async function buildRoute(input: BuildRouteInput): Promise<RouteRecord> {
     billableMiles: response.billableMiles,
     durationHours: response.durationHours,
     polyline: response.polyline,
+    method: response.method,
     volatilityIndex: intelligence.volatilityIndex,
     capacityScore: intelligence.capacityScore,
   });

@@ -1,3 +1,5 @@
+import { drivingDistance, geocodeAddress, isGeocodingAvailable } from './geocoding.js';
+
 const cityCoordinates = {
   'los angeles|ca': { lat: 34.0522, lng: -118.2437 },
   'san diego|ca': { lat: 32.7157, lng: -117.1611 },
@@ -200,4 +202,60 @@ export function estimateMileage(origin, destination, equipmentType = 'van') {
 
   laneMileageCache.set(laneKey, result);
   return result;
+}
+
+/**
+ * Async mileage estimation — tries Google Distance Matrix first, falls
+ * back to the synchronous haversine estimator when the API is unavailable.
+ */
+export async function estimateMileageAsync(origin, destination, equipmentType = 'van') {
+  const laneKey = buildMileageLaneKey(origin, destination, equipmentType);
+  const cached = laneMileageCache.get(laneKey);
+  if (cached) return { ...cached, laneKey };
+
+  // Attempt Google Distance Matrix
+  if (isGeocodingAvailable()) {
+    const originText = toLocationLabel(origin);
+    const destText = toLocationLabel(destination);
+    const google = await drivingDistance(originText, destText);
+    if (google && google.miles > 0) {
+      const result = {
+        miles: Math.max(25, google.miles),
+        method: google.method,
+        confidence: google.confidence,
+        durationMinutes: google.durationMinutes,
+        laneKey,
+      };
+      laneMileageCache.set(laneKey, result);
+      return result;
+    }
+  }
+
+  // Fallback to haversine
+  return estimateMileage(origin, destination, equipmentType);
+}
+
+/**
+ * Async geocode — resolves an address/city-state string to lat/lng.
+ * Returns null when the API is unavailable.
+ */
+export async function geocodeLocationAddress(address) {
+  if (!isGeocodingAvailable()) return null;
+  return geocodeAddress(address);
+}
+
+/**
+ * Build a human-readable location label for the Distance Matrix API.
+ */
+function toLocationLabel(location) {
+  if (!location) return '';
+  if (typeof location === 'string') return location;
+  const city = readLocationField(location, 'city');
+  const state = readLocationField(location, 'state');
+  const zip = readLocationField(location, 'zip') || readLocationField(location, 'zipCode');
+  const address = readLocationField(location, 'address');
+  if (address && city && state) return `${address}, ${city}, ${state}${zip ? ` ${zip}` : ''}`;
+  if (city && state) return `${city}, ${state}${zip ? ` ${zip}` : ''}`;
+  if (readLocationField(location, 'label')) return readLocationField(location, 'label');
+  return '';
 }

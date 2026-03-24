@@ -86,8 +86,20 @@ export default function CarrierProfile() {
         </div>
       </div>
       {/* HEADER STRIP */}
-      <div style={{ /* ...existing style... */ }}>
-        {/* ...existing code... */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 28px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', marginTop: 52 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 22, fontWeight: 800 }}>{carrierRecord.name || 'Unnamed Carrier'}</div>
+          <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
+            <span>Carrier ID: <b style={{ fontFamily: 'monospace', color: 'var(--accent)' }}>{carrierRecord.id}</b></span>
+            {carrierRecord.scacCode && <span>SCAC: <b style={{ fontFamily: 'monospace' }}>{carrierRecord.scacCode}</b></span>}
+            {carrierRecord.mcNumber && <span>MC #: <b style={{ fontFamily: 'monospace' }}>{carrierRecord.mcNumber}</b></span>}
+            {carrierRecord.dotNumber && <span>DOT #: <b style={{ fontFamily: 'monospace' }}>{carrierRecord.dotNumber}</b></span>}
+          </div>
+        </div>
+        <span style={{
+          display: 'inline-block', borderRadius: 999, border: `1px solid ${carrierRecord.status === 'Active' ? 'var(--success)' : 'var(--danger)'}`,
+          color: carrierRecord.status === 'Active' ? 'var(--success)' : 'var(--danger)', padding: '4px 12px', fontSize: 12, fontWeight: 700,
+        }}>{carrierRecord.status || 'Active'}</span>
       </div>
 
       {/* MAIN DASHBOARD LAYOUT */}

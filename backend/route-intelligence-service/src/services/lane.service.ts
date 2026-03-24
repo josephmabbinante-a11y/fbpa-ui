@@ -8,6 +8,7 @@ export interface PersistRouteInput {
   billableMiles: number;
   durationHours: number;
   polyline: string;
+  method: string;
   volatilityIndex: number;
   capacityScore: number;
 }
@@ -55,9 +56,10 @@ export async function persistLaneAndRoute(input: PersistRouteInput): Promise<voi
         actual_miles,
         billable_miles,
         duration_hours,
-        polyline
+        polyline,
+        method
       )
-      VALUES ($1,$2,$3,$4,$5)
+      VALUES ($1,$2,$3,$4,$5,$6)
       `,
       [
         input.laneId,
@@ -65,6 +67,7 @@ export async function persistLaneAndRoute(input: PersistRouteInput): Promise<voi
         input.billableMiles,
         input.durationHours,
         input.polyline,
+        input.method,
       ]
     );
 

@@ -3,6 +3,7 @@ import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import Customer from '../models/Customer.js';
 import Invoice from '../models/Invoice.js';
+import { generateCustomerId, deriveCustomerPrefix, generateCustomerCode } from '../utils/idGenerator.js';
 
 const router = express.Router();
 const upload = multer();
@@ -148,9 +149,21 @@ router.post('/', async (req, res) => {
   try {
     const { name, contact, email, phone, address } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name is required' });
-    const id = `c-${Date.now()}`;
+
+    // Derive a customer code from the name (e.g. "Acme Logistics" → "ACME-001")
+    const prefix = deriveCustomerPrefix(name);
+    const existing = await Customer.find({ id: { $regex: `^${prefix}-` } })
+      .sort({ id: -1 })
+      .limit(1)
+      .lean();
+    const nextSeq = existing.length
+      ? (parseInt(existing[0].id.split('-').pop(), 10) || 0) + 1
+      : 1;
+    const id = generateCustomerCode(prefix, nextSeq);
+
     const newCustomer = new Customer({
       id,
+      customerCode: id,
       name: normalizeString(name),
       email: normalizeString(email),
       phone: normalizeString(phone),

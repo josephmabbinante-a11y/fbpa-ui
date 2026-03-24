@@ -3,10 +3,11 @@ function chipClass(type) {
   return `chip chip-${type}`;
 }
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage } from '../api/client';
+import { Link, useNavigate } from 'react-router-dom';
+import { getInvoices, getInvoiceImages, uploadInvoiceImage, verifyInvoiceImage, getExceptions } from '../api/client';
 import mockInvoices from '../mock/invoices';
 import mockInvoiceImages from '../mock/invoiceImages';
+import mockExceptions from '../mock/exceptions';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import { useApi } from '../hooks/useApi';
@@ -15,6 +16,15 @@ import KPIWithTrend from '../components/KPIWithTrend';
 import CollapsibleSection from '../components/CollapsibleSection';
 import ExceptionBreakdownChart from '../components/ExceptionBreakdownChart';
 import SavingsByCarrierChart from '../components/SavingsByCarrierChart';
+
+function normalizeExceptionsResponse(response) {
+  if (Array.isArray(response)) return response;
+  if (response && Array.isArray(response.exceptions)) return response.exceptions;
+  return null;
+}
+
+const AUDIT_COLORS = { approved: '#10b981', rejected: '#ef4444', pending: '#f59e0b', auto_resolved: '#6366f1' };
+const SOURCE_LABELS = { carrier_invoice: 'Carrier Invoice', qr_scan: 'QR Code', manual_upload: 'Manual', system_rule: 'System', edi: 'EDI' };
 
 function normalizeInvoicesResponse(response) {
   // Safely extract invoices array from response
@@ -121,6 +131,28 @@ export default function Invoices() {
   const [verificationResult, setVerificationResult] = useState(null);
   const [recentActivity, setRecentActivity] = useState(() => (mockMode ? readMockRecentActivity() : []));
   const [arApFilter, setArApFilter] = useState('ALL');
+  const [activeTab, setActiveTab] = useState('invoices');
+  const [excQuery, setExcQuery] = useState('');
+  const [excStatusFilter, setExcStatusFilter] = useState('All');
+  const [excAuditFilter, setExcAuditFilter] = useState('All');
+
+  const { data: excRawData, loading: excLoading, error: excError } = useApi(() => getExceptions(), demoMode ? mockExceptions : null, [demoMode]);
+  const excSource = useMemo(() => {
+    const normalized = normalizeExceptionsResponse(excRawData);
+    if (normalized) return normalized;
+    return demoMode && Array.isArray(mockExceptions?.exceptions) ? mockExceptions.exceptions : [];
+  }, [demoMode, excRawData]);
+  const excStatuses = useMemo(() => ['All', ...new Set(excSource.map((e) => e.status).filter(Boolean))], [excSource]);
+  const excAuditStatuses = useMemo(() => ['All', ...new Set(excSource.map((e) => e.auditAction || 'pending').filter(Boolean))], [excSource]);
+  const excFiltered = useMemo(() => {
+    const term = excQuery.trim().toLowerCase();
+    return excSource.filter((item) => {
+      const matchesQuery = !term || String(item.invoiceNumber || '').toLowerCase().includes(term) || String(item.carrier || '').toLowerCase().includes(term) || String(item.reason || '').toLowerCase().includes(term);
+      const matchesStatus = excStatusFilter === 'All' || item.status === excStatusFilter;
+      const matchesAudit = excAuditFilter === 'All' || (item.auditAction || 'pending') === excAuditFilter;
+      return matchesQuery && matchesStatus && matchesAudit;
+    });
+  }, [excQuery, excSource, excStatusFilter, excAuditFilter]);
 
   const persistRecentActivity = (nextActivity) => {
     if (!isMockModeEnabled()) return;
@@ -319,9 +351,81 @@ export default function Invoices() {
         </CollapsibleSection>
         {/* ...existing code... */}
       
+  const tabStyle = (tab) => ({
+    padding: '10px 20px',
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: 'pointer',
+    border: 'none',
+    borderBottom: activeTab === tab ? `3px solid var(--accent, ${t.accent})` : '3px solid transparent',
+    background: 'transparent',
+    color: activeTab === tab ? 'var(--text)' : 'var(--text-secondary)',
+  });
+
   return (
     <div className="ui-page">
-      <PageHeader title="Invoices" loading={loading} />
+      <PageHeader title="Invoices" loading={loading || excLoading} />
+
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
+        <button type="button" style={tabStyle('invoices')} onClick={() => setActiveTab('invoices')}>Invoices</button>
+        <button type="button" style={tabStyle('exceptions')} onClick={() => setActiveTab('exceptions')}>Exceptions{excSource.length > 0 ? ` (${excSource.length})` : ''}</button>
+      </div>
+
+      {activeTab === 'exceptions' ? (
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ margin: 0, fontSize: 22 }}>Exceptions</h2>
+            {excError ? <span style={{ fontSize: 12, color: 'var(--warning)' }}>{demoMode ? `Using fallback data: ${excError}` : `Unable to load exceptions: ${excError}`}</span> : null}
+          </div>
+          {excLoading ? <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loading exceptions...</div> : null}
+
+          <div style={{ display: 'flex', gap: 12 }}>
+            <input type="text" placeholder="Search by invoice, carrier, or reason" value={excQuery} onChange={(e) => setExcQuery(e.target.value)} style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }} />
+            <select value={excStatusFilter} onChange={(e) => setExcStatusFilter(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }}>
+              {excStatuses.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={excAuditFilter} onChange={(e) => setExcAuditFilter(e.target.value)} style={{ padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--surface)', color: 'var(--text)' }}>
+              {excAuditStatuses.map((a) => <option key={a} value={a}>{a === 'All' ? 'All Audits' : a}</option>)}
+            </select>
+          </div>
+
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, fontSize: '1rem' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left', padding: 8 }}>Invoice</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Carrier</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Amount</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Audit</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Source</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Created</th>
+                <th style={{ textAlign: 'left', padding: 8 }}>Detail</th>
+              </tr>
+            </thead>
+            <tbody>
+              {excFiltered.map((item) => (
+                <tr key={item.id}>
+                  <td style={{ padding: 8 }}>{item.invoiceNumber}</td>
+                  <td style={{ padding: 8 }}>{item.carrier ? <a href={`/carriers/profile/${encodeURIComponent(item.carrier)}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/carriers/profile/${encodeURIComponent(item.carrier)}`); }} style={{ color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>{item.carrier}</a> : '—'}</td>
+                  <td style={{ padding: 8 }}>${Number(item.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ padding: 8 }}>{item.status}</td>
+                  <td style={{ padding: 8 }}>
+                    <span style={{ color: AUDIT_COLORS[item.auditAction] || AUDIT_COLORS.pending, fontWeight: 600 }}>
+                      {item.auditAction || 'pending'}
+                    </span>
+                  </td>
+                  <td style={{ padding: 8 }}>{item.source ? (SOURCE_LABELS[item.source] || item.source) : '-'}</td>
+                  <td style={{ padding: 8 }}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-'}</td>
+                  <td style={{ padding: 8 }}>
+                    <Link to={`/exceptions/${item.id}`}>Drilldown</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+      <>
 
       {/* Dashboard assets moved from Dashboard.jsx */}
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 24 }}>
@@ -423,7 +527,7 @@ export default function Invoices() {
                 </div>
                 <div style={{ display: "grid", gap: 8, fontSize: 12 }}>
                   <div><strong>Invoice ID:</strong> {verificationResult.extractedFields.invoiceId}</div>
-                  <div><strong>Carrier:</strong> {verificationResult.extractedFields.carrier}</div>
+                  <div><strong>Carrier:</strong> {verificationResult.extractedFields.carrier ? <a href={`/carriers/profile/${encodeURIComponent(verificationResult.extractedFields.carrier)}`} onClick={(e) => { e.preventDefault(); navigate(`/carriers/profile/${encodeURIComponent(verificationResult.extractedFields.carrier)}`); }} style={{ color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>{verificationResult.extractedFields.carrier}</a> : '—'}</div>
                   <div><strong>Amount:</strong> ${verificationResult.extractedFields.amount.toLocaleString()}</div>
                   <div><strong>Invoice Date:</strong> {verificationResult.extractedFields.invoiceDate}</div>
                   <div><strong>Due Date:</strong> {verificationResult.extractedFields.dueDate}</div>
@@ -514,7 +618,7 @@ export default function Invoices() {
                   <td style={{ color: "var(--accent)", cursor: "pointer", fontWeight: 600 }} onClick={() => navigate(`/invoices/${invoice.id}`)}>
                     {invoice.id}
                   </td>
-                  <td>{invoice.carrier}</td>
+                  <td>{invoice.carrier ? <a href={`/carriers/profile/${encodeURIComponent(invoice.carrier)}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/carriers/profile/${encodeURIComponent(invoice.carrier)}`); }} style={{ color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>{invoice.carrier}</a> : '—'}</td>
                   <td style={{ color: "var(--success)", fontWeight: 600 }}>
                     ${invoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
@@ -537,6 +641,9 @@ export default function Invoices() {
             <SavingsByCarrierChart data={savingsByCarrierData} />
         </div>
       </CollapsibleSection>
+
+      </>
+      )}
 
     </div>
   );

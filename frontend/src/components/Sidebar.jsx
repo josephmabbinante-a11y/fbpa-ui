@@ -28,6 +28,22 @@ function Sidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showThemePanel, setShowThemePanel] = useState(true);
+  const [openSections, setOpenSections] = useState(() => {
+    try {
+      const stored = localStorage.getItem('opscale_sidebar_sections');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleSection = (id) => {
+    setOpenSections((prev) => {
+      const next = { ...prev, [id]: !prev[id] };
+      try { localStorage.setItem('opscale_sidebar_sections', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   useEffect(() => {
     const storedCollapsed = localStorage.getItem('opscale_sidebar_collapsed') === 'true';
@@ -69,12 +85,18 @@ function Sidebar() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '🏠', path: '/' },
     { id: 'invoices', label: 'Invoices', icon: '🧾', path: '/invoices' },
-    { id: 'exceptions', label: 'Exceptions', icon: '❗', path: '/exceptions' },
     { id: 'fleet-dashboard', label: 'Fleet Dashboard', icon: '🚛', path: '/fleet' },
+    {
+      id: 'sales-ops', label: 'Sales Ops', icon: '🤝', dropdown: true, items: [
+        { id: 'leads', label: 'Lead Management', icon: '🎯', path: '/leads' },
+        { id: 'quoting', label: 'Quoting & RFP', icon: '📋', path: '/quoting' },
+      ]
+    },
     {
       id: 'load-center', label: 'Load Center', icon: '🚚', dropdown: true, items: [
         { id: 'dispatch-center', label: 'Dispatch Center', icon: '🛣️', path: '/loadcenter/dispatch-screen' },
         { id: 'freight-exchange', label: 'Freight Exchange', icon: '🚛', path: '/load-board' },
+        { id: 'capacity-board', label: 'Capacity & Tenders', icon: '📦', path: '/capacity-board' },
       ]
     },
     {
@@ -82,12 +104,14 @@ function Sidebar() {
         { id: 'ap', label: 'AP (Carrier Pay)', icon: 'AP', path: '/finance/ap' },
         { id: 'ar', label: 'AR (Broker)', icon: 'AR', path: '/finance/ar' },
         { id: 'aging', label: 'Aging', icon: 'AG', path: '/finance/aging' },
+        { id: 'budget-pl', label: 'Budget & P&L', icon: '📊', path: '/budget-pl' },
+        { id: 'carrier-compliance', label: 'Compliance & Safety', icon: '🛡️', path: '/carrier-compliance' },
       ]
     },
     {
       id: 'analytics', label: 'Analytics', icon: '📊', dropdown: true, items: [
         { id: 'spend-reports', label: 'Spend Reports', icon: 'SR', path: '/reports' },
-        { id: 'carrier-performance', label: 'Carrier Performance', icon: 'CP', path: '/carriers-list' },
+        { id: 'carrier-performance', label: 'Carrier Performance', icon: 'CP', path: '/carrier-performance' },
         { id: 'lane-intelligence', label: 'Lane Intelligence', icon: 'LI', path: '/lane-intelligence' },
         { id: 'audit-iq', label: 'Audit IQ', icon: 'AQ', path: '/audit-iq' },
         { id: 'fraud-prevention', label: 'Fraud Prevention', icon: 'FP', path: '/fraud-prevention' },
@@ -105,6 +129,7 @@ function Sidebar() {
     {
       id: 'tools', label: 'Tools', icon: '🛠️', dropdown: true, items: [
         { id: 'rate-logic', label: 'Rate Logic Tool', icon: 'RL', path: '/rate-logic-tool' },
+        { id: 'operational-kpis', label: 'Operational KPIs', icon: '📈', path: '/operational-kpis' },
       ]
     },
     { id: 'account', label: 'Account', icon: '👤', path: '/settings' },
@@ -173,6 +198,33 @@ function Sidebar() {
       </header>
       {/* ...existing sidebar content... */}
 
+      <div style={{ padding: collapsed ? '8px 2px' : '10px 10px 0 10px' }}>
+        <NavLink
+          to="/load-board/new-shipment"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: collapsed ? 0 : 8,
+            borderRadius: 10,
+            border: 'none',
+            background: `linear-gradient(135deg, ${theme.accent}, ${theme.accent2 || theme.accent})`,
+            color: '#fff',
+            padding: collapsed ? '8px 0' : '10px 14px',
+            fontSize: 13,
+            fontWeight: 700,
+            width: '100%',
+            minWidth: collapsed ? 36 : undefined,
+            cursor: 'pointer',
+            textDecoration: 'none',
+            boxShadow: '0 2px 8px rgba(47,128,255,0.18)',
+          }}
+        >
+          <span style={{ fontSize: 16 }}>+</span>
+          {showLabels && <span>New Load</span>}
+        </NavLink>
+      </div>
+
       <nav
         style={{
           display: 'flex',
@@ -214,7 +266,8 @@ function Sidebar() {
                   e.currentTarget.style.background = 'var(--surface)';
                   e.currentTarget.style.color = theme.textSecondary;
                 }}
-                aria-expanded={false}
+                aria-expanded={!!openSections[item.id]}
+                onClick={() => toggleSection(item.id)}
               >
                 <span
                   style={{
@@ -233,9 +286,10 @@ function Sidebar() {
                   {item.icon}
                 </span>
                 {showLabels && <span style={{ whiteSpace: 'nowrap' }}>{item.label}</span>}
-                {showLabels && <span style={{ marginLeft: 'auto', fontSize: 16 }}>{'▸'}</span>}
+                {showLabels && <span style={{ marginLeft: 'auto', fontSize: 10, transition: 'transform 200ms ease', transform: openSections[item.id] ? 'rotate(90deg)' : 'rotate(0deg)' }}>{'▸'}</span>}
               </button>
-              <div style={{ marginLeft: collapsed ? 0 : 32, marginTop: 2 }}>
+              {(openSections[item.id] || collapsed) && (
+              <div style={{ marginLeft: collapsed ? 0 : 32, marginTop: 2, overflow: 'hidden' }}>
                 {item.items.map((sub) => (
                   <NavLink
                     key={sub.id}
@@ -280,6 +334,7 @@ function Sidebar() {
                   </NavLink>
                 ))}
               </div>
+              )}
             </div>
           ) : (
             <NavLink

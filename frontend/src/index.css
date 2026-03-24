@@ -143,6 +143,7 @@ html[data-theme-palette="slimline"] td {
 
 #root {
   min-height: 100vh;
+  zoom: 0.67;
 }
 
 body.theme-transition,

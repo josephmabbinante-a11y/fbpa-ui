@@ -30,6 +30,9 @@ import carrierProfilesRouter from './routes/carrierProfiles.js';
 import auditResultsRouter from './routes/auditResults.js';
 import freightIntelligenceRouter from './routes/freightIntelligence.js';
 import freightExchangeRouter from './routes/freightExchange.js';
+import telephonyRouter from './routes/telephony.js';
+import documentRegistryRouter from './routes/documentRegistry.js';
+import quotesRouter from './routes/quotes.js';
 import { verifyToken, requireDatabase } from './middleware/auth.js';
 
 dotenv.config();
@@ -63,19 +66,19 @@ const distPath = path.resolve(__dirname, 'dist');
 const distIndexExists = fs.existsSync(path.join(distPath, 'index.html'));
 
 // Allow only Vercel frontend and custom domains for CORS
-const defaultAllowedOrigins = [
+const devOrigins = NODE_ENV === 'production' ? [] : [
   'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+];
+const defaultAllowedOrigins = [
+  ...devOrigins,
   'https://express-git-fbpa-josephmabbinante-a11ys-projects.vercel.app',
   'https://www.hdhtransport.com',
   'https://hdhtransport.com',
   'https://fbpa-f073sj7mi-josephmabbinante-a11ys-projects.vercel.app',
   'https://fbpa-qh4fmw9tg-josephmabbinante-a11ys-projects.vercel.app',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  // Add your deployed frontend URL here, e.g.:
-  // 'https://your-app.vercel.app',
-  // Add any custom production domains here
 ];
 
 const envAllowedOrigins = (process.env.CORS_ORIGIN || '')
@@ -154,7 +157,9 @@ app.use((req, res, next) => {
 
   res.on('finish', () => {
     const durationMs = Date.now() - startedAt;
-    console.log(`[http] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms origin=${origin} ip=${ip}`);
+    if (NODE_ENV !== 'production') {
+      console.log(`[http] ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms`);
+    }
   });
 
   next();
@@ -163,8 +168,8 @@ app.use((req, res, next) => {
 // Serve static files from public/ unconditionally (before body parsers and API routes)
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     const contentType = req.headers['content-type'] || '';
@@ -185,9 +190,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     database: dbStatus,
-    uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || '1.0.0',
   });
 });
 
@@ -215,6 +218,9 @@ app.use('/api/carrier-profiles', verifyToken, requireDatabase, carrierProfilesRo
 app.use('/api/audit-results', verifyToken, requireDatabase, auditResultsRouter);
 app.use('/api/freight-intelligence', verifyToken, requireDatabase, freightIntelligenceRouter);
 app.use('/api/freight-exchange', verifyToken, requireDatabase, freightExchangeRouter);
+app.use('/api/telephony', verifyToken, requireDatabase, telephonyRouter);
+app.use('/api/document-registry', verifyToken, requireDatabase, documentRegistryRouter);
+app.use('/api/quotes', verifyToken, requireDatabase, quotesRouter);
 
 // Root route: serve React SPA when built, otherwise redirect to static login
 app.get('/', (req, res, next) => {
@@ -249,11 +255,15 @@ app.use((err, req, res, next) => {
 
 // Global catch-all error handler — must be after all API routes
 app.use((err, req, res, next) => {
-  console.error('[error] Unhandled route error:', err.message, err.stack);
+  if (NODE_ENV !== 'production') {
+    console.error('[error] Unhandled route error:', err.message, err.stack);
+  } else {
+    console.error('[error] Unhandled route error:', err.message);
+  }
   if (res.headersSent) return next(err);
   res.status(err.status || 500).json({
     ok: false,
-    error: err.message || 'Internal server error',
+    error: NODE_ENV === 'production' ? 'Internal server error' : (err.message || 'Internal server error'),
   });
 });
 
@@ -292,8 +302,8 @@ if (!process.env.VERCEL) {
 
   // Handle uncaught errors
   process.on('uncaughtException', (err) => {
-    console.error('[error] Uncaught exception:', err);
-    console.error('[error] Stack:', err.stack);
+    console.error('[error] Uncaught exception:', err.message);
+    if (NODE_ENV !== 'production') console.error('[error] Stack:', err.stack);
     gracefulShutdown('uncaughtException').finally(() => process.exit(1));
   });
 

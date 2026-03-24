@@ -1,4 +1,5 @@
 import { apiUrl } from './apiUrl';
+import { getAccessToken } from '../utils/authToken';
 
 async function readJsonSafe(response) {
   try {
@@ -9,9 +10,13 @@ async function readJsonSafe(response) {
 }
 
 export async function quoteSaiaAuction(load) {
+  const token = getAccessToken();
   const res = await fetch(apiUrl('/api/rate-logic/saia/quote'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(load),
     credentials: 'include',
   });
@@ -24,8 +29,12 @@ export async function quoteSaiaAuction(load) {
 }
 
 export async function getSaiaAuctionCircuit() {
+  const token = getAccessToken();
   const res = await fetch(apiUrl('/health/saia'), {
     method: 'GET',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     credentials: 'include',
   });
   const data = await readJsonSafe(res);

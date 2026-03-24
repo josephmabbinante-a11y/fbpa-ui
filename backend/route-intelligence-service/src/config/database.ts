@@ -33,6 +33,7 @@ export async function ensureSchema(): Promise<void> {
       billable_miles DOUBLE PRECISION,
       duration_hours DOUBLE PRECISION,
       polyline TEXT,
+      method TEXT DEFAULT 'here-truck',
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);

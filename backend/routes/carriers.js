@@ -1,6 +1,7 @@
 import express from 'express';
 import Carrier from '../models/Carrier.js';
 import Invoice from '../models/Invoice.js';
+import { generateCarrierId, normalizeScac } from '../utils/idGenerator.js';
 
 const router = express.Router();
 
@@ -111,7 +112,7 @@ router.get('/:id', async (req, res) => {
 // Create carrier (manual or system)
 router.post('/', async (req, res) => {
   try {
-    const { name, mcNumber, email, phone, paymentTerms, insuranceExpiry, taxId } = req.body || {};
+    const { name, mcNumber, email, phone, paymentTerms, insuranceExpiry, taxId, scacCode } = req.body || {};
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
     const mcNormalized = normalizeMc(mcNumber);
@@ -119,9 +120,16 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'Carrier already exists', carrier: existing });
 
     const now = new Date();
+    const carrierId = generateCarrierId(scacCode);
+
+    // If ID derived from SCAC, check for collision
+    const idExists = await Carrier.findOne({ id: carrierId });
+    if (idExists) return res.status(409).json({ error: 'Carrier with this SCAC code already exists', carrier: idExists });
+
     const newCarrier = new Carrier({
-      id: `cr-${Date.now()}`,
+      id: carrierId,
       name: normalizeString(name),
+      scacCode: normalizeScac(scacCode),
       mcNumber: mcNumber ? normalizeString(mcNumber) : undefined,
       mcNumberNormalized: mcNormalized || undefined,
       email: normalizeString(email),

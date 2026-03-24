@@ -840,7 +840,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
   }, [isLoadCenter, selectedLoad?.id]);
 
   return (
-    <div className="ui-page" style={{ display: 'grid', gap: 24, margin: 0, padding: 0, position: 'relative' }}>
+    <div className="ui-page" style={{ display: 'grid', gap: isDispatchCenter ? 8 : 24, margin: 0, padding: 0, position: 'relative' }}>
       {/* Book Load Dialog */}
       <BookLoadDialog
         open={showBookDialog}
@@ -949,18 +949,9 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 32 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{pageTitle}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: isDispatchCenter ? 4 : 32 }}>
+        <div style={{ fontSize: isDispatchCenter ? 16 : 20, fontWeight: 700, color: 'var(--text)' }}>{pageTitle}</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {canBook && (
-            <button
-              type="button"
-              onClick={() => setShowBookDialog(true)}
-              style={{ padding: '4px 10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: 4, fontWeight: 600, fontSize: 13, cursor: 'pointer', minHeight: 28 }}
-            >
-              Book
-            </button>
-          )}
           {isLoadCenter && (
             <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
               {isDispatchCenter ? 'Dispatch center: load board, dispatch readiness, SLA risk, and exception handling.' : 'Dispatch focus: pre-dispatch readiness, in-transit SLA risk, and exception handling.'}
@@ -968,7 +959,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
           )}
         </div>
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 14 }}>{isDispatchCenter ? 'Dispatch Center console' : 'Load Board execution console'}</div>
+      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: isDispatchCenter ? 4 : 14 }}>{isDispatchCenter ? 'Dispatch Center console' : 'Load Board execution console'}</div>
       {!isLoadCenter && <PrimaryTabs active="loads" />}
 
       <div style={{ display: 'grid', gridTemplateColumns: isDispatchCenter ? 'minmax(0,1fr) 380px' : isLoadCenter ? 'minmax(0,1fr)' : 'minmax(0,1fr) 380px', gap: 16, minHeight: '70vh' }}>
@@ -1308,7 +1299,7 @@ export default function LoadCommandPage({ pageTitle = 'Load Command' }) {
         </section>
 
         {(!isLoadCenter || isDispatchCenter) && (
-          <aside style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
+          <aside style={{ display: 'grid', gap: 16, alignContent: 'start', position: 'sticky', top: 16, alignSelf: 'start', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto' }}>
             <LoadDetailPanel
               detail={selectedDetail}
               risk={dispatchRisk}

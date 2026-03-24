@@ -31,7 +31,6 @@ function calcWinProbability(sellRate, marketRate) {
 const TABS = [
   { key: 'engine', label: 'Rate Logic Engine' },
   { key: 'calculator', label: 'Rate Calculator' },
-  { key: 'formula', label: 'Pricing Formula' },
   { key: 'email-quote', label: 'Email Quote' },
   { key: 'bulk-import', label: 'Bulk Import' },
 ];
@@ -111,10 +110,7 @@ export default function RateLogicTool() {
   return (
     <div style={{ padding: 24, backgroundColor: t.bg, color: t.text, minHeight: '100vh' }}>
       <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: `1px solid ${t.border}` }}>
-        <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 6 }}>💰 Rate Logic Tool</div>
-        <div style={{ fontSize: 14, color: t.textSecondary }}>
-          Rate engine • Quick calculator • Pricing formula • Email quotes • Bulk import
-        </div>
+        <div style={{ fontSize: 28, fontWeight: 700 }}>💰 Rate Logic Tool</div>
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -130,6 +126,7 @@ export default function RateLogicTool() {
 
       {/* ── Quick Rate Calculator ── */}
       {activeTab === 'calculator' && (
+        <>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={cardStyle}>
@@ -272,11 +269,9 @@ export default function RateLogicTool() {
             </div>
           </div>
         </div>
-      )}
 
-      {/* ── Pricing Formula ── */}
-      {activeTab === 'formula' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        {/* ── Pricing Formula Reference ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
           <div style={cardStyle}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>📐 Pricing Formula</div>
             <div style={{ fontFamily: 'monospace', fontSize: 13, lineHeight: 2, backgroundColor: t.bg, padding: 16, borderRadius: 6, border: `1px solid ${t.border}` }}>
@@ -291,37 +286,8 @@ export default function RateLogicTool() {
             </div>
           </div>
           <div style={cardStyle}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>📋 Example Calculation</div>
-            <div style={{ fontSize: 13, lineHeight: 1.8, color: t.textSecondary }}>
-              <div style={{ marginBottom: 12, padding: '10px 14px', backgroundColor: t.bg, borderRadius: 6, border: `1px solid ${t.border}` }}>
-                <div style={{ fontWeight: 600, color: t.text, marginBottom: 6 }}>Chicago, IL → Miami, FL</div>
-                <div>Distance: 1,380 miles</div>
-                <div>Market RPM: $2.42</div>
-                <div>Equipment: Dry Van</div>
-                <div>Fuel: $0.55/mi</div>
-              </div>
-              <div style={{ padding: '10px 14px', backgroundColor: t.bg, borderRadius: 6, border: `1px solid ${t.border}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span>Base Linehaul</span><span style={{ color: t.text }}>$3,340</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span>Fuel Component</span><span style={{ color: t.text }}>$759</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, borderTop: `1px solid ${t.border}`, paddingTop: 8 }}>
-                  <span style={{ fontWeight: 600, color: '#3b82f6' }}>Carrier Buy Rate</span><span style={{ fontWeight: 600, color: '#3b82f6' }}>$4,099</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span>Broker Margin (15%)</span><span style={{ color: '#f59e0b' }}>$724</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: `1px solid ${t.border}`, paddingTop: 8 }}>
-                  <span style={{ fontWeight: 600, color: '#10b981' }}>Shipper Quote</span><span style={{ fontWeight: 600, color: '#10b981' }}>$4,823</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style={{ ...cardStyle, gridColumn: '1 / -1' }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>⚙️ Margin Optimization Logic</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gap: 12 }}>
               {[
                 { condition: 'Lane demand HIGH + truck supply LOW', action: 'Increase margin target +3%', color: '#10b981' },
                 { condition: 'Rejection rate spike detected', action: 'Reduce sell rate -2%', color: '#ef4444' },
@@ -338,6 +304,7 @@ export default function RateLogicTool() {
             </div>
           </div>
         </div>
+        </>
       )}
 
       {/* ── Email Quote Generator ── */}

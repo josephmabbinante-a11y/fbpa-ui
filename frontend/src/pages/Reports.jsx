@@ -185,7 +185,7 @@ export default function Reports() {
                 <tbody>
                   {(data?.topSavingsCarriers || []).map((row) => (
                     <tr key={row.carrier}>
-                      <td>{row.carrier}</td>
+                      <td>{row.carrier ? <a href={`/carriers/profile/${encodeURIComponent(row.carrier)}`} onClick={(e) => { e.preventDefault(); navigate(`/carriers/profile/${encodeURIComponent(row.carrier)}`); }} style={{ color: 'var(--accent)', textDecoration: 'underline', cursor: 'pointer' }}>{row.carrier}</a> : '—'}</td>
                       <td>${Number(row.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                   ))}

@@ -81,7 +81,7 @@ const adminSections = [
     icon: 'freight',
     title: 'Load & Freight Configuration',
     description: 'Control load workflows and operational behaviors.',
-    actions: ['Load Numbering Rules', 'Manifest Settings', 'Default Equipment Types', 'Workflow Automation Rules', 'Rate Logic Configuration'],
+    actions: ['Load Numbering Rules', 'Manifest Settings', 'Default Equipment Types', 'Workflow Automation Rules', 'Rate Logic Configuration', 'Pricing Formula'],
   },
   {
     icon: 'audit',
@@ -450,6 +450,118 @@ function OperatorEmailTemplatesPanel({ t }) {
     </div>
   );
 }
+
+const PRICING_FORMULA_STORAGE_KEY = 'fbpa_pricing_formula_config';
+
+function PricingFormulaSettingsPanel({ t }) {
+  const [config, setConfig] = useState(() => {
+    try {
+      const raw = localStorage.getItem(PRICING_FORMULA_STORAGE_KEY);
+      if (raw) return { ...defaultFormulaConfig, ...JSON.parse(raw) };
+    } catch { /* ignore */ }
+    return defaultFormulaConfig;
+  });
+  const [saved, setSaved] = useState(false);
+
+  const handleChange = (key, value) => setConfig(prev => ({ ...prev, [key]: value }));
+
+  const handleSave = () => {
+    writeStorage(PRICING_FORMULA_STORAGE_KEY, config);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
+  const sec = { background: t.surface, border: `1px solid ${t.border}`, borderRadius: 8, padding: 20, marginBottom: 16 };
+  const label = { fontSize: 12, fontWeight: 600, color: t.textSecondary, marginBottom: 4, display: 'block' };
+  const input = { padding: '8px 10px', borderRadius: 6, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 13, width: '100%', boxSizing: 'border-box' };
+
+  return (
+    <div>
+      <div style={sec}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Pricing Formula Configuration</div>
+        <div style={{ fontSize: 13, color: t.textSecondary, marginBottom: 16 }}>
+          Configure the default parameters used by the pricing formula engine.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div>
+            <label style={label}>Default Margin Target (%)</label>
+            <input style={input} type="number" min="1" max="50" value={config.defaultMarginPct} onChange={e => handleChange('defaultMarginPct', e.target.value)} />
+          </div>
+          <div>
+            <label style={label}>Demand Surge Margin Boost (%)</label>
+            <input style={input} type="number" min="0" max="20" value={config.demandSurgeBoostPct} onChange={e => handleChange('demandSurgeBoostPct', e.target.value)} />
+          </div>
+          <div>
+            <label style={label}>Reefer Equipment Multiplier</label>
+            <input style={input} type="number" step="0.01" min="1" max="1.5" value={config.reeferMultiplier} onChange={e => handleChange('reeferMultiplier', e.target.value)} />
+          </div>
+          <div>
+            <label style={label}>Flatbed Equipment Multiplier</label>
+            <input style={input} type="number" step="0.01" min="1" max="1.5" value={config.flatbedMultiplier} onChange={e => handleChange('flatbedMultiplier', e.target.value)} />
+          </div>
+          <div>
+            <label style={label}>Default Fuel Cost ($/mi)</label>
+            <input style={input} type="number" step="0.01" min="0" value={config.defaultFuelCost} onChange={e => handleChange('defaultFuelCost', e.target.value)} />
+          </div>
+          <div>
+            <label style={label}>Rejection Spike Rate Reduction (%)</label>
+            <input style={input} type="number" min="0" max="20" value={config.rejectionSpikeReductionPct} onChange={e => handleChange('rejectionSpikeReductionPct', e.target.value)} />
+          </div>
+        </div>
+      </div>
+
+      <div style={sec}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14 }}>Margin Optimization Rules</div>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {[
+            { key: 'demandSupplyRule', label: 'Demand/Supply Auto-Adjust', desc: 'Increase margin when lane demand is high and supply is low' },
+            { key: 'rejectionSpikeRule', label: 'Rejection Spike Reduction', desc: 'Reduce sell rate when rejection spikes are detected' },
+            { key: 'capacitySurchargeRule', label: 'Capacity Surcharge', desc: 'Apply surcharge when regional capacity is tight' },
+            { key: 'seasonalPeakRule', label: 'Seasonal Peak Multiplier', desc: 'Apply demand multiplier during seasonal peak periods' },
+          ].map(rule => (
+            <div key={rule.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: `1px solid ${t.border}` }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{rule.label}</div>
+                <div style={{ fontSize: 12, color: t.textSecondary }}>{rule.desc}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleChange(rule.key, !config[rule.key])}
+                style={{
+                  width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: config[rule.key] ? t.accent : t.border, position: 'relative', transition: 'background 0.2s',
+                }}
+              >
+                <span style={{ position: 'absolute', top: 3, left: config[rule.key] ? 18 : 3, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={handleSave}
+        style={{ padding: '9px 20px', background: t.accent, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+      >
+        {saved ? '✓ Saved' : 'Save Formula Configuration'}
+      </button>
+    </div>
+  );
+}
+
+const defaultFormulaConfig = {
+  defaultMarginPct: '15',
+  demandSurgeBoostPct: '3',
+  reeferMultiplier: '1.09',
+  flatbedMultiplier: '1.06',
+  defaultFuelCost: '0.55',
+  rejectionSpikeReductionPct: '2',
+  demandSupplyRule: true,
+  rejectionSpikeRule: true,
+  capacitySurchargeRule: true,
+  seasonalPeakRule: true,
+};
 
 function ActionPanel({ action, t, theme, setTheme }) {
   const [saveMessage, setSaveMessage] = useState('');
@@ -861,6 +973,8 @@ function ActionPanel({ action, t, theme, setTheme }) {
       return <WorkflowAutomationEnginePanel t={t} onSave={save} />;
     case 'Rate Logic Configuration':
       return <RateLogicPanel t={t} onSave={save} />;
+    case 'Pricing Formula':
+      return <PricingFormulaSettingsPanel t={t} />;
 
     // ── Audit & Financial ─────────────────────────────────────────────────────
     case 'Accessorial Validation Rules':
@@ -1192,6 +1306,124 @@ function ActionPanel({ action, t, theme, setTheme }) {
     default:
       return <div style={{ color: t.textSecondary, fontSize: 13 }}>Select an action to begin configuration.</div>;
   }
+}
+
+// ── Layout Customization Panel ───────────────────────────────────────────────
+
+const LAYOUT_EDIT_MODE_KEY = 'opscale_layout_edit_mode';
+const LAYOUT_CUSTOM_STORAGE_KEY = 'opscale_layout_customizations_v1';
+
+function LayoutCustomizationPanel({ t, sec, secTitle }) {
+  const [editMode, setEditMode] = useState(
+    () => localStorage.getItem(LAYOUT_EDIT_MODE_KEY) === 'true',
+  );
+
+  // Sync if Layout.jsx toggles it externally
+  useEffect(() => {
+    const sync = () => setEditMode(localStorage.getItem(LAYOUT_EDIT_MODE_KEY) === 'true');
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
+
+  const toggleEditMode = () => {
+    const next = !editMode;
+    setEditMode(next);
+    localStorage.setItem(LAYOUT_EDIT_MODE_KEY, String(next));
+    window.dispatchEvent(new Event('opscale-layout-edit-toggle'));
+  };
+
+  const resetPage = () => window.dispatchEvent(new Event('opscale-layout-reset-page'));
+  const resetAll = () => window.dispatchEvent(new Event('opscale-layout-reset-all'));
+
+  const hasCustomizations = (() => {
+    try {
+      const raw = localStorage.getItem(LAYOUT_CUSTOM_STORAGE_KEY);
+      return raw && Object.keys(JSON.parse(raw)).length > 0;
+    } catch {
+      return false;
+    }
+  })();
+
+  return (
+    <div style={sec}>
+      <button
+        type="button"
+        onClick={() => {}}
+        style={{ width: '100%', border: 'none', background: 'transparent', color: t.text, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 0, cursor: 'default' }}
+      >
+        {secTitle('Layout Customization')}
+      </button>
+
+      <div style={{ fontSize: 13, color: t.textSecondary, marginBottom: 16 }}>
+        Enable layout edit mode to rearrange page blocks. Hold <strong>Shift + drag</strong> to move blocks, <strong>Alt + double-click</strong> to hide/show.
+      </div>
+
+      <button
+        type="button"
+        onClick={toggleEditMode}
+        style={{
+          padding: '9px 20px',
+          borderRadius: 8,
+          border: `1px solid ${editMode ? t.accent : t.border}`,
+          background: editMode ? t.accent : t.bgAlt,
+          color: editMode ? '#fff' : t.text,
+          cursor: 'pointer',
+          fontSize: 13,
+          fontWeight: 700,
+          marginBottom: 12,
+        }}
+      >
+        {editMode ? '🟢 Layout Edit Mode: ON' : '⚪ Layout Edit Mode: OFF'}
+      </button>
+
+      {editMode && (
+        <div style={{ fontSize: 12, color: t.accent, fontWeight: 600, marginBottom: 12 }}>
+          Edit mode is active — navigate to any page to rearrange its layout blocks.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          onClick={resetPage}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 6,
+            border: `1px solid ${t.border}`,
+            background: t.bgAlt,
+            color: t.text,
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          Reset Current Page
+        </button>
+        <button
+          type="button"
+          onClick={resetAll}
+          style={{
+            padding: '8px 16px',
+            borderRadius: 6,
+            border: `1px solid ${t.border}`,
+            background: t.bgAlt,
+            color: t.text,
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 600,
+          }}
+        >
+          Reset All Pages
+        </button>
+      </div>
+
+      {hasCustomizations && (
+        <div style={{ marginTop: 10, fontSize: 12, color: t.textSecondary }}>
+          You have saved layout customizations.
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Account & Profile Panel ──────────────────────────────────────────────────
@@ -1804,6 +2036,9 @@ function AccountProfilePanel({ activeAction, t, theme, setTheme, settings, setAd
               </>
             )}
           </div>
+          {/* 5. Layout Customization Section */}
+          <LayoutCustomizationPanel t={t} sec={sec} secTitle={secTitle} />
+
           <div style={sec}>
             {secTitle('Notifications')}
             <ToggleList t={t} storageKey="fbpa_settings_preferences_notifications" items={[

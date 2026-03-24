@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
-import { uploadInvoiceFile } from '../api/client';
+import { useEffect, useState, useCallback } from 'react';
+import { uploadInvoiceFile, getDocumentRegistry, registerDocument } from '../api/client';
 import uploadHistory from '../mock/uploads';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 import DocumentManagementPanel from './DocumentManagementPanel';
 import CollapsibleSection from '../components/CollapsibleSection';
 import logo from '../assets/opscale-logo.svg';
+
+const SOURCE_LABELS = { qr_code: 'QR Code', manual_upload: 'Manual Upload', email_ingest: 'Email', edi: 'EDI', api: 'API', carrier_portal: 'Carrier Portal' };
+const AUDIT_STATUS_COLORS = { pending_review: '#f59e0b', approved: '#10b981', rejected: '#ef4444', auto_matched: '#6366f1', needs_attention: '#f97316' };
 
 export default function Uploads() {
   const { theme } = useTheme();
@@ -16,10 +19,19 @@ export default function Uploads() {
   const [uploadResult, setUploadResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState(() => (demoMode ? uploadHistory : []));
+  const [registryDocs, setRegistryDocs] = useState([]);
+
+  const refreshRegistry = useCallback(async () => {
+    try {
+      const res = await getDocumentRegistry();
+      if (res && Array.isArray(res.documents)) setRegistryDocs(res.documents);
+    } catch { /* fallback stays empty */ }
+  }, []);
 
   useEffect(() => {
     setHistory(demoMode ? uploadHistory : []);
-  }, [demoMode]);
+    refreshRegistry();
+  }, [demoMode, refreshRegistry]);
 
   // State for Rate Confirmation Upload
   const [rcFile, setRcFile] = useState(null);
@@ -49,6 +61,8 @@ export default function Uploads() {
       const res = await uploadInvoiceFile(rcFile);
       if (res && res.success) {
         setRcStatus('Upload successful!');
+        // Register in document registry
+        registerDocument({ documentType: 'rate_confirmation', fileName: rcFile.name, source: 'manual_upload' }).then(() => refreshRegistry()).catch(() => {});
         setRcFile(null);
         setRcPreviewUrl(null);
       } else {
@@ -89,6 +103,8 @@ export default function Uploads() {
         status: 'Processed',
       };
       setHistory((h) => [entry, ...h]);
+      // Also register in document registry for unified tracking
+      registerDocument({ documentType: 'customer_invoice', fileName: file.name, source: 'manual_upload' }).then(() => refreshRegistry()).catch(() => {});
     } else {
       setStatus(`Upload failed: ${res && res.error ? res.error : 'unknown'}`);
       setUploadResult(res && res.errors ? res : null);
@@ -354,6 +370,48 @@ export default function Uploads() {
             ))}
           </tbody>
         </table>
+      </CollapsibleSection>
+
+      {/* Document Registry — all sources unified */}
+      <CollapsibleSection title={`Document Registry (${registryDocs.length})`} defaultOpen={false} id="document-registry">
+        {registryDocs.length === 0 ? (
+          <div style={{ fontSize: 12, color: t.textSecondary, padding: 12 }}>No documents registered yet. Uploads, QR scans, and carrier submissions will appear here.</div>
+        ) : (
+          <table style={{ ...tableStyle, fontSize: '1rem' }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>File</th>
+                <th style={thStyle}>Type</th>
+                <th style={thStyle}>Source</th>
+                <th style={thStyle}>Invoice</th>
+                <th style={thStyle}>Carrier</th>
+                <th style={thStyle}>Audit Status</th>
+                <th style={thStyle}>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {registryDocs.map((doc) => (
+                <tr key={doc.id || doc._id}>
+                  <td style={tdStyle}>{doc.fileName}</td>
+                  <td style={tdStyle}>{doc.documentType?.replace(/_/g, ' ') || '-'}</td>
+                  <td style={tdStyle}>
+                    <span style={{ padding: '2px 6px', borderRadius: 4, fontSize: 10, background: doc.source === 'qr_code' ? 'rgba(99,102,241,0.15)' : 'rgba(16,185,129,0.1)', color: doc.source === 'qr_code' ? '#6366f1' : '#10b981' }}>
+                      {SOURCE_LABELS[doc.source] || doc.source}
+                    </span>
+                  </td>
+                  <td style={tdStyle}>{doc.invoiceNumber || doc.invoiceId || '-'}</td>
+                  <td style={tdStyle}>{doc.carrierName || doc.carrierId || '-'}</td>
+                  <td style={tdStyle}>
+                    <span style={{ fontWeight: 600, color: AUDIT_STATUS_COLORS[doc.auditStatus] || t.text }}>
+                      {doc.auditStatus?.replace(/_/g, ' ') || '-'}
+                    </span>
+                  </td>
+                  <td style={{ ...tdStyle, fontSize: '12px', color: t.textSecondary }}>{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </CollapsibleSection>
     </div>
   );

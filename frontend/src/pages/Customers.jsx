@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ContactCustomerModal from '../components/ContactCustomerModal';
 import { getCustomerAging, getCustomerDetail, getCustomers, sendCustomerMessage } from '../api/client';
-import { useTheme, themes } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 
 function toMoney(value) {
@@ -24,21 +24,37 @@ export default function Customers() {
   const [error, setError] = useState('');
   const CUSTOMER_RENDER_LIMIT = 1000;
 
-  const panelStyle = {
-    border: `1px solid ${t.border}`,
-    borderRadius: 12,
-    background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`,
-    boxShadow: '0 10px 24px rgba(0,0,0,0.14)',
-  };
-
   const inputStyle = {
-    minHeight: 36,
+    minHeight: 34,
     borderRadius: 8,
     border: `1px solid ${t.border}`,
     background: t.bgAlt,
     color: t.text,
-    padding: '8px 10px',
+    padding: '7px 10px',
     fontSize: 12,
+    outline: 'none',
+  };
+
+  const ghostBtn = {
+    border: `1px solid ${t.border}`,
+    background: t.surface,
+    color: t.text,
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 700,
+    padding: '8px 12px',
+    cursor: 'pointer',
+  };
+
+  const primaryBtn = {
+    border: `1px solid ${t.accent2 || t.accent}`,
+    background: `linear-gradient(135deg, ${t.accent}, ${t.accent2 || t.accent})`,
+    color: t.bg,
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 700,
+    padding: '8px 12px',
+    cursor: 'pointer',
   };
 
   const loadCustomers = async () => {
@@ -144,254 +160,263 @@ export default function Customers() {
   );
 
   return (
-    <div className="app-bg">
-      <div className="page-container">
-        <header className="customers-header">
-          <div>
-            <h1 style={{ margin: 0, fontSize: 26 }}>Customers</h1>
-            <div className="secondary-text" style={{ fontSize: 12 }}>Search, review, and open a full customer profile from one command center.</div>
+    <div style={{ display: 'grid', gap: 12 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 26 }}>Customers</h1>
+          <div style={{ color: t.textSecondary, fontSize: 12 }}>Search, review, and open a full customer profile from one command center.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" style={ghostBtn} onClick={loadCustomers}>
+            {loadingCustomers ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            type="button"
+            onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
+            disabled={!selected}
+            style={{ ...ghostBtn, cursor: selected ? 'pointer' : 'not-allowed', opacity: selected ? 1 : 0.5 }}
+          >
+            Open Profile
+          </button>
+          <button type="button" style={primaryBtn} onClick={() => navigate('/customers/new')}>
+            + Add Customer
+          </button>
+        </div>
+      </div>
+
+      {error && <div style={{ color: t.error, fontSize: 12, padding: '4px 0' }}>{error}</div>}
+
+      {/* KPI Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+        {[
+          ['Total Customers', customerMetrics.total],
+          ['Combined Revenue', toMoney(customerMetrics.totalRevenue)],
+          ['Combined Open AR', toMoney(customerMetrics.openAR)],
+        ].map(([label, value]) => (
+          <div key={label} style={{ border: `1px solid ${t.border}`, borderRadius: 10, background: t.surface, padding: 12 }}>
+            <div style={{ fontSize: 11, color: t.textSecondary, marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" onClick={loadCustomers} className="kpi-card" style={{ cursor: 'pointer', fontWeight: 700 }}>
-              {loadingCustomers ? 'Refreshing...' : 'Refresh'}
+        ))}
+      </div>
+
+      {/* Filters & Table */}
+      <section style={{ border: `1px solid ${t.border}`, borderRadius: 12, background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`, overflow: 'hidden' }}>
+        <header style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, background: t.bgAlt }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search customer, company, email, phone…"
+              style={{ ...inputStyle, width: 280 }}
+            />
+            <span style={{ color: t.textSecondary, fontSize: 12 }}>
+              {filteredCustomers.length} of {customers.length} customers
+            </span>
+          </div>
+        </header>
+
+        {filteredCustomers.length > renderedCustomers.length && (
+          <div style={{ padding: '8px 12px', borderBottom: `1px solid ${t.border}`, color: t.warning, fontSize: 12, background: t.bgAlt }}>
+            Displaying first {renderedCustomers.length.toLocaleString()} customers. Refine search to view more rows.
+          </div>
+        )}
+
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+            <thead>
+              <tr style={{ background: t.bgAlt, color: t.textSecondary }}>
+                {['Code', 'Name', 'Company', 'Email', 'Phone', 'Open AR', 'Invoices', 'Actions'].map((header) => (
+                  <th key={header} style={{ padding: '10px 8px', textAlign: 'left', fontSize: 11, fontWeight: 600 }}>
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {renderedCustomers.map((customer) => {
+                const isActive = selected === customer.id;
+                return (
+                  <tr
+                    key={customer.id}
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      setSelected(customer.id);
+                      openCustomerContextMenu(customer, event.clientX, event.clientY);
+                    }}
+                    title="Right-click for customer shortcuts"
+                    style={{ background: isActive ? t.surfaceStrong : 'transparent', cursor: 'pointer' }}
+                  >
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontFamily: 'monospace', fontWeight: 600, color: 'var(--accent)' }}>
+                      {customer.customerCode || customer.id || '—'}
+                    </td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}`, fontWeight: 600 }}>
+                      <a
+                        href={`/customers/${encodeURIComponent(customer.id || customer._id)}`}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); navigate(`/customers/${encodeURIComponent(customer.id || customer._id)}`); }}
+                        style={{ color: 'var(--accent)', textDecoration: 'none' }}
+                        title="Open customer profile"
+                      >
+                        {customer.name || '—'}
+                      </a>
+                    </td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{customer.company || '—'}</td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{customer.email || '—'}</td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{customer.phone || '—'}</td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{toMoney(customer.openAR)}</td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>{Number(customer.invoiceCount || 0)}</td>
+                    <td style={{ padding: '8px', borderTop: `1px solid ${t.border}` }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelected(customer.id)}
+                          style={{ ...ghostBtn, padding: '4px 8px', fontSize: 11 }}
+                        >
+                          Preview
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/customers/${encodeURIComponent(customer.id)}`)}
+                          style={{ ...ghostBtn, padding: '4px 8px', fontSize: 11, borderColor: t.accent }}
+                        >
+                          Profile
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {!filteredCustomers.length && (
+                <tr>
+                  <td colSpan={8} style={{ padding: 16, textAlign: 'center', borderTop: `1px solid ${t.border}`, color: t.textSecondary }}>No customers found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Customer Preview Panel */}
+      <section style={{ border: `1px solid ${t.border}`, borderRadius: 12, background: `linear-gradient(160deg, ${t.surface}, ${t.surfaceStrong})`, padding: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700 }}>Customer Preview</div>
+            {!selected && <div style={{ fontSize: 12, color: t.textSecondary }}>Select a customer to load summary details.</div>}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              disabled={!detail}
+              style={{ ...ghostBtn, cursor: detail ? 'pointer' : 'not-allowed', opacity: detail ? 1 : 0.5 }}
+            >
+              Contact Customer
             </button>
             <button
               type="button"
               onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
               disabled={!selected}
-              className="kpi-card"
-              style={{ cursor: selected ? 'pointer' : 'not-allowed', fontWeight: 700, borderColor: t.accent }}
+              style={{ ...ghostBtn, cursor: selected ? 'pointer' : 'not-allowed', opacity: selected ? 1 : 0.5, borderColor: t.accent }}
             >
-              Open Profile
+              Open Full Profile
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/customers/new')}
-              className="kpi-card"
-              style={{ cursor: 'pointer', fontWeight: 700, borderColor: t.accent, background: t.accent, color: t.surface }}
-            >
-              + Add Customer
-            </button>
-          </div>
-        </header>
-
-        <div className="kpi-grid">
-          {[
-            ['Total Customers', customerMetrics.total],
-            ['Combined Revenue', toMoney(customerMetrics.totalRevenue)],
-            ['Combined Open AR', toMoney(customerMetrics.openAR)],
-          ].map(([label, value]) => (
-            <div key={label} className="kpi-card">
-              <div className="secondary-text" style={{ fontSize: 11, marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700 }}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="table-wrapper">
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', padding: '16px' }}>
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search customer, company, email, phone"
-              style={{ minWidth: 280, flex: 1, minHeight: 36, borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, padding: '8px 10px', fontSize: 12 }}
-            />
-            <div className="secondary-text" style={{ fontSize: 12 }}>
-              {filteredCustomers.length} of {customers.length} customers
-            </div>
-          </div>
-
-          {error && <div style={{ fontSize: 12, color: t.error, paddingLeft: 16 }}>{error}</div>}
-          {filteredCustomers.length > renderedCustomers.length && (
-            <div style={{ fontSize: 12, color: t.warning, paddingLeft: 16 }}>
-              Displaying first {renderedCustomers.length.toLocaleString()} customers. Refine your search to view more.
-            </div>
-          )}
-
-          <div style={{ overflow: 'auto' }}>
-            <table style={{ width: '100%', minWidth: 840, borderCollapse: 'collapse', fontSize: '1rem' }}>
-              <thead>
-                <tr>
-                  {['Name', 'Company', 'Email', 'Phone', 'Open AR', 'Invoices', 'Actions'].map((header) => (
-                    <th key={header} style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: t.textSecondary, borderBottom: `1px solid ${t.border}` }}>
-                      {header}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {renderedCustomers.map((customer) => {
-                  const isActive = selected === customer.id;
-                  return (
-                    <tr
-                      key={customer.id}
-                      onContextMenu={(event) => {
-                        event.preventDefault();
-                        setSelected(customer.id);
-                        openCustomerContextMenu(customer, event.clientX, event.clientY);
-                      }}
-                      title="Right-click for customer shortcuts"
-                      style={{ background: isActive ? t.surfaceStrong : 'transparent', cursor: 'pointer' }}
-                    >
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}`, fontWeight: 600 }}>{customer.name || '—'}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.company || '—'}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.email || '—'}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{customer.phone || '—'}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{toMoney(customer.openAR)}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>{Number(customer.invoiceCount || 0)}</td>
-                      <td style={{ padding: '10px 12px', borderBottom: `1px solid ${t.border}` }}>
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                          <button
-                            type="button"
-                            onClick={() => setSelected(customer.id)}
-                            style={{ minHeight: 28, padding: '4px 8px', cursor: 'pointer', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontWeight: 600 }}
-                          >
-                            Preview
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/customers/${encodeURIComponent(customer.id)}`)}
-                            style={{ minHeight: 28, padding: '4px 8px', cursor: 'pointer', borderRadius: 8, border: `1px solid ${t.accent}`, background: t.bgAlt, color: t.text, fontWeight: 600 }}
-                          >
-                            Profile
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {!filteredCustomers.length && (
-                  <tr>
-                    <td colSpan={7} className="secondary-text" style={{ padding: '14px 12px' }}>No customers found for this search.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           </div>
         </div>
 
-        <div className="customer-preview-panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700 }}>Customer Preview</div>
-              {!selected && <div className="secondary-text" style={{ fontSize: 12 }}>Select a customer to load summary details.</div>}
+        {loading && <div style={{ fontSize: 12, color: t.textSecondary }}>Loading selected customer...</div>}
+        {!loading && detail && (
+          <>
+            <div style={{ fontSize: 13 }}>
+              <strong>{detail.name}</strong>
+              <div style={{ marginTop: 4, color: t.textSecondary }}>
+                {detail.contact || 'No contact'} • {detail.email || 'No email'} • {detail.phone || 'No phone'}
+              </div>
+              {detail.address && <div style={{ marginTop: 4, color: t.textSecondary }}>{detail.address}</div>}
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                disabled={!detail}
-                className="kpi-card"
-                style={{ cursor: detail ? 'pointer' : 'not-allowed', fontWeight: 700 }}
-              >
-                Contact Customer
-              </button>
-              <button
-                type="button"
-                onClick={() => selected && navigate(`/customers/${encodeURIComponent(selected)}`)}
-                disabled={!selected}
-                className="kpi-card"
-                style={{ cursor: selected ? 'pointer' : 'not-allowed', fontWeight: 700, borderColor: t.accent }}
-              >
-                Open Full Profile
-              </button>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginTop: 12 }}>
+              <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
+              <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
+              <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
             </div>
-          </div>
 
-          {loading && <div className="secondary-text" style={{ fontSize: 12 }}>Loading selected customer...</div>}
-          {!loading && detail && (
-            <>
-              <div style={{ fontSize: 13 }}>
-                <strong>{detail.name}</strong>
-                <div className="secondary-text" style={{ marginTop: 4 }}>
-                  {detail.contact || 'No contact'} • {detail.email || 'No email'} • {detail.phone || 'No phone'}
-                </div>
-                {detail.address && <div className="secondary-text" style={{ marginTop: 4 }}>{detail.address}</div>}
-              </div>
-
-              <div className="kpi-grid">
-                <MetricCard label="Total Revenue" value={toMoney(detail.totalRevenue)} t={t} />
-                <MetricCard label="Open AR" value={toMoney(detail.openAR)} t={t} />
-                <MetricCard label="Invoice Count" value={Number(detail.invoiceCount || 0)} t={t} />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-                <StatTable title="Audit Statistics" stats={detail.auditStats} t={t} />
-                <StatTable title="Payment Statistics" stats={detail.paymentStats} t={t} />
-                <AgingTable aging={aging} t={t} />
-              </div>
-            </>
-          )}
-        </div>
-
-        <ContactCustomerModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onSend={handleSendMessage}
-          customer={detail}
-          invoice={null}
-          exception={null}
-        />
-
-        {/* Right-click context menu */}
-        {rowContextMenu?.customer && (
-          <div
-            role="menu"
-            data-customer-context-menu="true"
-            style={{
-              position: 'fixed',
-              top: rowContextMenu.y,
-              left: rowContextMenu.x,
-              zIndex: 1200,
-              minWidth: 240,
-              borderRadius: 10,
-              border: `1px solid ${t.border}`,
-              background: t.surface,
-              boxShadow: '0 14px 30px rgba(0,0,0,0.3)',
-              padding: 8,
-              display: 'grid',
-              gap: 6,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => { setSelected(rowContextMenu.customer.id); setRowContextMenu(null); }}
-              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
-            >
-              Preview Customer
-            </button>
-            <button
-              type="button"
-              onClick={() => { navigate(`/customers/${encodeURIComponent(rowContextMenu.customer.id)}`); setRowContextMenu(null); }}
-              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
-            >
-              Open Customer Profile
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSelected(rowContextMenu.customer.id); setModalOpen(true); setRowContextMenu(null); }}
-              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
-            >
-              Contact Customer
-            </button>
-            <hr style={{ border: 'none', borderTop: `1px solid ${t.border}`, margin: '2px 0' }} />
-            <button
-              type="button"
-              onClick={() => { navigate('/customers/new'); setRowContextMenu(null); }}
-              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
-            >
-              + Add Customer
-            </button>
-            <button
-              type="button"
-              onClick={() => { loadCustomers(); setRowContextMenu(null); }}
-              style={{ minHeight: 34, textAlign: 'left', cursor: 'pointer', fontWeight: 700, padding: '6px 12px', borderRadius: 8, border: `1px solid ${t.border}`, background: t.bgAlt, color: t.text, fontSize: 12 }}
-            >
-              Refresh
-            </button>
-          </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginTop: 12 }}>
+              <StatTable title="Audit Statistics" stats={detail.auditStats} t={t} />
+              <StatTable title="Payment Statistics" stats={detail.paymentStats} t={t} />
+              <AgingTable aging={aging} t={t} />
+            </div>
+          </>
         )}
-      </div>
+      </section>
+
+      <ContactCustomerModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSend={handleSendMessage}
+        customer={detail}
+        invoice={null}
+        exception={null}
+      />
+
+      {/* Right-click context menu */}
+      {rowContextMenu?.customer && (
+        <div
+          role="menu"
+          data-customer-context-menu="true"
+          style={{
+            position: 'fixed',
+            top: rowContextMenu.y,
+            left: rowContextMenu.x,
+            zIndex: 1200,
+            minWidth: 240,
+            borderRadius: 10,
+            border: `1px solid ${t.border}`,
+            background: t.surface,
+            boxShadow: '0 14px 30px rgba(0,0,0,0.3)',
+            padding: 8,
+            display: 'grid',
+            gap: 6,
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => { setSelected(rowContextMenu.customer.id); setRowContextMenu(null); }}
+            style={{ ...ghostBtn, minHeight: 34, textAlign: 'left', padding: '6px 12px' }}
+          >
+            Preview Customer
+          </button>
+          <button
+            type="button"
+            onClick={() => { navigate(`/customers/${encodeURIComponent(rowContextMenu.customer.id)}`); setRowContextMenu(null); }}
+            style={{ ...ghostBtn, minHeight: 34, textAlign: 'left', padding: '6px 12px' }}
+          >
+            Open Customer Profile
+          </button>
+          <button
+            type="button"
+            onClick={() => { setSelected(rowContextMenu.customer.id); setModalOpen(true); setRowContextMenu(null); }}
+            style={{ ...ghostBtn, minHeight: 34, textAlign: 'left', padding: '6px 12px' }}
+          >
+            Contact Customer
+          </button>
+          <hr style={{ border: 'none', borderTop: `1px solid ${t.border}`, margin: '2px 0' }} />
+          <button
+            type="button"
+            onClick={() => { navigate('/customers/new'); setRowContextMenu(null); }}
+            style={{ ...ghostBtn, minHeight: 34, textAlign: 'left', padding: '6px 12px' }}
+          >
+            + Add Customer
+          </button>
+          <button
+            type="button"
+            onClick={() => { loadCustomers(); setRowContextMenu(null); }}
+            style={{ ...ghostBtn, minHeight: 34, textAlign: 'left', padding: '6px 12px' }}
+          >
+            Refresh
+          </button>
+        </div>
+      )}
     </div>
   );
 }

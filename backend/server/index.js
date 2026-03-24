@@ -63,7 +63,13 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4001;
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+  throw new Error('JWT_SECRET environment variable is required in production.');
+}
+if (!JWT_SECRET) {
+  console.warn('[startup] WARNING: JWT_SECRET not set. Auth will not work.');
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -71,7 +77,10 @@ const distPath = path.resolve(__dirname, '../dist');
 
 const resetTokens = {};
 let mongoLastError = '';
-const PASSWORD_HASH_SALT = process.env.PASSWORD_HASH_SALT || 'fbpa-default-salt';
+const PASSWORD_HASH_SALT = process.env.PASSWORD_HASH_SALT;
+if (!PASSWORD_HASH_SALT && process.env.NODE_ENV === 'production') {
+  throw new Error('PASSWORD_HASH_SALT environment variable is required in production.');
+}
 const allowVercelOrigins = true;
 
 function hashPassword(password) {
@@ -246,18 +255,10 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     database: dbConnected ? 'connected' : 'disconnected',
-    uptime: Math.floor(process.uptime()),
-    dbStatus: dbConnected ? 'connected' : 'disconnected',
   });
 });
 
 app.get('/api/health/saia', async (_req, res) => {
-  const health = await getSaiaHealthStatus();
-  const statusCode = health.status === 'OFFLINE' ? 503 : 200;
-  return res.status(statusCode).json(health);
-});
-
-app.get('/health/saia', async (_req, res) => {
   const health = await getSaiaHealthStatus();
   const statusCode = health.status === 'OFFLINE' ? 503 : 200;
   return res.status(statusCode).json(health);

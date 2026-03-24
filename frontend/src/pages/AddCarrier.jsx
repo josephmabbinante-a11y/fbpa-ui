@@ -13,6 +13,7 @@ export default function AddCarrier() {
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     name: '',
+    scacCode: '',
     mcNumber: '',
     taxId: '',
     dotNumber: '',
@@ -119,10 +120,11 @@ export default function AddCarrier() {
     const nextErrors = {
       name: String(form.name || '').trim() ? '' : 'Carrier name is required.',
       email: form.email && !String(form.email).includes('@') ? 'Enter a valid email.' : '',
+      scacCode: form.scacCode && !/^[A-Za-z]{2,4}$/.test(form.scacCode.trim()) ? 'SCAC must be 2–4 letters (e.g. JBHT).' : '',
     };
     setErrors(nextErrors);
 
-    if (nextErrors.name || nextErrors.email) {
+    if (nextErrors.name || nextErrors.email || nextErrors.scacCode) {
       setMessage('Please resolve required fields.');
       return;
     }
@@ -132,6 +134,7 @@ export default function AddCarrier() {
 
     const result = await createCarrier({
       name: form.name,
+      scacCode: form.scacCode,
       mcNumber: form.mcNumber,
       taxId: form.taxId,
       email: form.email,
@@ -194,6 +197,11 @@ export default function AddCarrier() {
             <label style={{ display: 'grid', gap: 5 }}>
               <span style={labelStyle}>MC Number</span>
               <input value={form.mcNumber} onChange={(event) => setField('mcNumber', event.target.value)} style={inputStyle} placeholder="MC123456" />
+            </label>
+            <label style={{ display: 'grid', gap: 5 }}>
+              <span style={labelStyle}>SCAC Code</span>
+              <input value={form.scacCode} onChange={(event) => setField('scacCode', event.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))} style={{ ...inputStyle, border: errors.scacCode ? `1.5px solid ${t.error}` : inputStyle.border, textTransform: 'uppercase', letterSpacing: 1 }} placeholder="JBHT" maxLength={4} />
+              {errors.scacCode ? <span style={{ fontSize: 11, color: t.error }}>{errors.scacCode}</span> : <span style={{ fontSize: 10, color: t.textSecondary }}>2–4 letter Standard Carrier Alpha Code</span>}
             </label>
             <label style={{ display: 'grid', gap: 5 }}>
               <span style={labelStyle}>DOT Number</span>

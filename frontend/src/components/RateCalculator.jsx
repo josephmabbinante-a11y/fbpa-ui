@@ -887,6 +887,9 @@ function RateCalculator() {
         capacityHeatScore: marketModels.capacityHeatScore,
         customerTierMultiplier: 1,
       },
+      // Pass context so auction quote is recorded in quote history
+      customerName: shipmentDetails?.customerName || '',
+      customerId: shipmentDetails?.customerId || '',
     });
     setQuotingSaia(false);
 
@@ -946,6 +949,15 @@ function RateCalculator() {
       time_to_cover_minutes: timeToCoverMinutes,
       feature_snapshot: featureSnapshot,
       quote_events: quoteTelemetry,
+      // Additional fields for quote history tracking
+      source: 'calculator',
+      origin,
+      destination,
+      recommended_sell_rate: recommendedSellRate,
+      carrier_cost_rate: carrierCostRate,
+      total_quote_amount: Math.round(recommendedSellRate * Math.max(1, featureSnapshot.miles || 0)),
+      customerName: shipmentDetails?.customerName || '',
+      customerId: shipmentDetails?.customerId || '',
     });
     setLoggingOutcome(false);
 
@@ -1144,53 +1156,8 @@ function RateCalculator() {
     <ErrorBoundary>
       <div className={styles.container}>
       <header className={styles.header}>
-        <h1>Truckload Rate Calculator</h1>
         <div className={styles.headerIcons} />
       </header>
-
-      <div style={{ padding: '0 32px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', color: t.textSecondary, fontSize: 12 }}>
-        <span>Data Updated: {safeString(safeConfidenceMeta.dataFreshness)}</span>
-        <span>Fuel Index: {safeString(safeConfidenceMeta.fuelSource)}</span>
-        <span>Engine: {safeString(safeConfidenceMeta.engineVersion)}</span>
-        <span>Sources: {safeString(safeConfidenceMeta.marketSource)}</span>
-        <span>{safeHarvestedPricing.loading ? 'Harvesting loads...' : `Harvest: ${safeString(safeHarvestedPricing.matchedLoads)}/${safeString(safeHarvestedPricing.totalLoads)} (${safeString(safeHarvestedPricing.source)})`}</span>
-        <span>Capacity Mode: {safeString(safeMarketModels.marketDataMode)}</span>
-        <span>Volatility: {safeMarketModels.capacityVolatilityFlag ? 'High' : 'Normal'}</span>
-      </div>
-
-      <div
-        style={{
-          margin: '8px 32px 0 32px',
-          border: `1px solid ${t.border}`,
-          borderRadius: 10,
-          background: t.bgAlt,
-          padding: '8px 10px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 8,
-          flexWrap: 'wrap',
-          fontSize: 12,
-        }}
-      >
-        <strong style={{ color: t.textSecondary }}>Geo Coverage</strong>
-        <span>
-          Origin {safeString(safeGeoCoverage.originZip3 || '---')} ({safeString(safeGeoCoverage.originRegion || 'Unknown')})
-          {'  '}→{'  '}
-          Destination {safeString(safeGeoCoverage.destinationZip3 || '---')} ({safeString(safeGeoCoverage.destinationRegion || 'Unknown')})
-        </span>
-        <span>
-          Miles: {safeString(Number(safeFeatureSnapshot.miles || 0).toLocaleString())}
-          {'  '}({safeString(safeMileageEstimate.method || 'estimated')} • {safeString(Math.round(Number(safeMileageEstimate.confidence || 0) * 100))}%)
-          {'  '}|{'  '}
-          Origin Capacity: {safeString(Number(safeMarketModels.originCapacityScore || 0).toFixed(0))}/100
-          {'  '}|{'  '}
-          Destination Capacity: {safeString(Number(safeMarketModels.destinationCapacityScore || 0).toFixed(0))}/100
-        </span>
-        <span style={{ color: t.textSecondary }}>
-          {mileageLoading ? 'Resolving mileage...' : (safeGeoCoverage.loading ? 'Resolving...' : `Source: ${safeString(safeGeoCoverage.source)}`)}
-        </span>
-      </div>
 
       <main className={styles.main}>
         <section className={styles.leftPanel}>

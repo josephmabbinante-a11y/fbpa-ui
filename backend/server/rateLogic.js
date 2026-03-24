@@ -2,6 +2,8 @@ import express from 'express';
 import { randomUUID } from 'crypto';
 import mongoose from 'mongoose';
 import { CarrierRateLog } from './models.js';
+import Quote from '../models/Quote.js';
+import { estimateMileageAsync } from './mileage.js';
 import {
   CONTINENTAL_STATES,
   GEO_DATABASE_VERSION,
@@ -524,7 +526,7 @@ async function persistCarrierRateLog(entry) {
   return { source: 'mongodb' };
 }
 
-router.post('/calculate', (req, res) => {
+router.post('/calculate', async (req, res) => {
   const {
     origin = '',
     destination = '',
@@ -533,9 +535,25 @@ router.post('/calculate', (req, res) => {
     mileage,
   } = req.body || {};
 
-  const numericMileage = Number(mileage);
+  let numericMileage = Number(mileage);
+  let mileageSource = null;
+
+  // Auto-resolve mileage from origin/destination when not explicitly provided
   if (!Number.isFinite(numericMileage) || numericMileage <= 0) {
-    return res.status(400).json({ error: 'Mileage must be a positive number' });
+    if (origin && destination) {
+      try {
+        const estimated = await estimateMileageAsync(origin, destination, equipment);
+        if (estimated && estimated.miles > 0) {
+          numericMileage = estimated.miles;
+          mileageSource = { method: estimated.method, confidence: estimated.confidence, durationMinutes: estimated.durationMinutes ?? null };
+        }
+      } catch {
+        // Mileage auto-resolve failed; fall through to error
+      }
+    }
+    if (!Number.isFinite(numericMileage) || numericMileage <= 0) {
+      return res.status(400).json({ error: 'Mileage must be a positive number, or provide valid origin and destination' });
+    }
   }
 
   const normalizedEquipment = normalizeText(equipment);
@@ -577,6 +595,8 @@ router.post('/calculate', (req, res) => {
     quote,
     confidence,
     marketPosition,
+    miles: numericMileage,
+    mileageSource: mileageSource || null,
     laneData: buildMarketRows(laneAverage),
     shortTermHistory: buildShortTermHistory(laneAverage),
     topCarriers: buildTopCarriers(laneAverage),
@@ -709,8 +729,50 @@ router.post('/saia/quote', async (req, res) => {
 
     const persisted = await persistCarrierRateLog(logEntry);
 
+    // Persist auction quote to Quote collection for quoting history
+    let auctionQuoteId = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const userId = req.user?.userId || req.user?.id || req.user?.email || 'anonymous';
+        auctionQuoteId = `aq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const shipmentBody = req.body?.shipment || {};
+        await Quote.create({
+          quoteId: auctionQuoteId,
+          userId,
+          userEmail: req.user?.email || '',
+          userName: req.user?.name || '',
+          source: 'auction',
+          customerId: req.body?.customerId || '',
+          customerName: req.body?.customerName || '',
+          origin: String(shipmentBody.originZip || ''),
+          destination: String(shipmentBody.destinationZip || ''),
+          originZip3: String(shipmentBody.originZip || '').slice(0, 3),
+          destinationZip3: String(shipmentBody.destinationZip || '').slice(0, 3),
+          miles: Number(featureSnapshot.miles || 0),
+          equipmentType: featureSnapshot.equipment_type || 'dry_van',
+          ruleRate: null,
+          auctionCarrier: 'SAIA',
+          auctionQuoteId: String(normalizedRate.quoteId || ''),
+          auctionRate: Number(normalizedRate.totalRate || 0),
+          recommendedSellRate: finalSellRate,
+          carrierCostRate: pricingInput.rawCostInput,
+          totalQuoteAmount: finalSellRate,
+          margin: finalSellRate - pricingInput.rawCostInput,
+          confidence: null,
+          status: 'draft',
+          engineVersion: ENGINE_VERSION,
+          featureSnapshot,
+          predictionSnapshot: { pricingResult: { rawCostInput: pricingInput.rawCostInput, marginPct, finalSellRate } },
+          loadId: req.body?.loadId || '',
+        });
+      } catch (err) {
+        console.error('[saia/quote] Failed to persist auction quote to Quote collection:', err.message);
+      }
+    }
+
     return res.json({
       carrierQuote: sanitizeQuoteForFrontend(normalizedRate),
+      auctionQuoteId,
       pricingInput,
       pricingResult: {
         rawCostInput: pricingInput.rawCostInput,
@@ -803,7 +865,7 @@ router.get('/health/saia', async (_req, res) => {
   return res.status(statusCode).json(health);
 });
 
-router.post('/quote-outcomes', (req, res) => {
+router.post('/quote-outcomes', async (req, res) => {
   const incomingFeature = normalizeFeaturePayload(req.body?.feature_snapshot || req.body?.features || {});
   const issues = validateFeaturePayload(incomingFeature);
   if (issues.length > 0) {
@@ -820,9 +882,13 @@ router.post('/quote-outcomes', (req, res) => {
   const accepted = req.body?.accepted;
   const normalizedAccepted = accepted === true || accepted === false ? accepted : null;
 
+  const quoteId = randomUUID();
   const record = {
-    quote_id: randomUUID(),
+    quote_id: quoteId,
     created_at: new Date().toISOString(),
+    user_id: req.user?.userId || req.user?.id || req.user?.email || null,
+    user_email: req.user?.email || '',
+    user_name: req.user?.name || '',
     engine_version: String(req.body?.engine_version || ENGINE_VERSION),
     feature_schema_version: incomingFeature.feature_schema_version,
     rule_rate: Number.isFinite(Number(req.body?.rule_rate)) ? toRate(Number(req.body.rule_rate)) : predicted.rule_rate,
@@ -845,6 +911,47 @@ router.post('/quote-outcomes', (req, res) => {
 
   quoteOutcomes.unshift(record);
   if (quoteOutcomes.length > 5000) quoteOutcomes.length = 5000;
+
+  // Persist to Quote collection in MongoDB for quote history tracking
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const source = req.body?.source || 'calculator';
+      await Quote.create({
+        quoteId,
+        userId: record.user_id || 'anonymous',
+        userEmail: record.user_email,
+        userName: record.user_name,
+        source,
+        customerId: req.body?.customerId || '',
+        customerName: req.body?.customerName || '',
+        origin: req.body?.origin || '',
+        destination: req.body?.destination || '',
+        originZip3: incomingFeature.origin_zip3 || '',
+        destinationZip3: incomingFeature.destination_zip3 || '',
+        miles: incomingFeature.miles || 0,
+        equipmentType: incomingFeature.equipment_type || 'dry_van',
+        ruleRate: record.rule_rate,
+        mlRate: record.ml_rate,
+        recommendedSellRate: Number(req.body?.recommended_sell_rate) || null,
+        carrierCostRate: Number(req.body?.carrier_cost_rate) || null,
+        totalQuoteAmount: Number(req.body?.total_quote_amount) || null,
+        margin: record.margin,
+        confidence: predicted.confidence,
+        status: normalizedAccepted === true ? 'accepted' : normalizedAccepted === false ? 'rejected' : 'draft',
+        accepted: normalizedAccepted,
+        bookedRate: record.booked_rate,
+        timeToCoverMinutes: record.time_to_cover_minutes,
+        engineVersion: record.engine_version,
+        featureSchemaVersion: record.feature_schema_version,
+        featureSnapshot: incomingFeature,
+        predictionSnapshot: record.prediction_snapshot,
+        loadId: req.body?.loadId || '',
+        notes: req.body?.notes || '',
+      });
+    } catch (err) {
+      console.error('[quote-outcomes] Failed to persist quote to MongoDB:', err.message);
+    }
+  }
 
   return res.status(201).json({ quote: record });
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { quoteSaiaAuction, getSaiaAuctionCircuit } from '../api/auctionClient';
 import AuctionNotificationManager from '../components/AuctionNotificationManager';
+import { LoadStatusBadge } from '../components/LoadStatusBadge';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDemo } from '../demo/DemoContext';
 
@@ -81,25 +82,7 @@ const MOCK_ACTIVE_AUCTIONS = [
     topBid: '$420',
     expiry: '—',
     commodity: 'Electronics',
-  },
-];
-
-function StatusBadge({ status }) {
-  const colors = {
-    'Open': { bg: '#10b98118', text: '#10b981' },
-    'Closing Soon': { bg: '#f59e0b18', text: '#f59e0b' },
-    'Awarded': { bg: '#3b82f618', text: '#3b82f6' },
-    'Expired': { bg: '#ef444418', text: '#ef4444' },
-  };
-  const c = colors[status] || { bg: '#88888820', text: '#888' };
-  return (
-    <span style={{ padding: '2px 8px', borderRadius: 99, backgroundColor: c.bg, color: c.text, fontSize: 11, fontWeight: 700 }}>
-      {status}
-    </span>
-  );
-}
-
-export default function AuctionBoard() {
+  },\n];\n\nexport default function AuctionBoard() {
   const { theme } = useTheme();
   const t = theme;
   const { demoMode } = useDemo();
@@ -329,7 +312,7 @@ export default function AuctionBoard() {
                       <td style={{ ...tdStyle, color: auction.expiry === '—' ? t.textSecondary : auction.status === 'Closing Soon' ? '#f59e0b' : t.text, fontWeight: auction.status === 'Closing Soon' ? 700 : 400 }}>
                         {auction.expiry}
                       </td>
-                      <td style={tdStyle}><StatusBadge status={auction.status} /></td>
+                      <td style={tdStyle}><LoadStatusBadge status={auction.status} size="sm" /></td>
                     </tr>
                   ))}
                 </tbody>
@@ -344,7 +327,7 @@ export default function AuctionBoard() {
                   <div>
                     <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{selectedAuction.id}</div>
                     <div style={{ fontSize: 12, fontFamily: 'monospace', color: '#e67e22', fontWeight: 700, marginBottom: 6 }}>Load: {selectedAuction.loadId}</div>
-                    <StatusBadge status={selectedAuction.status} />
+                    <LoadStatusBadge status={selectedAuction.status} size="sm" />
                   </div>
                   <button
                     onClick={() => setSelectedAuction(null)}
