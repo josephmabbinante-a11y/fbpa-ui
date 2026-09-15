@@ -2,9 +2,14 @@
   "name": "fbpa-backend",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
+    "build": "echo \"Backend service does not require build step\"",
     "setup-multitenant": "node server/setup-multitenant.cjs",
     "load:transit": "node scripts/load-transit-flow.js",
     "customer:add": "node scripts/add-customers.js",
@@ -26,5 +31,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
+  },
+  "overrides": {
+    "glob": "^10.5.0"
   }
 }

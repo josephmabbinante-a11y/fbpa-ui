@@ -2,6 +2,10 @@
   "name": "fbpa",
   "private": true,
   "version": "1.0.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "workspaces": [
     "frontend",
     "backend",
@@ -9,14 +13,28 @@
   ],
   "scripts": {
     "start": "npm --workspace=backend run start",
+    "build": "npm run build:frontend && npm --workspace=api run build 2>/dev/null || true",
+    "build:frontend": "npm --workspace=frontend run build",
+    "build:all": "npm run build:frontend",
     "dev:frontend": "npm --workspace=frontend run dev",
     "dev:api": "npm --workspace=api run dev",
     "dev:backend": "npm --workspace=backend run dev",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:api\" \"npm run dev:backend\"",
-    "build:frontend": "npm --workspace=frontend run build",
-    "install:all": "npm install --workspaces"
+    "install:all": "npm install --workspaces",
+    "audit:fix": "npm audit fix --force && npm --workspace=frontend audit fix --force && npm --workspace=backend audit fix --force && npm --workspace=api audit fix --force",
+    "audit": "npm audit && npm --workspace=frontend audit && npm --workspace=backend audit && npm --workspace=api audit",
+    "upgrade:npm": "npm install -g npm@latest",
+    "clean": "rm -rf node_modules */node_modules dist */dist .next */.next",
+    "reinstall": "npm run clean && npm install --workspaces"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "overrides": {
+    "glob": "^10.5.0",
+    "inflight": "^1.0.6"
+  },
+  "optionalDependencies": {
+    "whatwg-encoding": "^3.1.1"
   }
 }
